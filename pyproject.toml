@@ -1,0 +1,92 @@
+#!/usr/bin/env python
+# (C) Copyright 2024 ECMWF.
+#
+# This software is licensed under the terms of the Apache Licence Version 2.0
+# which can be obtained at http://www.apache.org/licenses/LICENSE-2.0.
+# In applying this licence, ECMWF does not waive the privileges and immunities
+# granted to it by virtue of its status as an intergovernmental organisation
+# nor does it submit to any jurisdiction.
+
+# https://packaging.python.org/en/latest/guides/writing-pyproject-toml/
+
+[build-system]
+requires = [
+  "setuptools>=60",
+  "setuptools-scm>=8",
+]
+
+[project]
+name = "anemoi-graphs"
+
+description = "A package to build graphs for data-driven forecasts."
+keywords = [
+  "ai",
+  "graphs",
+  "tools",
+]
+
+license = { file = "LICENSE" }
+authors = [
+  { name = "European Centre for Medium-Range Weather Forecasts (ECMWF)", email = "software.support@ecmwf.int" },
+]
+
+requires-python = ">=3.9"
+
+classifiers = [
+  "Development Status :: 4 - Beta",
+  "Intended Audience :: Developers",
+  "License :: OSI Approved :: Apache Software License",
+  "Operating System :: OS Independent",
+  "Programming Language :: Python :: 3 :: Only",
+  "Programming Language :: Python :: 3.9",
+  "Programming Language :: Python :: 3.10",
+  "Programming Language :: Python :: 3.11",
+  "Programming Language :: Python :: 3.12",
+  "Programming Language :: Python :: Implementation :: CPython",
+  "Programming Language :: Python :: Implementation :: PyPy",
+]
+
+dynamic = [
+  "version",
+]
+dependencies = [
+  "anemoi-datasets",
+]
+
+optional-dependencies.all = [
+]
+optional-dependencies.dev = [
+  "nbsphinx",
+  "pandoc",
+  "pytest",
+  "requests",
+  "sphinx",
+  "sphinx-argparse",
+  "sphinx-rtd-theme",
+  "termcolor",
+  "tomli",
+]
+
+optional-dependencies.docs = [
+  "nbsphinx",
+  "pandoc",
+  "requests",
+  "sphinx",
+  "sphinx-argparse",
+  "sphinx-rtd-theme",
+  "termcolor",
+  "tomli",
+]
+
+optional-dependencies.tests = [
+  "pytest",
+]
+
+urls.Documentation = "https://anemoi-graphs.readthedocs.io/"
+urls.Homepage = "https://github.com/ecmwf/anemoi-graphs/"
+urls.Issues = "https://github.com/ecmwf/anemoi-graphs/issues"
+urls.Repository = "https://github.com/ecmwf/anemoi-graphs/"
+scripts.anemoi-graphs = "anemoi.graphs.__main__:main"
+
+[tool.setuptools_scm]
+version_file = "src/anemoi/graphs/_version.py"
