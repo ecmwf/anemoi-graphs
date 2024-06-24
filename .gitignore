@@ -189,3 +189,5 @@ _version.py
 
 /config*
 *.pt
+
+/config*
