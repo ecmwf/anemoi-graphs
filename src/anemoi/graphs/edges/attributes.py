@@ -1,8 +1,8 @@
+import logging
 from abc import ABC
 from abc import abstractmethod
 from typing import Optional
 
-import logging
 import numpy as np
 from torch_geometric.data import HeteroData
 

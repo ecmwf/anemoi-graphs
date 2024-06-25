@@ -1,10 +1,10 @@
+import logging
 import os
+
 import torch
 from anemoi.utils.config import DotDict
 from hydra.utils import instantiate
 from torch_geometric.data import HeteroData
-
-import logging
 
 logger = logging.getLogger(__name__)
 
