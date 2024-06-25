@@ -188,3 +188,4 @@ _version.py
 *.code-workspace
 
 /config*
+*.pt
