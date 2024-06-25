@@ -56,7 +56,9 @@ def compute_directions(loc1: np.ndarray, loc2: np.ndarray, pole_vec: Optional[np
     return direction / np.sqrt(np.power(direction, 2).sum(axis=0))
 
 
-def directional_edge_features(loc1: np.ndarray, loc2: np.ndarray, relative_to_rotated_target: bool = True) -> np.ndarray:
+def directional_edge_features(
+    loc1: np.ndarray, loc2: np.ndarray, relative_to_rotated_target: bool = True
+) -> np.ndarray:
     """Compute features of the edge joining the nodes considered.
 
     It computes the direction of the edge after rotating the north pole.

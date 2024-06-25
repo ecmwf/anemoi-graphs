@@ -1,22 +1,14 @@
+import logging
+from abc import ABC
 from abc import abstractmethod
 from pathlib import Path
-from typing import Optional
-from typing import Union
 
-import h3
 import numpy as np
 import torch
-from abc import ABC
 from anemoi.datasets import open_dataset
 from anemoi.utils.config import DotDict
 from hydra.utils import instantiate
-from sklearn.neighbors import NearestNeighbors
 from torch_geometric.data import HeteroData
-
-from aifs.graphs import GraphBuilder
-from aifs.graphs.generate.hexagonal import create_hexagonal_nodes
-from aifs.graphs.generate.icosahedral import create_icosahedral_nodes
-import logging
 
 logger = logging.getLogger(__name__)
 earth_radius = 6371.0  # km

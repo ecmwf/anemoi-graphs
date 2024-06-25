@@ -20,7 +20,10 @@ def get_nearest_neighbour(coords_rad: torch.Tensor, mask: Optional[torch.Tensor]
     NearestNeighbors
         fitted NearestNeighbour object
     """
-    assert mask is None or mask.shape == (coords_rad.shape[0], 1), "Mask must have the same shape as the number of nodes."
+    assert mask is None or mask.shape == (
+        coords_rad.shape[0],
+        1,
+    ), "Mask must have the same shape as the number of nodes."
 
     nearest_neighbour = NearestNeighbors(metric="haversine", n_jobs=4)
 
