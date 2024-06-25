@@ -4,7 +4,6 @@ from abc import abstractmethod
 from dataclasses import dataclass
 from typing import Optional
 
-import logging
 import numpy as np
 import torch
 from torch_geometric.data import HeteroData
