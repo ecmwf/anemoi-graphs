@@ -4,6 +4,7 @@ from abc import abstractmethod
 from dataclasses import dataclass
 from typing import Optional
 
+import logging
 import numpy as np
 import torch
 from torch_geometric.data import HeteroData
@@ -12,7 +13,7 @@ from anemoi.graphs.edges.directional import directional_edge_features
 from anemoi.graphs.normalizer import NormalizerMixin
 from anemoi.graphs.utils import haversine_distance
 
-LOGGER = logging.getLogger(__name__)
+logger = logging.getLogger(__name__)
 
 
 @dataclass

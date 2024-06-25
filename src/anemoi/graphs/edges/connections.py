@@ -1,8 +1,7 @@
+import logging
 from abc import abstractmethod
-from dataclasses import dataclass
 from typing import Optional
 
-import networkx as nx
 import numpy as np
 import torch
 from anemoi.utils.config import DotDict
@@ -14,8 +13,6 @@ from torch_geometric.data.storage import NodeStorage
 
 from anemoi.graphs import earth_radius
 from anemoi.graphs.utils import get_grid_reference_distance
-
-import logging
 
 logger = logging.getLogger(__name__)
 
@@ -32,7 +29,9 @@ class BaseEdgeBuilder:
     def get_adj_matrix(self, src_nodes: NodeStorage, dst_nodes: NodeStorage): ...
 
     def register_edges(self, graph, head_indices, tail_indices):
-        graph[(self.src_name, "to", self.dst_name)].edge_index = np.stack([head_indices, tail_indices], axis=0).astype(np.int32)
+        graph[(self.src_name, "to", self.dst_name)].edge_index = np.stack([head_indices, tail_indices], axis=0).astype(
+            np.int32
+        )
         return graph
 
     def register_edge_attribute(self, graph: HeteroData, name: str, values: np.ndarray):
@@ -40,7 +39,9 @@ class BaseEdgeBuilder:
         assert (
             values.shape[0] == num_edges
         ), f"Number of edge features ({values.shape[0]}) must match number of edges ({num_edges})."
-        graph[self.src_name, "to", self.dst_name][name] = values.reshape(num_edges, -1)  # TODO: Check the [name] part works
+        graph[self.src_name, "to", self.dst_name][name] = values.reshape(
+            num_edges, -1
+        )  # TODO: Check the [name] part works
         return graph
 
     def prepare_node_data(self, graph: HeteroData):
@@ -111,7 +112,8 @@ class CutOffEdgeBuilder(BaseEdgeBuilder):
         assert cutoff_factor > 0, "Cutoff factor must be positive"
         self.cutoff_factor = cutoff_factor
 
-    def get_cutoff_radius(self, dst_nodes: NodeStorage, mask_attr: Optional[torch.Tensor] = None):
+    def get_cutoff_radius(self, graph: HeteroData, mask_attr: Optional[torch.Tensor] = None):
+        dst_nodes = graph[self.dst_name]
         mask = dst_nodes[mask_attr] if mask_attr is not None else None
         dst_grid_reference_distance = get_grid_reference_distance(dst_nodes.x, mask)
         radius = dst_grid_reference_distance * self.cutoff_factor
@@ -128,4 +130,3 @@ class CutOffEdgeBuilder(BaseEdgeBuilder):
         nearest_neighbour.fit(src_nodes.x)
         adj_matrix = nearest_neighbour.radius_neighbors_graph(dst_nodes.x, radius=self.radius).tocoo()
         return adj_matrix
-
