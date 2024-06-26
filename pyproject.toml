@@ -62,6 +62,7 @@ optional-dependencies.dev = [
   "nbsphinx",
   "pandoc",
   "pytest",
+  "pytest-mock",
   "requests",
   "sphinx",
   "sphinx-argparse",
@@ -83,6 +84,7 @@ optional-dependencies.docs = [
 
 optional-dependencies.tests = [
   "pytest",
+  "pytest-mock",
 ]
 
 urls.Documentation = "https://anemoi-graphs.readthedocs.io/"
