@@ -23,18 +23,19 @@ class BaseWeights(ABC, NormalizerMixin):
     @abstractmethod
     def compute(self, nodes: NodeStorage, *args, **kwargs): ...
 
-    def get_weights(self, *args, **kwargs):
+    def get_weights(self, *args, **kwargs) -> torch.Tensor:
         weights = self.compute(*args, **kwargs)
         if weights.ndim == 1:
             weights = weights[:, np.newaxis]
-        return self.normalize(weights)
+        norm_weights = self.normalize(weights)
+        return torch.tensor(norm_weights, dtype=torch.float32)
 
 
 class UniformWeights(BaseWeights):
     """Implements a uniform weight for the nodes."""
 
     def compute(self, nodes: NodeStorage) -> np.ndarray:
-        return torch.ones(nodes.num_nodes)
+        return np.ones(nodes.num_nodes)
 
 
 class AreaWeights(BaseWeights):

@@ -11,30 +11,10 @@ from hydra.utils import instantiate
 from torch_geometric.data import HeteroData
 
 logger = logging.getLogger(__name__)
-earth_radius = 6371.0  # km
-
-
-def latlon_to_radians(coords: np.ndarray) -> np.ndarray:
-    return np.deg2rad(coords)
-
-
-def rad_to_latlon(coords: np.ndarray) -> np.ndarray:
-    """Converts coordinates from radians to degrees.
-
-    Parameters
-    ----------
-    coords : np.ndarray
-        Coordinates in radians.
-
-    Returns
-    -------
-    np.ndarray
-        _description_
-    """
-    return np.rad2deg(coords)
 
 
 class BaseNodeBuilder(ABC):
+    """Base class for node builders."""
 
     def register_nodes(self, graph: HeteroData, name: str) -> None:
         graph[name].x = self.get_coordinates()
@@ -52,7 +32,6 @@ class BaseNodeBuilder(ABC):
     def reshape_coords(self, latitudes: np.ndarray, longitudes: np.ndarray) -> np.ndarray:
         coords = np.stack([latitudes, longitudes], axis=-1).reshape((-1, 2))
         coords = np.deg2rad(coords)
-        # TODO: type needs to be variable?
         return torch.tensor(coords, dtype=torch.float32)
 
     def transform(self, graph: HeteroData, name: str, attr_config: DotDict) -> HeteroData:
