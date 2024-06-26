@@ -14,20 +14,24 @@ from anemoi.graphs.normalizer import NormalizerMixin
 
 logger = logging.getLogger(__name__)
 
-class AttributeBuilder():
+class NodeAttributeBuilder():
 
     def transform(self, graph: HeteroData, graph_config: DotDict): 
 
         for name, nodes_cfg in graph_config.nodes.items():
             graph = self.register_node_attributes(graph, name, nodes_cfg.get("attributes", {}))
-        for edges_cfg in graph_config.edges:
-            graph =  self.register_edge_attributes(graph, edges_cfg.nodes.src_name, edges_cfg.nodes.dst_name, edges_cfg.get("attributes", {}))
-        return graph
 
     def register_node_attributes(self, graph: HeteroData, node_name: str, node_config: DotDict):
         assert node_name in graph.keys(), f"Node {node_name} does not exist in the graph."
         for attr_name, attr_cfg in node_config.items():
             graph[node_name][attr_name] = instantiate(attr_cfg).compute(graph, node_name) 
+        return graph
+
+class EdgeAttributeBuilder():
+
+    def transform(self, graph: HeteroData, graph_config: DotDict):
+        for edges_cfg in graph_config.edges:
+            graph =  self.register_edge_attributes(graph, edges_cfg.nodes.src_name, edges_cfg.nodes.dst_name, edges_cfg.get("attributes", {}))
         return graph
 
     def register_edge_attributes(self, graph: HeteroData, src_name: str, dst_name: str, edge_config: DotDict):
