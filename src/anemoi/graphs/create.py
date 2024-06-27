@@ -65,3 +65,8 @@ class GraphCreator:
             return True
         except FileNotFoundError:
             return False
+
+
+if __name__ == "__main__":
+    creator = GraphCreator(config="/home/ecm1924/GitRepos/anemoi-graphs/recipe.yaml", path="graph.pt")
+    creator.create()
