@@ -41,7 +41,7 @@ def test_register_nodes(mock_grids_path: str, resolution: str):
     assert graph["test_nodes"].x is not None
     assert isinstance(graph["test_nodes"].x, torch.Tensor)
     assert graph["test_nodes"].x.shape == (num_nodes, 2)
-    assert graph["test_nodes"].node_type == "NPZNodes"
+    assert graph["test_nodes"].node_type == "NPZFileNodeBuilder"
 
 
 @pytest.mark.parametrize("attr_class", [UniformWeights, AreaWeights])
