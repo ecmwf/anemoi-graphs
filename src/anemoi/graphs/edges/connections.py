@@ -7,11 +7,10 @@ import torch
 from anemoi.utils.config import DotDict
 from hydra.utils import instantiate
 from sklearn.neighbors import NearestNeighbors
-from sklearn.preprocessing import normalize
 from torch_geometric.data import HeteroData
 from torch_geometric.data.storage import NodeStorage
 
-from anemoi.graphs import earth_radius
+from anemoi.graphs import EARTH_RADIUS
 from anemoi.graphs.utils import get_grid_reference_distance
 
 logger = logging.getLogger(__name__)
@@ -54,25 +53,15 @@ class BaseEdgeBuilder:
         # Compute adjacency matrix.
         adjmat = self.get_adj_matrix(src_nodes, dst_nodes)
 
-        # Normalize adjacency matrix.
-        adjmat_norm = self.normalize_adjmat(adjmat)
-
         # Add edges to the graph and register normed distance.
         graph = self.register_edges(graph, adjmat.col, adjmat.row)
 
-        self.register_edge_attribute(graph, "normed_dist", adjmat_norm.data)
         if attrs_config is not None:
             for attr_name, attr_cfg in attrs_config.items():
                 attr_values = instantiate(attr_cfg)(graph, self.src_name, self.dst_name)
                 graph = self.register_edge_attribute(graph, attr_name, attr_values)
 
         return graph
-
-    def normalize_adjmat(self, adjmat):
-        """Normalize a sparse adjacency matrix."""
-        adjmat_norm = normalize(adjmat, norm="l1", axis=1)
-        adjmat_norm.data = 1.0 - adjmat_norm.data
-        return adjmat_norm
 
 
 class KNNEdgeBuilder(BaseEdgeBuilder):
@@ -124,7 +113,7 @@ class CutOffEdgeBuilder(BaseEdgeBuilder):
         return super().prepare_node_data(graph)
 
     def get_adj_matrix(self, src_nodes: NodeStorage, dst_nodes: NodeStorage):
-        logger.debug("Using cut-off radius of %.1f km.", self.radius * earth_radius)
+        logger.debug("Using cut-off radius of %.1f km.", self.radius * EARTH_RADIUS)
 
         nearest_neighbour = NearestNeighbors(metric="haversine", n_jobs=4)
         nearest_neighbour.fit(src_nodes.x)

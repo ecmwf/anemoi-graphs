@@ -4,12 +4,9 @@ from abc import abstractmethod
 from dataclasses import dataclass
 from typing import Optional
 
-import torch
-from anemoi.utils.config import DotDict
 import numpy as np
 import torch
 from torch_geometric.data import HeteroData
-from hydra.utils import instantiate
 
 from anemoi.graphs.edges.directional import directional_edge_features
 from anemoi.graphs.normalizer import NormalizerMixin
