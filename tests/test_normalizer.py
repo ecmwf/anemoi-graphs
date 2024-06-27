@@ -7,10 +7,11 @@ from anemoi.graphs.normalizer import NormalizerMixin
 @pytest.mark.parametrize("norm", ["l1", "l2", "unit-max", "unit-sum", "unit-std"])
 def test_normalizer(norm: str):
     """Test NormalizerMixin normalize method."""
+
     class Normalizer(NormalizerMixin):
         def __init__(self, norm):
             self.norm = norm
-        
+
         def __call__(self, data):
             return self.normalize(data)
 
@@ -24,10 +25,11 @@ def test_normalizer(norm: str):
 @pytest.mark.parametrize("norm", ["l3", "invalid"])
 def test_normalizer_wrong_norm(norm: str):
     """Test NormalizerMixin normalize method."""
+
     class Normalizer(NormalizerMixin):
         def __init__(self, norm: str):
             self.norm = norm
-        
+
         def __call__(self, data):
             return self.normalize(data)
 
@@ -39,10 +41,11 @@ def test_normalizer_wrong_norm(norm: str):
 
 def test_normalizer_wrong_inheritance():
     """Test NormalizerMixin normalize method."""
+
     class Normalizer(NormalizerMixin):
         def __init__(self, attr):
             self.attr = attr
-        
+
         def __call__(self, data):
             return self.normalize(data)
 
