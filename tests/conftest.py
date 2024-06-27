@@ -60,7 +60,7 @@ def config_file(tmp_path) -> tuple[str, str]:
         "nodes": {
             "test_nodes": {
                 "node_builder": {
-                    "_target_": "anemoi.graphs.nodes.NPZNodes",
+                    "_target_": "anemoi.graphs.nodes.NPZFileNodeBuilder",
                     "grid_definition_path": str(tmp_path),
                     "resolution": "o16",
                 },
