@@ -9,31 +9,9 @@ from torch_geometric.data import HeteroData
 logger = logging.getLogger(__name__)
 
 
-def generate_graph(graph_config: DotDict) -> HeteroData:
-    """Generate a graph from a configuration.
-
-    Parameters
-    ----------
-    graph_config : DotDict
-        Configuration for the nodes and edges (and its attributes).
-
-    Returns
-    -------
-    HeteroData
-        Graph.
-    """
-    graph = HeteroData()
-
-    for name, nodes_cfg in graph_config.nodes.items():
-        graph = instantiate(nodes_cfg.node_builder).transform(graph, name, nodes_cfg.get("attributes", {}))
-
-    for edges_cfg in graph_config.edges:
-        graph = instantiate(edges_cfg.edge_builder, **edges_cfg.nodes).transform(graph, edges_cfg.get("attributes", {}))
-
-    return graph
-
-
 class GraphCreator:
+    """Graph creator."""
+
     def __init__(
         self,
         path,
@@ -55,9 +33,18 @@ class GraphCreator:
         if self._path_readable() and not self.overwrite:
             raise Exception(f"{self.path} already exists. Use overwrite=True to overwrite.")
 
-    def load(self) -> HeteroData:
+    def generate_graph(self) -> HeteroData:
         config = DotDict.from_file(self.config)
-        graph = generate_graph(config)
+
+        graph = HeteroData()
+        for name, nodes_cfg in config.nodes.items():
+            graph = instantiate(nodes_cfg.node_builder).transform(graph, name, nodes_cfg.get("attributes", {}))
+
+        for edges_cfg in config.edges:
+            graph = instantiate(edges_cfg.edge_builder, **edges_cfg.nodes).transform(
+                graph, edges_cfg.get("attributes", {})
+            )
+
         return graph
 
     def save(self, graph: HeteroData) -> None:
@@ -67,7 +54,7 @@ class GraphCreator:
 
     def create(self):
         self.init()
-        graph = self.load()
+        graph = self.generate_graph()
         self.save(graph)
 
     def _path_readable(self) -> bool:

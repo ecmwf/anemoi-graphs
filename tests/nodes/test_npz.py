@@ -2,7 +2,7 @@ import pytest
 import torch
 from torch_geometric.data import HeteroData
 
-from anemoi.graphs.nodes.nodes import NPZNodes
+from anemoi.graphs.nodes.builder import NPZNodes
 from anemoi.graphs.nodes.weights import AreaWeights
 from anemoi.graphs.nodes.weights import UniformWeights
 

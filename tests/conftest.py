@@ -1,6 +1,7 @@
 import numpy as np
 import pytest
 import torch
+import yaml
 from torch_geometric.data import HeteroData
 
 lats = [-0.15, 0, 0.15]
@@ -50,3 +51,42 @@ def graph_nodes_and_edges() -> HeteroData:
     graph["test_nodes"].x = 2 * torch.pi * torch.tensor(coords)
     graph[("test_nodes", "to", "test_nodes")].edge_index = torch.tensor([[0, 1], [1, 2], [2, 3], [3, 0]])
     return graph
+
+
+@pytest.fixture
+def config_file(tmp_path) -> tuple[str, str]:
+    """Mock grid_definition_path with files for 3 resolutions."""
+    cfg = {
+        "nodes": {
+            "test_nodes": {
+                "node_builder": {
+                    "_target_": "anemoi.graphs.nodes.NPZNodes",
+                    "grid_definition_path": str(tmp_path),
+                    "resolution": "o16",
+                },
+            }
+        },
+        "edges": [
+            {
+                "nodes": {"src_name": "test_nodes", "dst_name": "test_nodes"},
+                "edge_builder": {
+                    "_target_": "anemoi.graphs.edges.KNNEdgeBuilder",
+                    "num_nearest_neighbours": 3,
+                },
+                "attributes": {
+                    "dist_norm": {
+                        "_target_": "anemoi.graphs.edges.attributes.EdgeLength",
+                        "norm": "l1",
+                        "invert": True,
+                    },
+                    "directional_features": {"_target_": "anemoi.graphs.edges.attributes.DirectionalFeatures"},
+                },
+            },
+        ],
+    }
+    file_name = "config.yaml"
+
+    with (tmp_path / file_name).open("w") as file:
+        yaml.dump(cfg, file)
+
+    return tmp_path, file_name
