@@ -1,0 +1,10 @@
+nodes:
+  data:
+    coords:
+      _target_: aifs.graphs.nodes.nodes.ZarrDatasetNodeBuilder
+      dataset: /path/to/dataset.zarr
+      forcing_dataset: /path/to/forcing.zarr
+    attributes:
+      weights:
+        _target_: aifs.graphs.nodes.masks.CutoutMask
+  hidden: ...

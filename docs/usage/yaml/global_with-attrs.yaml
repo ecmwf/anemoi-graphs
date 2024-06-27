@@ -1,0 +1,38 @@
+nodes:
+  data: ...
+  hidden: ...
+
+edges:
+  # A) Encoder connections
+  - nodes:
+      src_name: data
+      dst_name: hidden
+    edge_builder:
+      _target_: aifs.graphs.edges.CutOffConnection
+      cutoff_factor: 0.7
+    attributes:
+      edge_length:
+        _target_: aifs.graphs.edges.attributes.EdgeLength
+        norm: l1
+  # B) Decoder connections
+  - nodes:
+      src_name: hidden
+      dst_name: hidden
+    edge_builder:
+      _target_: aifs.graphs.edges.KNNConnection
+      nearest_neighbours: 3
+    attributes:
+      edge_length:
+        _target_: aifs.graphs.edges.attributes.EdgeLength
+        norm: l1
+ # C) Processor connections
+  - nodes:
+      src_name: hidden
+      dst_name: data
+    edge_builder:
+      _target_: aifs.graphs.edges.KNNConnection
+      nearest_neighbours: 3
+    attributes:
+      edge_length:
+        _target_: aifs.graphs.edges.attributes.EdgeLength
+        norm: l1
