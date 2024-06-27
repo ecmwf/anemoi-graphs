@@ -6,6 +6,8 @@ logger = logging.getLogger(__name__)
 
 
 class NormalizerMixin:
+    """Mixin class for normalizing attributes."""
+
     def normalize(self, values: np.ndarray) -> np.ndarray:
         if self.norm is None:
             logger.debug("Node weights are not normalized.")

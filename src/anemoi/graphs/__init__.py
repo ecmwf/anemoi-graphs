@@ -7,4 +7,4 @@
 
 from ._version import __version__
 
-earth_radius = 6371.0  # km
+EARTH_RADIUS = 6371.0  # km

@@ -10,13 +10,25 @@ logger = logging.getLogger(__name__)
 
 
 def generate_graph(graph_config: DotDict) -> HeteroData:
+    """Generate a graph from a configuration.
+
+    Parameters
+    ----------
+    graph_config : DotDict
+        Configuration for the nodes and edges (and its attributes).
+
+    Returns
+    -------
+    HeteroData
+        Graph.
+    """
     graph = HeteroData()
 
     for name, nodes_cfg in graph_config.nodes.items():
-        graph = instantiate(nodes_cfg.node_type).transform(graph, name, nodes_cfg.get("attributes", {}))
+        graph = instantiate(nodes_cfg.node_builder).transform(graph, name, nodes_cfg.get("attributes", {}))
 
     for edges_cfg in graph_config.edges:
-        graph = instantiate(edges_cfg.edge_type, **edges_cfg.nodes).transform(graph, edges_cfg.get("attributes", {}))
+        graph = instantiate(edges_cfg.edge_builder, **edges_cfg.nodes).transform(graph, edges_cfg.get("attributes", {}))
 
     return graph
 
@@ -66,3 +78,8 @@ class GraphCreator:
             return True
         except FileNotFoundError:
             return False
+
+
+if __name__ == "__main__":
+    creator = GraphCreator(config="/home/ecm1924/GitRepos/anemoi-graphs/recipe.yaml", path="graph.pt")
+    creator.create()
