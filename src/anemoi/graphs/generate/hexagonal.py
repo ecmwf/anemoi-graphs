@@ -40,7 +40,6 @@ def add_edge(
 def get_cells_at_resolution(
     resolution: int,
     area: Optional[dict] = None,
-    aoi_mask_builder: Optional[KNNAreaMaskBuilder] = None,
 ) -> set[str]:
     """Get cells at a specified refinement level.
 
@@ -61,13 +60,7 @@ def get_cells_at_resolution(
     # TODO: What is area?
     cells = h3.uncompact(h3.get_res0_indexes(), resolution) if area is None else h3.polyfill(area, resolution)
 
-    if aoi_mask_builder is not None:
-        cells = list(cells)
-
-        coords = np.deg2rad(np.array([h3.h3_to_geo(c) for c in cells]))
-        aoi_mask = aoi_mask_builder.get_mask(coords)
-
-        cells = set(map(str, np.array(cells)[aoi_mask]))
+    # TODO: AOI not used in the current implementation.
 
     return cells
 
@@ -124,7 +117,6 @@ def create_hexagonal_nodes(
     resolutions: list[int],
     flat: bool = True,
     area: Optional[dict] = None,
-    aoi_mask_builder: Optional[KNNAreaMaskBuilder] = None,
 ) -> tuple[nx.Graph, torch.Tensor, list[int]]:
     """Creates a global mesh from a refined icosahedro.
 
@@ -150,7 +142,7 @@ def create_hexagonal_nodes(
     """
     graph = nx.Graph()
 
-    area_kwargs = {"area": area, "aoi_mask_builder": aoi_mask_builder}
+    area_kwargs = {"area": area}
 
     for resolution in resolutions:
         add_nodes_for_resolution(graph, resolution, **area_kwargs)
