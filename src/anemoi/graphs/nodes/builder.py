@@ -16,6 +16,9 @@ logger = logging.getLogger(__name__)
 class BaseNodeBuilder(ABC):
     """Base class for node builders."""
 
+    def __init__(self) -> None:
+        self.aoi_mask_builder = None
+
     def register_nodes(self, graph: HeteroData, name: str) -> None:
         graph[name].x = self.get_coordinates()
         graph[name].node_type = type(self).__name__
@@ -62,3 +65,52 @@ class NPZFileNodes(BaseNodeBuilder):
     def get_coordinates(self) -> np.ndarray:
         coords = self.reshape_coords(self.grid_definition["latitudes"], self.grid_definition["longitudes"])
         return coords
+
+
+class RefinedIcosahedralNodeBuilder(BaseNodeBuilder):
+    """Processor mesh based on a triangular mesh.
+
+    It is based on the icosahedral mesh, which is a mesh of triangles that covers the sphere.
+
+    Parameters
+    ----------
+    resolution : list[int] | int
+        Refinement level of the mesh.
+    np_dtype : np.dtype, optional
+        The numpy data type to use, by default np.float32.
+    """
+
+    def __init__(
+        self,
+        resolution: Union[int, list[int]],
+        np_dtype: np.dtype = np.float32,
+    ) -> None:
+        self.np_dtype = np_dtype
+
+        if isinstance(resolution, int):
+            self.resolutions = list(range(resolution + 1))
+        else:
+            self.resolutions = resolution
+
+        super().__init__()
+
+    def get_coordinates(self) -> np.ndarray:
+        self.nx_graph, coords_rad, self.node_ordering = self.create_nodes()
+        return coords_rad[self.node_ordering]
+
+    def create_nodes(self) -> np.ndarray: ...
+
+    def register_attributes(self, graph: HeteroData, name: str, config: DotDict) -> HeteroData:
+        graph[name]["resolutions"] = self.resolutions
+        graph[name]["nx_graph"] = self.nx_graph
+        graph[name]["node_ordering"] = self.node_ordering
+        graph[name]["aoi_mask_builder"] = self.aoi_mask_builder
+        return super().register_attributes(graph, name, config)
+
+
+class TriRefinedIcosahedralNodeBuilder(RefinedIcosahedralNodeBuilder):
+    """It depends on the trimesh Python library."""
+
+    def create_nodes(self) -> np.ndarray:
+        return create_icosahedral_nodes(resolutions=self.resolutions, aoi_nneighb=self.aoi_mask_builder)
+
