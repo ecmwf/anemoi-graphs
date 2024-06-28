@@ -11,6 +11,7 @@ from anemoi.utils.config import DotDict
 from hydra.utils import instantiate
 from torch_geometric.data import HeteroData
 from anemoi.graphs.generate.icosahedral import create_icosahedral_nodes
+from anemoi.graphs.generate.hexagonal import create_hexagonal_nodes
 
 logger = logging.getLogger(__name__)
 
@@ -114,3 +115,9 @@ class TriRefinedIcosahedralNodeBuilder(RefinedIcosahedralNodeBuilder):
         # TODO: AOI mask builder is not used in the current implementation.
         return create_icosahedral_nodes(resolutions=self.resolutions) 
 
+
+class HexRefinedIcosahedralNodeBuilder(RefinedIcosahedralNodeBuilder):
+    """It depends on the h3 Python library."""
+
+    def create_nodes(self) -> np.ndarray:
+        return create_hexagonal_nodes(self.resolutions)
