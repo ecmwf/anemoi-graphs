@@ -2,6 +2,7 @@ import logging
 from abc import ABC
 from abc import abstractmethod
 from pathlib import Path
+from typing import Union
 
 import numpy as np
 import torch
@@ -9,15 +10,13 @@ from anemoi.datasets import open_dataset
 from anemoi.utils.config import DotDict
 from hydra.utils import instantiate
 from torch_geometric.data import HeteroData
+from anemoi.graphs.generate.icosahedral import create_icosahedral_nodes
 
 logger = logging.getLogger(__name__)
 
 
 class BaseNodeBuilder(ABC):
     """Base class for node builders."""
-
-    def __init__(self) -> None:
-        self.aoi_mask_builder = None
 
     def register_nodes(self, graph: HeteroData, name: str) -> None:
         graph[name].x = self.get_coordinates()
@@ -104,7 +103,7 @@ class RefinedIcosahedralNodeBuilder(BaseNodeBuilder):
         graph[name]["resolutions"] = self.resolutions
         graph[name]["nx_graph"] = self.nx_graph
         graph[name]["node_ordering"] = self.node_ordering
-        graph[name]["aoi_mask_builder"] = self.aoi_mask_builder
+        # TODO: AOI mask builder is not used in the current implementation.
         return super().register_attributes(graph, name, config)
 
 
@@ -112,5 +111,6 @@ class TriRefinedIcosahedralNodeBuilder(RefinedIcosahedralNodeBuilder):
     """It depends on the trimesh Python library."""
 
     def create_nodes(self) -> np.ndarray:
-        return create_icosahedral_nodes(resolutions=self.resolutions, aoi_nneighb=self.aoi_mask_builder)
+        # TODO: AOI mask builder is not used in the current implementation.
+        return create_icosahedral_nodes(resolutions=self.resolutions) 
 
