@@ -26,6 +26,11 @@ class GraphCreator:
         else:
             self.config = config
 
+        if isinstance(config, str) or isinstance(config, os.PathLike):
+            self.config = DotDict.from_file(self.config)
+        else:
+            self.config = config
+
         self.path = path  # Output path
         self.cache = cache
         self.print = print
