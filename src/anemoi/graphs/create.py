@@ -21,26 +21,26 @@ class GraphCreator:
         overwrite=False,
         **kwargs,
     ):
+        if isinstance(config, str) or isinstance(config, os.PathLike):
+            self.config = DotDict.from_file(self.config)
+        else:
+            self.config = config
+
         self.path = path  # Output path
-        self.config = config
         self.cache = cache
         self.print = print
         self.overwrite = overwrite
 
     def init(self):
-        assert os.path.exists(self.config), f"Path {self.config} does not exist."
-
         if self._path_readable() and not self.overwrite:
             raise Exception(f"{self.path} already exists. Use overwrite=True to overwrite.")
 
     def generate_graph(self) -> HeteroData:
-        config = DotDict.from_file(self.config)
-
         graph = HeteroData()
-        for name, nodes_cfg in config.nodes.items():
+        for name, nodes_cfg in self.config.nodes.items():
             graph = instantiate(nodes_cfg.node_builder).transform(graph, name, nodes_cfg.get("attributes", {}))
 
-        for edges_cfg in config.edges:
+        for edges_cfg in self.config.edges:
             graph = instantiate(edges_cfg.edge_builder, **edges_cfg.nodes).transform(
                 graph, edges_cfg.get("attributes", {})
             )
@@ -52,10 +52,11 @@ class GraphCreator:
             torch.save(graph, self.path)
             self.print(f"Graph saved at {self.path}.")
 
-    def create(self):
+    def create(self) -> HeteroData:
         self.init()
         graph = self.generate_graph()
         self.save(graph)
+        return graph
 
     def _path_readable(self) -> bool:
         import torch
