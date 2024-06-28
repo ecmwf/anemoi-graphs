@@ -4,6 +4,7 @@ from typing import Optional
 
 import numpy as np
 import torch
+import networkx as nx
 from anemoi.utils.config import DotDict
 from hydra.utils import instantiate
 from sklearn.neighbors import NearestNeighbors
@@ -12,6 +13,8 @@ from torch_geometric.data.storage import NodeStorage
 
 from anemoi.graphs import EARTH_RADIUS
 from anemoi.graphs.utils import get_grid_reference_distance
+from anemoi.graphs.nodes.builder import TriRefinedIcosahedralNodeBuilder
+from anemoi.graphs.generate import icosahedral
 
 logger = logging.getLogger(__name__)
 
@@ -119,3 +122,45 @@ class CutOffEdges(BaseEdgeBuilder):
         nearest_neighbour.fit(src_nodes.x)
         adj_matrix = nearest_neighbour.radius_neighbors_graph(dst_nodes.x, radius=self.radius).tocoo()
         return adj_matrix
+
+
+class TriIcosahedralEdgeBuilder(BaseEdgeBuilder):
+    """Computes icosahedral edges and adds them to a HeteroData graph."""
+
+    def __init__(self, src_name: str, dst_name: str, xhops: int):
+        super().__init__(src_name, dst_name)
+
+        assert isinstance(xhops, int), "Number of xhops must be an integer"
+        assert xhops > 0, "Number of xhops must be positive"
+
+        self.xhops = xhops
+
+    def transform(self, graph: HeteroData, edge_name: str, attrs_config: Optional[DotDict] = None) -> HeteroData:
+
+        assert (
+            graph[self.src_name].node_type == TriRefinedIcosahedralNodeBuilder.__name__
+        ), "IcosahedralConnection requires MultiScaleIcosahedral nodes."
+        assert graph[self.src_name] == graph[self.dst_name], "InheritConnection requires the same nodes for source and destination."
+
+        # TODO: Next assert doesn't exist anymore since filters were moved, make sure this is checked where appropriate
+        # assert filter_src is None and filter_dst is None, "InheritConnection does not support filtering with attributes."
+
+        return super().transform(graph, edge_name, attrs_config)
+
+    def get_adj_matrix(self, src_nodes: NodeStorage, dst_nodes: NodeStorage):
+
+        src_nodes["nx_graph"] = icosahedral.add_edges_to_nx_graph(
+            src_nodes["nx_graph"],
+            resolutions=src_nodes["resolutions"],
+            xhops=self.xhops,
+            aoi_nneighb=None if "aoi_nneighb" not in src_nodes else src_nodes["aoi_nneigh"],
+        )  # HeteroData refuses to accept None
+
+        adjmat = nx.to_scipy_sparse_array(src_nodes["nx_graph"], nodelist=list(src_nodes["nx_graph"]), format="coo")
+        graph_1_sorted = dict(zip(range(len(src_nodes["nx_graph"].nodes)), list(src_nodes["nx_graph"].nodes)))
+        graph_2_sorted = dict(zip(src_nodes.node_ordering, range(len(src_nodes.node_ordering))))
+        sort_func1 = np.vectorize(graph_1_sorted.get)
+        sort_func2 = np.vectorize(graph_2_sorted.get)
+        adjmat.row = sort_func2(sort_func1(adjmat.row))
+        adjmat.col = sort_func2(sort_func1(adjmat.col))
+        return adjmat
