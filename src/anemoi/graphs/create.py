@@ -22,7 +22,7 @@ class GraphCreator:
         **kwargs,
     ):
         if isinstance(config, str) or isinstance(config, os.PathLike):
-            self.config = DotDict.from_file(self.config)
+            self.config = DotDict.from_file(config)
         else:
             self.config = config
 
