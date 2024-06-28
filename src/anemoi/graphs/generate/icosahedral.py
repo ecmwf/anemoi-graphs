@@ -36,7 +36,8 @@ def create_icosahedral_nodes(
     node_ordering : list[int]
         Order of the nodes in the graph to be sorted by latitude and longitude.
     """
-    sphere = create_sphere(resolutions[-1])
+    sphere = trimesh.creation.icosphere(subdivisions=resolutions[-1], radius=1.0)
+    
     coords_rad = cartesian_to_latlon_rad(sphere.vertices)
 
     node_ordering = get_node_ordering(coords_rad)
@@ -90,7 +91,7 @@ def add_edges_to_nx_graph(
     """
     assert xhops > 0, "xhops == 0, graph would have no edges ..."
 
-    sphere = create_sphere(resolutions[-1])
+    sphere = trimesh.creation.icosphere(subdivisions=resolutions[-1], radius=1.0)
     vertices_rad = cartesian_to_latlon_rad(sphere.vertices)
     x_hops = get_x_hops(sphere, xhops, valid_nodes=list(graph.nodes))
 
@@ -101,7 +102,7 @@ def add_edges_to_nx_graph(
 
     for resolution in resolutions[:-1]:
         # Defined refined sphere
-        r_sphere = create_sphere(resolution)
+        r_sphere = trimesh.creation.icosphere(subdivisions=resolution, radius=1.0)
         r_vertices_rad = cartesian_to_latlon_rad(r_sphere.vertices)
 
         # TODO AOI mask builder is not used in the current implementation.
@@ -116,31 +117,12 @@ def add_edges_to_nx_graph(
     return graph
 
 
-def create_sphere(subdivisions: int = 0, radius: float = 1.0) -> trimesh.Trimesh:
-    """Creates a sphere.
-
-    Parameters
-    ----------
-    subdivisions : int, optional
-        How many times to subdivide the mesh. Note that the number of faces will grow as function of 4 ** subdivisions.
-        Defaults to 0.
-    radius : float, optional
-        Radius of the sphere created, by default 1.0
-
-    Returns
-    -------
-    trimesh.Trimesh
-        Meshed sphere.
-    """
-    return trimesh.creation.icosphere(subdivisions=subdivisions, radius=radius)
-
-
-def get_x_hops(sp: trimesh.Trimesh, hops: int, valid_nodes: Optional[list[int]] = None) -> dict[int, set[int]]:
+def get_x_hops(tri_mesh: trimesh.Trimesh, hops: int, valid_nodes: Optional[list[int]] = None) -> dict[int, set[int]]:
     """Get the neigbour connections in the graph.
 
     Parameters
     ----------
-    sp : trimesh.Trimesh
+    tri_mesh : trimesh.Trimesh
         The mesh to consider.
     hops : int
         Number of hops between 2 nodes to consider them neighbours.
@@ -154,11 +136,11 @@ def get_x_hops(sp: trimesh.Trimesh, hops: int, valid_nodes: Optional[list[int]] 
         A list with the neighbours for each vertex. The element at position 'i' correspond to the neighbours to the
         i-th vertex of the mesh.
     """
-    edges = sp.edges_unique
+    edges = tri_mesh.edges_unique
     if valid_nodes is not None:
-        edges = edges[np.isin(sp.edges_unique, valid_nodes).all(axis=1)]
+        edges = edges[np.isin(tri_mesh.edges_unique, valid_nodes).all(axis=1)]
     else:
-        valid_nodes = list(range(len(sp.vertices)))
+        valid_nodes = list(range(len(tri_mesh.vertices)))
     g = nx.from_edgelist(edges)
 
     neighbours = {ii: set(nx.ego_graph(g, ii, radius=hops, center=False) if ii in g else []) for ii in valid_nodes}
@@ -191,24 +173,24 @@ def add_neigbours_edges(
     idx : np.ndarray, optional
         Index to map the vertices from the refined sphere to the original one, by default None.
     """
-    for ineighb in neighbours:
-        if not self_loops and ii == ineighb:  # no self-loops
+    for idx_neighbour in neighbours:
+        if not self_loops and ii == idx_neighbour:  # no self-loops
             continue
 
-        loc_self = vertices[ii]
-        loc_neigh = vertices[ineighb]
-        edge_length = haversine_distances([loc_neigh, loc_self])[0][1]
+        location_node = vertices[ii]
+        location_neighbour = vertices[idx_neighbour]
+        edge_length = haversine_distances([location_neighbour, location_node])[0][1]
 
         if idx is not None:
             # Use the same method to add edge in all spheres
-            node_neigh = idx[ineighb][0]
+            node_neighbour = idx[idx_neighbour][0]
             node = idx[ii][0]
         else:
-            node, node_neigh = ii, ineighb
+            node, node_neighbour = ii, idx_neighbour
 
         # add edge to the graph
-        if node in graph and node_neigh in graph:
-            graph.add_edge(node_neigh, node, weight=edge_length)
+        if node in graph and node_neighbour in graph:
+            graph.add_edge(node_neighbour, node, weight=edge_length)
 
 
 
