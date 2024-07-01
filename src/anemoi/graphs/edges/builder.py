@@ -14,8 +14,8 @@ from torch_geometric.data.storage import NodeStorage
 from anemoi.graphs import EARTH_RADIUS
 from anemoi.graphs.generate import hexagonal
 from anemoi.graphs.generate import icosahedral
-from anemoi.graphs.nodes.builder import HexRefinedIcosahedralNodeBuilder
-from anemoi.graphs.nodes.builder import TriRefinedIcosahedralNodeBuilder
+from anemoi.graphs.nodes.builder import HexRefinedIcosahedralNodes
+from anemoi.graphs.nodes.builder import TriRefinedIcosahedralNodes
 from anemoi.graphs.utils import get_grid_reference_distance
 
 logger = logging.getLogger(__name__)
@@ -129,8 +129,8 @@ class CutOffEdges(BaseEdgeBuilder):
 class TriIcosahedralEdges(BaseEdgeBuilder):
     """Computes icosahedral edges and adds them to a HeteroData graph."""
 
-    def __init__(self, src_name: str, dst_name: str, xhops: int):
-        super().__init__(src_name, dst_name)
+    def __init__(self, src_name: str, xhops: int):
+        super().__init__(src_name, src_name)
 
         assert isinstance(xhops, int), "Number of xhops must be an integer"
         assert xhops > 0, "Number of xhops must be positive"
@@ -140,11 +140,8 @@ class TriIcosahedralEdges(BaseEdgeBuilder):
     def transform(self, graph: HeteroData, edge_name: str, attrs_config: Optional[DotDict] = None) -> HeteroData:
 
         assert (
-            graph[self.src_name].node_type == TriRefinedIcosahedralNodeBuilder.__name__
-        ), "IcosahedralConnection requires MultiScaleIcosahedral nodes."
-        assert (
-            graph[self.src_name] == graph[self.dst_name]
-        ), "InheritConnection requires the same nodes for source and destination."
+            graph[self.src_name].node_type == TriRefinedIcosahedralNodes.__name__
+        ), "IcosahedralConnection requires TriRefinedIcosahedralNodes."
 
         # TODO: Next assert doesn't exist anymore since filters were moved, make sure this is checked where appropriate
         # assert filter_src is None and filter_dst is None, "InheritConnection does not support filtering with attributes."
@@ -173,20 +170,15 @@ class TriIcosahedralEdges(BaseEdgeBuilder):
 class HexagonalEdges(BaseEdgeBuilder):
     """Computes hexagonal edges and adds them to a HeteroData graph."""
 
-    def __init__(
-        self, src_name: str, dst_name: str, add_neighbouring_children: bool = False, depth_children: Optional[int] = 1
-    ):
-        super().__init__(src_name, dst_name)
+    def __init__(self, src_name: str, add_neighbouring_children: bool = False, depth_children: Optional[int] = 1):
+        super().__init__(src_name, src_name)
         self.add_neighbouring_children = add_neighbouring_children
         self.depth_children = depth_children
 
     def transform(self, graph: HeteroData, edge_name: str, attrs_config: Optional[DotDict] = None) -> HeteroData:
         assert (
-            graph[self.src_name].node_type == HexRefinedIcosahedralNodeBuilder.__name__
-        ), "IcosahedralConnection requires MultiScaleIcosahedral nodes."
-        assert (
-            graph[self.src_name] == graph[self.dst_name]
-        ), "InheritConnection requires the same nodes for source and destination."
+            graph[self.src_name].node_type == HexRefinedIcosahedralNodes.__name__
+        ), "HexagonalEdges requires HexRefinedIcosahedralNodes."
 
         # TODO: Next assert doesn't exist anymore since filters were moved, make sure this is checked where appropriate
         # assert filter_src is None and filter_dst is None, "InheritConnection does not support filtering with attributes."
