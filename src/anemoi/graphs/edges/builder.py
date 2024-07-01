@@ -27,10 +27,9 @@ class BaseEdgeBuilder:
     @abstractmethod
     def get_adj_matrix(self, src_nodes: NodeStorage, dst_nodes: NodeStorage): ...
 
-    def register_edges(self, graph, head_indices, tail_indices):
-        graph[(self.src_name, "to", self.dst_name)].edge_index = np.stack([head_indices, tail_indices], axis=0).astype(
-            np.int32
-        )
+    def register_edges(self, graph, head_indices, tail_indices) -> HeteroData:
+        edge_index = np.stack([head_indices, tail_indices], axis=0).astype(np.int32)
+        graph[(self.src_name, "to", self.dst_name)].edge_index = torch.from_numpy(edge_index)
         return graph
 
     def register_edge_attribute(self, graph: HeteroData, name: str, values: np.ndarray):
