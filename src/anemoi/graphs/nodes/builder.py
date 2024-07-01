@@ -40,7 +40,7 @@ class BaseNodeBuilder(ABC):
         return graph
 
 
-class ZarrDatasetNodeBuilder(BaseNodeBuilder):
+class ZarrDatasetNodes(BaseNodeBuilder):
     """Nodes from Zarr dataset."""
 
     def __init__(self, dataset: DotDict) -> None:
@@ -51,7 +51,7 @@ class ZarrDatasetNodeBuilder(BaseNodeBuilder):
         return self.reshape_coords(self.ds.latitudes, self.ds.longitudes)
 
 
-class NPZFileNodeBuilder(BaseNodeBuilder):
+class NPZFileNodes(BaseNodeBuilder):
     """Nodes from NPZ defined grids."""
 
     def __init__(self, resolution: str, grid_definition_path: str) -> None:

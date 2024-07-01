@@ -2,8 +2,8 @@ import pytest
 import torch
 from torch_geometric.data import HeteroData
 
-from anemoi.graphs.nodes.weights import AreaWeights
-from anemoi.graphs.nodes.weights import UniformWeights
+from anemoi.graphs.nodes.attributes import AreaWeights
+from anemoi.graphs.nodes.attributes import UniformWeights
 
 
 @pytest.mark.parametrize("norm", [None, "l1", "l2", "unit-max", "unit-sum", "unit-std"])

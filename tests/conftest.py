@@ -60,7 +60,7 @@ def config_file(tmp_path) -> tuple[str, str]:
         "nodes": {
             "test_nodes": {
                 "node_builder": {
-                    "_target_": "anemoi.graphs.nodes.NPZFileNodeBuilder",
+                    "_target_": "anemoi.graphs.nodes.NPZFileNodes",
                     "grid_definition_path": str(tmp_path),
                     "resolution": "o16",
                 },
@@ -70,7 +70,7 @@ def config_file(tmp_path) -> tuple[str, str]:
             {
                 "nodes": {"src_name": "test_nodes", "dst_name": "test_nodes"},
                 "edge_builder": {
-                    "_target_": "anemoi.graphs.edges.KNNEdgeBuilder",
+                    "_target_": "anemoi.graphs.edges.KNNEdges",
                     "num_nearest_neighbours": 3,
                 },
                 "attributes": {

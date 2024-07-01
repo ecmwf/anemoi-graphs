@@ -64,7 +64,7 @@ class BaseEdgeBuilder:
         return graph
 
 
-class KNNEdgeBuilder(BaseEdgeBuilder):
+class KNNEdges(BaseEdgeBuilder):
     """Computes KNN based edges and adds them to the graph."""
 
     def __init__(self, src_name: str, dst_name: str, num_nearest_neighbours: int):
@@ -92,7 +92,7 @@ class KNNEdgeBuilder(BaseEdgeBuilder):
         return adj_matrix
 
 
-class CutOffEdgeBuilder(BaseEdgeBuilder):
+class CutOffEdges(BaseEdgeBuilder):
     """Computes cut-off based edges and adds them to the graph."""
 
     def __init__(self, src_name: str, dst_name: str, cutoff_factor: float):
