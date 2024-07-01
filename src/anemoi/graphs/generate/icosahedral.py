@@ -1,3 +1,4 @@
+import logging
 from collections.abc import Iterable
 from typing import Optional
 
@@ -8,7 +9,6 @@ from sklearn.metrics.pairwise import haversine_distances
 from sklearn.neighbors import BallTree
 
 from anemoi.graphs.generate.transforms import cartesian_to_latlon_rad
-import logging
 
 logger = logging.getLogger(__name__)
 
@@ -37,7 +37,7 @@ def create_icosahedral_nodes(
         Order of the nodes in the graph to be sorted by latitude and longitude.
     """
     sphere = trimesh.creation.icosphere(subdivisions=resolutions[-1], radius=1.0)
-    
+
     coords_rad = cartesian_to_latlon_rad(sphere.vertices)
 
     node_ordering = get_node_ordering(coords_rad)
@@ -61,11 +61,11 @@ def create_icosahedral_nx_graph_from_coords(coords_rad: np.ndarray, node_orderin
     return graph
 
 
-def get_node_ordering(vertices_rad: np.ndarray) -> np.ndarray:
+def get_node_ordering(coords_rad: np.ndarray) -> np.ndarray:
     # Get indices to sort points by lon & lat in radians.
-    ind1 = np.argsort(vertices_rad[:, 1])
-    ind2 = np.argsort(vertices_rad[ind1][:, 0])[::-1]
-    node_ordering = np.arange(vertices_rad.shape[0])[ind1][ind2]
+    ind1 = np.argsort(coords_rad[:, 1])
+    ind2 = np.argsort(coords_rad[ind1][:, 0])[::-1]
+    node_ordering = np.arange(coords_rad.shape[0])[ind1][ind2]
     return node_ordering
 
 
@@ -108,10 +108,10 @@ def add_edges_to_nx_graph(
         # TODO AOI mask builder is not used in the current implementation.
         valid_nodes = None
 
-        x_rings = get_x_hops(r_sphere, xhops, valid_nodes=valid_nodes)
+        x_hops = get_x_hops(r_sphere, xhops, valid_nodes=valid_nodes)
 
         _, idx = tree.query(r_vertices_rad, k=1)
-        for i, i_neighbours in x_rings.items():
+        for i, i_neighbours in x_hops.items():
             add_neigbours_edges(graph, r_vertices_rad, i, i_neighbours, idx=idx)
 
     return graph
@@ -151,8 +151,8 @@ def get_x_hops(tri_mesh: trimesh.Trimesh, hops: int, valid_nodes: Optional[list[
 def add_neigbours_edges(
     graph: nx.Graph,
     vertices: np.ndarray,
-    ii: int,
-    neighbours: Iterable[int],
+    node_idx: int,
+    neighbour_indices: Iterable[int],
     self_loops: bool = False,
     idx: Optional[np.ndarray] = None,
 ) -> None:
@@ -164,7 +164,7 @@ def add_neigbours_edges(
         The graph.
     vertices : np.ndarray
         A 2D array of shape (num_vertices, 2) with the planar coordinates of the mesh, in radians.
-    ii : int
+    node_idx : int
         The node considered.
     neighbours : list[int]
         The neighbours of the node.
@@ -173,26 +173,21 @@ def add_neigbours_edges(
     idx : np.ndarray, optional
         Index to map the vertices from the refined sphere to the original one, by default None.
     """
-    for idx_neighbour in neighbours:
-        if not self_loops and ii == idx_neighbour:  # no self-loops
+    for neighbour_idx in neighbour_indices:
+        if not self_loops and node_idx == neighbour_idx:  # no self-loops
             continue
 
-        location_node = vertices[ii]
-        location_neighbour = vertices[idx_neighbour]
+        location_node = vertices[node_idx]
+        location_neighbour = vertices[neighbour_idx]
         edge_length = haversine_distances([location_neighbour, location_node])[0][1]
 
         if idx is not None:
             # Use the same method to add edge in all spheres
-            node_neighbour = idx[idx_neighbour][0]
-            node = idx[ii][0]
+            node_neighbour = idx[neighbour_idx][0]
+            node = idx[node_idx][0]
         else:
-            node, node_neighbour = ii, idx_neighbour
+            node, node_neighbour = node_idx, neighbour_idx
 
         # add edge to the graph
         if node in graph and node_neighbour in graph:
             graph.add_edge(node_neighbour, node, weight=edge_length)
-
-
-
-
-
