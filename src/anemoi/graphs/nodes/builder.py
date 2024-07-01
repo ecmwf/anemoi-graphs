@@ -215,6 +215,7 @@ class RefinedIcosahedralNodes(BaseNodeBuilder, ABC):
         resolution: Union[int, list[int]],
         np_dtype: np.dtype = np.float32,
     ) -> None:
+        # TODO: Discuss np_dtype
         self.np_dtype = np_dtype
 
         if isinstance(resolution, int):
@@ -224,9 +225,9 @@ class RefinedIcosahedralNodes(BaseNodeBuilder, ABC):
 
         super().__init__()
 
-    def get_coordinates(self) -> np.ndarray:
+    def get_coordinates(self) -> torch.Tensor:
         self.nx_graph, coords_rad, self.node_ordering = self.create_nodes()
-        return coords_rad[self.node_ordering]
+        return torch.tensor(coords_rad[self.node_ordering])
 
     @abstractmethod
     def create_nodes(self) -> np.ndarray: ...
@@ -251,4 +252,5 @@ class HexRefinedIcosahedralNodes(RefinedIcosahedralNodes):
     """It depends on the h3 Python library."""
 
     def create_nodes(self) -> np.ndarray:
+        # TODO: AOI mask builder is not used in the current implementation.
         return create_hexagonal_nodes(self.resolutions)
