@@ -10,8 +10,9 @@ from anemoi.datasets import open_dataset
 from anemoi.utils.config import DotDict
 from hydra.utils import instantiate
 from torch_geometric.data import HeteroData
-from anemoi.graphs.generate.icosahedral import create_icosahedral_nodes
+
 from anemoi.graphs.generate.hexagonal import create_hexagonal_nodes
+from anemoi.graphs.generate.icosahedral import create_icosahedral_nodes
 
 logger = logging.getLogger(__name__)
 
@@ -67,7 +68,7 @@ class NPZFileNodes(BaseNodeBuilder):
         return coords
 
 
-class RefinedIcosahedralNodeBuilder(BaseNodeBuilder):
+class RefinedIcosahedralNodes(BaseNodeBuilder, ABC):
     """Processor mesh based on a triangular mesh.
 
     It is based on the icosahedral mesh, which is a mesh of triangles that covers the sphere.
@@ -98,6 +99,7 @@ class RefinedIcosahedralNodeBuilder(BaseNodeBuilder):
         self.nx_graph, coords_rad, self.node_ordering = self.create_nodes()
         return coords_rad[self.node_ordering]
 
+    @abstractmethod
     def create_nodes(self) -> np.ndarray: ...
 
     def register_attributes(self, graph: HeteroData, name: str, config: DotDict) -> HeteroData:
@@ -108,15 +110,15 @@ class RefinedIcosahedralNodeBuilder(BaseNodeBuilder):
         return super().register_attributes(graph, name, config)
 
 
-class TriRefinedIcosahedralNodeBuilder(RefinedIcosahedralNodeBuilder):
+class TriRefinedIcosahedralNodes(RefinedIcosahedralNodes):
     """It depends on the trimesh Python library."""
 
     def create_nodes(self) -> np.ndarray:
         # TODO: AOI mask builder is not used in the current implementation.
-        return create_icosahedral_nodes(resolutions=self.resolutions) 
+        return create_icosahedral_nodes(resolutions=self.resolutions)
 
 
-class HexRefinedIcosahedralNodeBuilder(RefinedIcosahedralNodeBuilder):
+class HexRefinedIcosahedralNodes(RefinedIcosahedralNodes):
     """It depends on the h3 Python library."""
 
     def create_nodes(self) -> np.ndarray:
