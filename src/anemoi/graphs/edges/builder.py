@@ -137,7 +137,7 @@ class TriIcosahedralEdges(BaseEdgeBuilder):
 
         self.xhops = xhops
 
-    def transform(self, graph: HeteroData, edge_name: str, attrs_config: Optional[DotDict] = None) -> HeteroData:
+    def transform(self, graph: HeteroData, attrs_config: Optional[DotDict] = None) -> HeteroData:
 
         assert (
             graph[self.src_name].node_type == TriRefinedIcosahedralNodes.__name__
@@ -146,7 +146,7 @@ class TriIcosahedralEdges(BaseEdgeBuilder):
         # TODO: Next assert doesn't exist anymore since filters were moved, make sure this is checked where appropriate
         # assert filter_src is None and filter_dst is None, "InheritConnection does not support filtering with attributes."
 
-        return super().transform(graph, edge_name, attrs_config)
+        return super().transform(graph, attrs_config)
 
     def get_adj_matrix(self, src_nodes: NodeStorage, dst_nodes: NodeStorage):
 
@@ -154,7 +154,6 @@ class TriIcosahedralEdges(BaseEdgeBuilder):
             src_nodes["nx_graph"],
             resolutions=src_nodes["resolutions"],
             xhops=self.xhops,
-            aoi_nneighb=None if "aoi_nneighb" not in src_nodes else src_nodes["aoi_nneigh"],
         )  # HeteroData refuses to accept None
 
         adjmat = nx.to_scipy_sparse_array(src_nodes["nx_graph"], nodelist=list(src_nodes["nx_graph"]), format="coo")
@@ -175,7 +174,7 @@ class HexagonalEdges(BaseEdgeBuilder):
         self.add_neighbouring_children = add_neighbouring_children
         self.depth_children = depth_children
 
-    def transform(self, graph: HeteroData, edge_name: str, attrs_config: Optional[DotDict] = None) -> HeteroData:
+    def transform(self, graph: HeteroData, attrs_config: Optional[DotDict] = None) -> HeteroData:
         assert (
             graph[self.src_name].node_type == HexRefinedIcosahedralNodes.__name__
         ), "HexagonalEdges requires HexRefinedIcosahedralNodes."
@@ -183,7 +182,7 @@ class HexagonalEdges(BaseEdgeBuilder):
         # TODO: Next assert doesn't exist anymore since filters were moved, make sure this is checked where appropriate
         # assert filter_src is None and filter_dst is None, "InheritConnection does not support filtering with attributes."
 
-        return super().transform(graph, edge_name, attrs_config)
+        return super().transform(graph, attrs_config)
 
     def get_adj_matrix(self, src_nodes: NodeStorage, dst_nodes: NodeStorage):
 
