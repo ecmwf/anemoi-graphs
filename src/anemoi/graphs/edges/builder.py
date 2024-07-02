@@ -313,6 +313,9 @@ class HexagonalEdges(BaseEdgeBuilder):
     def __init__(self, src_name: str, add_neighbouring_children: bool = False, depth_children: Optional[int] = 1):
         super().__init__(src_name, src_name)
         self.add_neighbouring_children = add_neighbouring_children
+
+        assert isinstance(depth_children, int), "Depth of children must be an integer"
+        assert depth_children > 0, "Depth of children must be positive"
         self.depth_children = depth_children
 
     def transform(self, graph: HeteroData, attrs_config: Optional[DotDict] = None) -> HeteroData:
