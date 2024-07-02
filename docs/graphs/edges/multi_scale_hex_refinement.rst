@@ -3,5 +3,6 @@
 #######################################################
 
 .. warning::
-    This connection method is only support for building the connections within a set of nodes defined with the
-    ``MultiScaleHexagonal`` class.
+
+   This connection method is only support for building the connections
+   within a set of nodes defined with the ``MultiScaleHexagonal`` class.

@@ -1,10 +1,10 @@
 nodes:
   data:
     node_builder:
-      _target_: aifs.graphs.nodes.ZarrDatasetNodeBuilder
+      _target_: aifs.graphs.nodes.ZarrDatasetNodes
       dataset: /path/to/dataset.zarr
     attributes:
       weights:
-        _target_: aifs.graphs.nodes.weights.Area
+        _target_: aifs.graphs.nodes.attributes.AreaWeights
         norm: unit-max
   hidden: ...

@@ -1,7 +1,6 @@
-#################
+###############
  API Reference
-#################
-
+###############
 
 **************
  Node builder
@@ -13,7 +12,6 @@
    :no-undoc-members:
    :show-inheritance:
 
-
 *****************
  Node attributes
 *****************
@@ -24,7 +22,6 @@
    :no-undoc-members:
    :show-inheritance:
 
-
 **************
  Edge builder
 **************
@@ -34,7 +31,6 @@
    :exclude-members: BaseEdgeBuilder
    :no-undoc-members:
    :show-inheritance:
-
 
 *****************
  Edge attributes

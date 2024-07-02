@@ -1,10 +1,10 @@
 nodes:
   data:
     node_builder:
-      _target_: aifs.graphs.nodes.ZarrDatasetNodeBuilder
+      _target_: aifs.graphs.nodes.ZarrDatasetNodes
       dataset: /path/to/dataset.zarr
   hidden:
     node_builder:
-      _target_: aifs.graphs.nodes.NPZFileNodeBuilder
+      _target_: aifs.graphs.nodes.NPZFileNodes
       grid_definition_path: /path/to/grids/
       resolution: o48
