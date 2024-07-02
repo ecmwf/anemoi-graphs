@@ -62,7 +62,7 @@ class GraphCreator:
         import torch
 
         try:
-            torch.load(self.path, "r")
+            torch.load(self.path)
             return True
         except FileNotFoundError:
             return False
