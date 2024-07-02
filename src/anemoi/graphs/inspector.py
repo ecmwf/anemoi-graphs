@@ -7,10 +7,11 @@ from typing import Union
 import torch
 from torch_geometric.data import HeteroData
 
-from anemoi.graphs.plotting.plots import plot_connection_stats_graphdata
-from anemoi.graphs.plotting.plots import plot_html_for_subgraph
-from anemoi.graphs.plotting.plots import plot_nodes
-from anemoi.graphs.plotting.plots import plot_orphan_nodes
+from anemoi.graphs.plotting.displots import plot_dist_edge_attributes
+from anemoi.graphs.plotting.displots import plot_dist_node_attributes
+from anemoi.graphs.plotting.interactive_html import plot_interactive_subgraph
+from anemoi.graphs.plotting.interactive_html import plot_nodes
+from anemoi.graphs.plotting.interactive_html import plot_orphan_nodes
 
 logger = logging.getLogger(__name__)
 
@@ -35,8 +36,9 @@ class GraphInspectorTool:
 
     def run_all(self):
         """Run all the inspector methods."""
+        plot_dist_edge_attributes(self.graph, self.output_path / "distribution_edge_attributes.png")
+        plot_dist_node_attributes(self.graph, self.output_path / "distribution_node_attributes.png")
         plot_orphan_nodes(self.graph, self.output_path / "orphan_nodes.html")
-        plot_connection_stats_graphdata(self.graph, self.output_path / "subgraphs_stats.png")
 
         for nodes_name, nodes_store in self.graph.node_items():
             ofile = self.output_path / f"{nodes_name}_nodes.html"
@@ -45,4 +47,8 @@ class GraphInspectorTool:
 
         for src_nodes, _, dst_nodes in self.graph.edge_types:
             ofile = self.output_path / f"{src_nodes}_to_{dst_nodes}.html"
-            plot_html_for_subgraph(self.graph, (src_nodes, dst_nodes))
+            plot_interactive_subgraph(self.graph, (src_nodes, dst_nodes), out_file=ofile)
+
+
+if __name__ == "__main__":
+    GraphInspectorTool("my_graph.pt", "output").run_all()
