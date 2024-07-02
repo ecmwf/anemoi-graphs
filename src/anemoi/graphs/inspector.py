@@ -1,8 +1,10 @@
+import logging
+import os
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Union
+
 import torch
-import logging
 from torch_geometric.data import HeteroData
 
 from anemoi.graphs.plotting.plots import plot_connection_stats_graphdata
@@ -16,12 +18,20 @@ logger = logging.getLogger(__name__)
 @dataclass
 class GraphInspectorTool:
     """Inspect the graph."""
+
     graph: Union[HeteroData, str]
     output_path: Path
 
     def __post_init__(self):
         if not isinstance(self.graph, HeteroData):
             self.graph = torch.load(self.graph)
+
+        if isinstance(self.output_path, str):
+            self.output_path = Path(self.output_path)
+
+        assert self.output_path.exists(), f"Path {self.output_path} does not exist."
+        assert self.output_path.is_dir(), f"Path {self.output_path} is not a directory."
+        assert os.access(self.output_path, os.W_OK), f"Path {self.output_path} is not writable."
 
     def run_all(self):
         """Run all the inspector methods."""
@@ -36,9 +46,3 @@ class GraphInspectorTool:
         for src_nodes, _, dst_nodes in self.graph.edge_types:
             ofile = self.output_path / f"{src_nodes}_to_{dst_nodes}.html"
             plot_html_for_subgraph(self.graph, (src_nodes, dst_nodes))
-
-
-if __name__ == "__main__":
-    import torch
-    graph = torch.load("my_graph.pt")
-    GraphInspectorTool(graph, Path(".")).run_all()

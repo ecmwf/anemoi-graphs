@@ -1,13 +1,14 @@
+import logging
 from pathlib import Path
 from typing import Optional
 from typing import Union
-from torch_geometric.data import HeteroData
+
 import matplotlib.pyplot as plt
 import networkx as nx
 import numpy as np
 import plotly.graph_objects as go
+from torch_geometric.data import HeteroData
 
-import logging
 logger = logging.getLogger(__name__)
 
 annotations_style = {"text": "", "showarrow": False, "xref": "paper", "yref": "paper", "x": 0.005, "y": -0.002}
@@ -98,7 +99,9 @@ def edge_list(graph: HeteroData, plt_ids: tuple[str, str]) -> tuple[np.ndarray, 
     return latitudes, longitudes
 
 
-def compute_node_adjacencies(graph: HeteroData, edges_from: str, edges_to: str, num_nodes: int) -> tuple[list[int], list[str]]:
+def compute_node_adjacencies(
+    graph: HeteroData, edges_from: str, edges_to: str, num_nodes: int
+) -> tuple[list[int], list[str]]:
     """Compute the number of adjacencies of each node in a bipartite graph.
 
     Parameters
@@ -235,7 +238,9 @@ def plot_graph_from_networkx(title: str, graph: nx.Graph, out_file: Optional[Uni
         edge_x.extend((x0, x1, None))
         edge_y.extend((y0, y1, None))
 
-    edge_trace = go.Scattergeo(lat=edge_x, lon=edge_y, line={"width": 0.5, "color": "#888"}, hoverinfo="none", mode="lines")
+    edge_trace = go.Scattergeo(
+        lat=edge_x, lon=edge_y, line={"width": 0.5, "color": "#888"}, hoverinfo="none", mode="lines"
+    )
 
     node_x = []
     node_y = []
@@ -370,7 +375,9 @@ def plot_orphan_nodes(graph: HeteroData, out_file: Optional[Union[str, Path]] = 
         fig.show()
 
 
-def plot_nodes(title: str, lats: np.ndarray, lons: np.ndarray, mask: np.ndarray = None, out_file: Optional[str] = None) -> None:
+def plot_nodes(
+    title: str, lats: np.ndarray, lons: np.ndarray, mask: np.ndarray = None, out_file: Optional[str] = None
+) -> None:
     """Plot nodes.
 
     This method creates an interactive visualization of a set of nodes.
