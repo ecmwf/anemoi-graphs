@@ -185,7 +185,7 @@ class HexRefinedIcosahedralNodes(RefinedIcosahedralNodes):
         return create_hexagonal_nodes(self.resolutions)
 
 
-class AreaTriRefinedIcosahedralNodeBuilder(TriRefinedIcosahedralNodes):
+class AreaTriRefinedIcosahedralNodes(TriRefinedIcosahedralNodes):
     """Class to build icosahedral nodes with a limited area of interest."""
 
     def __init__(
@@ -206,7 +206,7 @@ class AreaTriRefinedIcosahedralNodeBuilder(TriRefinedIcosahedralNodes):
         return super().register_nodes(graph, name)
 
 
-class AreaHexRefinedIcosahedralNodeBuilder(HexRefinedIcosahedralNodes):
+class AreaHexRefinedIcosahedralNodes(HexRefinedIcosahedralNodes):
     """Class to build icosahedral nodes with a limited area of interest."""
 
     def __init__(
