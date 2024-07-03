@@ -49,10 +49,29 @@ class ZarrDatasetNodes(BaseNodeBuilder):
 
     def __init__(self, dataset: DotDict) -> None:
         logger.info("Reading the dataset from %s.", dataset)
-        self.ds = open_dataset(dataset)
+        self.dataset = open_dataset(dataset)
 
     def get_coordinates(self) -> torch.Tensor:
-        return self.reshape_coords(self.ds.latitudes, self.ds.longitudes)
+        return self.reshape_coords(self.dataset.latitudes, self.dataset.longitudes)
+
+
+class LimitedAreaZarrDatasetNodes(ZarrDatasetNodes):
+    """Nodes from Zarr dataset."""
+
+    def __init__(self, lam_dataset: str, forcing_dataset: str, thinning: int = 1, adjust: str = "all") -> None:
+        dataset_config = {
+            "cutout": [{"dataset": lam_dataset, "thinning": thinning}, {"dataset": forcing_dataset}],
+            "adjust": adjust,
+        }
+        super().__init__(dataset_config)
+        self.n_cutout, self.n_other = self.dataset.grids
+
+    def register_attributes(self, graph: HeteroData, name: str, config: DotDict) -> None:
+        # this is a mask to cutout the LAM area
+        graph[name]["cutout"] = torch.tensor([True] * self.n_cutout + [False] * self.n_other, dtype=bool).reshape(
+            (-1, 1)
+        )
+        return super().register_attributes(graph, name, config)
 
 
 class NPZFileNodes(BaseNodeBuilder):
