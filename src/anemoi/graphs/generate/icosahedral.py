@@ -9,7 +9,7 @@ from sklearn.metrics.pairwise import haversine_distances
 from sklearn.neighbors import BallTree
 
 from anemoi.graphs.generate.transforms import cartesian_to_latlon_rad
-from anemoi.graphs.nodes import KNNAreaMaskBuilder
+from anemoi.graphs.nodes.masks import KNNAreaMaskBuilder
 
 logger = logging.getLogger(__name__)
 

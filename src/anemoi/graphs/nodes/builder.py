@@ -9,12 +9,11 @@ import torch
 from anemoi.datasets import open_dataset
 from anemoi.utils.config import DotDict
 from hydra.utils import instantiate
-from sklearn.neighbors import NearestNeighbors
 from torch_geometric.data import HeteroData
 
-from anemoi.graphs import EARTH_RADIUS
 from anemoi.graphs.generate.hexagonal import create_hexagonal_nodes
 from anemoi.graphs.generate.icosahedral import create_icosahedral_nodes
+from anemoi.graphs.nodes.masks import KNNAreaMaskBuilder
 
 logger = logging.getLogger(__name__)
 
@@ -102,12 +101,11 @@ class AreaNPZFileNodes(NPZFileNodes):
         reference_node_name: str,
         mask_attr_name: str,
         margin_radius_km: float = 100.0,
-        np_dtype: np.dtype = np.float32,
     ) -> None:
 
         self.aoi_mask_builder = KNNAreaMaskBuilder(reference_node_name, margin_radius_km, mask_attr_name)
 
-        super().__init__(resolution, grid_definition_path, np_dtype)
+        super().__init__(resolution, grid_definition_path)
 
     def register_nodes(self, graph: HeteroData, name: str) -> None:
         self.aoi_mask_builder.fit(graph)
@@ -227,25 +225,3 @@ class AreaHexRefinedIcosahedralNodeBuilder(HexRefinedIcosahedralNodes):
     def register_nodes(self, graph: HeteroData, name: str) -> None:
         self.aoi_mask_builder.fit(graph)
         return super().register_nodes(graph, name)
-
-
-class KNNAreaMaskBuilder:
-    """Class to build a mask based on distance to masked reference nodes using KNN."""
-
-    def __init__(self, reference_node_name: str, margin_radius_km: float, mask_attr_name: str):
-
-        self.nearest_neighbour = NearestNeighbors(metric="haversine", n_jobs=4)
-        self.margin_radius_km = margin_radius_km
-        self.reference_node_name = reference_node_name
-        self.mask_attr_name = mask_attr_name
-
-    def fit(self, graph: HeteroData):
-        coords_rad = graph[self.reference_node_name].x.numpy()
-        mask = graph[self.reference_node_name].mask_attr_name
-        self.nearest_neighbour.fit(coords_rad[mask])
-
-    def get_mask(self, coords_rad: np.ndarray):
-
-        neigh_dists, _ = self.nearest_neighbour.kneighbors(coords_rad, n_neighbors=1)
-        mask = neigh_dists[:, 0] * EARTH_RADIUS <= self.margin_radius_km
-        return mask
