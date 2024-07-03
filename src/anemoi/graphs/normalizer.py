@@ -18,8 +18,6 @@ class NormalizerMixin:
             return values / np.linalg.norm(values)
         if self.norm == "unit-max":
             return values / np.amax(values)
-        if self.norm == "unit-sum":
-            return values / np.sum(values)
         if self.norm == "unit-std":
             std = np.std(values)
             if std == 0:
@@ -27,5 +25,5 @@ class NormalizerMixin:
                 return values
             return values / std
         raise ValueError(
-            f"Weight normalization \"{values}\" is not valid. Options are: 'l1', 'l2', 'unit-max' 'unit-sum' or 'unit-std'."
+            f"Weight normalization \"{values}\" is not valid. Options are: 'l1', 'l2', 'unit-max' or 'unit-std'."
         )

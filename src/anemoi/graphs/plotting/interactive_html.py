@@ -1,3 +1,4 @@
+import logging
 from pathlib import Path
 from typing import Optional
 from typing import Union
@@ -13,6 +14,8 @@ from anemoi.graphs.plotting.prepare import node_list
 
 annotations_style = {"text": "", "showarrow": False, "xref": "paper", "yref": "paper", "x": 0.005, "y": -0.002}
 plotly_axis_config = {"showgrid": False, "zeroline": False, "showticklabels": False}
+
+logger = logging.getLogger(__name__)
 
 
 def plot_interactive_subgraph(
@@ -126,7 +129,7 @@ def plot_orphan_nodes(graph: HeteroData, out_file: Optional[Union[str, Path]] = 
             orphans[f"{dst_nodes} orphans ({src_nodes} -->)"] = node_list(graph, dst_nodes, mask=list(tail_orphans))
 
     if len(orphans) == 0:
-        print("No orphan nodes found.")
+        logger.info("No orphan nodes found.")
         return
 
     colorbar = plt.cm.rainbow(np.linspace(0, 1, len(orphans)))
@@ -159,12 +162,11 @@ def plot_orphan_nodes(graph: HeteroData, out_file: Optional[Union[str, Path]] = 
 
     if out_file is not None:
         fig.write_html(out_file)
-        print(f"Orphan nodes plot saved to {out_file}.")
     else:
         fig.show()
 
 
-def plot_nodes(
+def plot_interactive_nodes(
     title: str, lats: np.ndarray, lons: np.ndarray, mask: np.ndarray = None, out_file: Optional[str] = None
 ) -> None:
     """Plot nodes.

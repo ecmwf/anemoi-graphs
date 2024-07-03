@@ -10,7 +10,12 @@ class Inspect(Command):
     timestamp = True
 
     def add_arguments(self, command_parser):
-        command_parser.add_argument("graph", help="Path to the graph (a .PT file).")
+        command_parser.add_argument(
+            "--show_attribute_distributions",
+            action="store_false",
+            help="Show distribution of edge/node attributes.",
+        )
+        command_parser.add_argument("path", help="Path to the graph (a .PT file).")
         command_parser.add_argument("output_path", help="Path to store the inspection results.")
 
     def run(self, args):
