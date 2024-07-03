@@ -154,6 +154,7 @@ class TriIcosahedralEdges(BaseEdgeBuilder):
             src_nodes["nx_graph"],
             resolutions=src_nodes["resolutions"],
             xhops=self.xhops,
+            aoi_nneighb=None if "aoi_mask_builder" not in src_nodes else src_nodes["aoi_mask_builder"],
         )  # HeteroData refuses to accept None
 
         adjmat = nx.to_scipy_sparse_array(src_nodes["nx_graph"], nodelist=list(src_nodes["nx_graph"]), format="coo")

@@ -9,12 +9,13 @@ from sklearn.metrics.pairwise import haversine_distances
 from sklearn.neighbors import BallTree
 
 from anemoi.graphs.generate.transforms import cartesian_to_latlon_rad
+from anemoi.graphs.nodes import KNNAreaMaskBuilder
 
 logger = logging.getLogger(__name__)
 
 
 def create_icosahedral_nodes(
-    resolutions: list[int],
+    resolutions: list[int], aoi_mask_builder: Optional[KNNAreaMaskBuilder] = None
 ) -> tuple[nx.DiGraph, np.ndarray, list[int]]:
     """Creates a global mesh following AIFS strategy.
 
@@ -42,7 +43,9 @@ def create_icosahedral_nodes(
 
     node_ordering = get_node_ordering(coords_rad)
 
-    # TODO: AOI mask builder is not used in the current implementation.
+    if aoi_mask_builder is not None:
+        aoi_mask = aoi_mask_builder.get_mask(coords_rad)
+        node_ordering = node_ordering[aoi_mask]
 
     nx_graph = create_icosahedral_nx_graph_from_coords(coords_rad, node_ordering)
 
@@ -73,6 +76,7 @@ def add_edges_to_nx_graph(
     graph: nx.DiGraph,
     resolutions: list[int],
     xhops: int = 1,
+    aoi_mask_builder: Optional[KNNAreaMaskBuilder] = None,
 ) -> None:
     """Adds the edges to the graph.
 
@@ -86,8 +90,6 @@ def add_edges_to_nx_graph(
         Number of hops between 2 nodes to consider them neighbours, by default 1.
     aoi_mask_builder : KNNAreaMaskBuilder
         NearestNeighbors with the cloud of points to limit the mesh area, by default None.
-    margin_radius_km : float, optional
-        Margin radius in km to consider when creating the processor mesh, by default 0.0.
     """
     assert xhops > 0, "xhops == 0, graph would have no edges ..."
 
@@ -105,8 +107,12 @@ def add_edges_to_nx_graph(
         r_sphere = trimesh.creation.icosphere(subdivisions=resolution, radius=1.0)
         r_vertices_rad = cartesian_to_latlon_rad(r_sphere.vertices)
 
-        # TODO AOI mask builder is not used in the current implementation.
-        valid_nodes = None
+        # Limit area of mesh points.
+        if aoi_mask_builder is not None:
+            aoi_mask = aoi_mask_builder.get_mask(vertices_rad)
+            valid_nodes = np.where(aoi_mask)[0]
+        else:
+            valid_nodes = None
 
         x_hops = get_x_hops(r_sphere, xhops, valid_nodes=valid_nodes)
 
