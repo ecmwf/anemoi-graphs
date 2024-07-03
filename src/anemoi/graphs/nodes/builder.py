@@ -9,8 +9,10 @@ import torch
 from anemoi.datasets import open_dataset
 from anemoi.utils.config import DotDict
 from hydra.utils import instantiate
+from sklearn.neighbors import NearestNeighbors
 from torch_geometric.data import HeteroData
 
+from anemoi.graphs import EARTH_RADIUS
 from anemoi.graphs.generate.hexagonal import create_hexagonal_nodes
 from anemoi.graphs.generate.icosahedral import create_icosahedral_nodes
 
@@ -19,6 +21,9 @@ logger = logging.getLogger(__name__)
 
 class BaseNodeBuilder(ABC):
     """Base class for node builders."""
+
+    def __init__(self) -> None:
+        self.aoi_mask_builder = None
 
     def register_nodes(self, graph: HeteroData, name: str) -> None:
         graph[name].x = self.get_coordinates()
@@ -126,7 +131,7 @@ class RefinedIcosahedralNodes(BaseNodeBuilder, ABC):
         graph[name]["resolutions"] = self.resolutions
         graph[name]["nx_graph"] = self.nx_graph
         graph[name]["node_ordering"] = self.node_ordering
-        # TODO: AOI mask builder is not used in the current implementation.
+        graph[name]["aoi_mask_builder"] = self.aoi_mask_builder
         return super().register_attributes(graph, name, config)
 
 
@@ -144,3 +149,67 @@ class HexRefinedIcosahedralNodes(RefinedIcosahedralNodes):
     def create_nodes(self) -> np.ndarray:
         # TODO: AOI mask builder is not used in the current implementation.
         return create_hexagonal_nodes(self.resolutions)
+
+
+class AreaTriRefinedIcosahedralNodeBuilder(TriRefinedIcosahedralNodes):
+    """Class to build icosahedral nodes with a limited area of interest."""
+
+    def __init__(
+        self,
+        resolution: int | list[int],
+        reference_node_name: str,
+        mask_attr_name: str,
+        margin_radius_km: float = 100.0,
+        np_dtype: np.dtype = np.float32,
+    ) -> None:
+
+        super().__init__(resolution, np_dtype)
+
+        self.aoi_mask_builder = KNNAreaMaskBuilder(reference_node_name, margin_radius_km, mask_attr_name)
+
+    def register_nodes(self, graph: HeteroData, name: str) -> None:
+        self.aoi_mask_builder.fit(graph)
+        return super().register_nodes(graph, name)
+
+
+class AreaHexRefinedIcosahedralNodeBuilder(HexRefinedIcosahedralNodes):
+    """Class to build icosahedral nodes with a limited area of interest."""
+
+    def __init__(
+        self,
+        resolution: int | list[int],
+        reference_node_name: str,
+        mask_attr_name: str,
+        margin_radius_km: float = 100.0,
+        np_dtype: np.dtype = np.float32,
+    ) -> None:
+
+        super().__init__(resolution, np_dtype)
+
+        self.aoi_mask_builder = KNNAreaMaskBuilder(reference_node_name, margin_radius_km, mask_attr_name)
+
+    def register_nodes(self, graph: HeteroData, name: str) -> None:
+        self.aoi_mask_builder.fit(graph)
+        return super().register_nodes(graph, name)
+
+
+class KNNAreaMaskBuilder:
+    """Class to build a mask based on distance to masked reference nodes using KNN."""
+
+    def __init__(self, reference_node_name: str, margin_radius_km: float, mask_attr_name: str):
+
+        self.nearest_neighbour = NearestNeighbors(metric="haversine", n_jobs=4)
+        self.margin_radius_km = margin_radius_km
+        self.reference_node_name = reference_node_name
+        self.mask_attr_name = mask_attr_name
+
+    def fit(self, graph: HeteroData):
+        coords_rad = graph[self.reference_node_name].x.numpy()
+        mask = graph[self.reference_node_name].mask_attr_name
+        self.nearest_neighbour.fit(coords_rad[mask])
+
+    def get_mask(self, coords_rad: np.ndarray):
+
+        neigh_dists, _ = self.nearest_neighbour.kneighbors(coords_rad, n_neighbors=1)
+        mask = neigh_dists[:, 0] * EARTH_RADIUS <= self.margin_radius_km
+        return mask
