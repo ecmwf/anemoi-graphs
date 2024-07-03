@@ -92,6 +92,42 @@ class NPZFileNodes(BaseNodeBuilder):
         return coords
 
 
+class AreaNPZFileNodes(NPZFileNodes):
+    """Processor mesh based on an NPZ defined grids using an area of interest."""
+
+    def __init__(
+        self,
+        resolution: str,
+        grid_definition_path: str,
+        reference_node_name: str,
+        mask_attr_name: str,
+        margin_radius_km: float = 100.0,
+        np_dtype: np.dtype = np.float32,
+    ) -> None:
+
+        self.aoi_mask_builder = KNNAreaMaskBuilder(reference_node_name, margin_radius_km, mask_attr_name)
+
+        super().__init__(resolution, grid_definition_path, np_dtype)
+
+    def register_nodes(self, graph: HeteroData, name: str) -> None:
+        self.aoi_mask_builder.fit(graph)
+        return super().register_nodes(graph, name)
+
+    def get_coordinates(self) -> np.ndarray:
+        coords = super().get_coordinates()
+
+        logger.info(
+            "Limiting the processor mesh to a radius of %.2f km from the output mesh.",
+            self.aoi_mask_builder.margin_radius_km,
+        )
+        aoi_mask = self.aoi_mask_builder.get_mask(np.deg2rad(coords))
+
+        logger.info("Dropping %d nodes from the processor mesh.", len(aoi_mask) - aoi_mask.sum())
+        coords = coords[aoi_mask]
+
+        return coords
+
+
 class RefinedIcosahedralNodes(BaseNodeBuilder, ABC):
     """Processor mesh based on a triangular mesh.
 
