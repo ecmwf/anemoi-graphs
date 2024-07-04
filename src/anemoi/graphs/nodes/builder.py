@@ -134,6 +134,8 @@ class NPZFileNodes(BaseNodeBuilder):
         The resolution of the grid.
     grid_definition_path : str
         Path to the folder containing the grid definition files.
+    grid_definition : dict[str, np.ndarray]
+        The grid definition.
     """
 
     def __init__(self, resolution: str, grid_definition_path: str) -> None:
@@ -150,6 +152,7 @@ class NPZFileNodes(BaseNodeBuilder):
         """
         self.resolution = resolution
         self.grid_definition_path = grid_definition_path
+        self.grid_definition = np.load(Path(self.grid_definition_path) / f"grid-{self.resolution}.npz")
 
     def get_coordinates(self) -> torch.Tensor:
         """Get the coordinates of the nodes.
@@ -159,6 +162,5 @@ class NPZFileNodes(BaseNodeBuilder):
         torch.Tensor of shape (N, 2)
             Coordinates of the nodes.
         """
-        grid_definition = np.load(Path(self.grid_definition_path) / f"grid-{self.resolution}.npz")
-        coords = self.reshape_coords(grid_definition["latitudes"], grid_definition["longitudes"])
+        coords = self.reshape_coords(self.grid_definition["latitudes"], self.grid_definition["longitudes"])
         return coords
