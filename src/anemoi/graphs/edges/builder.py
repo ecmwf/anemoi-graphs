@@ -25,34 +25,76 @@ class BaseEdgeBuilder:
         self.target_name = target_name
 
     @abstractmethod
-    def get_adj_matrix(self, source_nodes: NodeStorage, target_nodes: NodeStorage): ...
+    def get_adjacency_matrix(self, source_nodes: NodeStorage, target_nodes: NodeStorage): ...
 
-    def register_edges(self, graph: HeteroData, head_indices: np.ndarray, tail_indices: np.ndarray) -> HeteroData:
-        edge_index = np.stack([head_indices, tail_indices], axis=0).astype(np.int32)
+    def register_edges(self, graph: HeteroData, source_indices: np.ndarray, target_indices: np.ndarray) -> HeteroData:
+        """Register edges in the graph.
+
+        Parameters
+        ----------
+        graph : HeteroData
+            The graph to register the edges.
+        source_indices : np.ndarray of shape (N, )
+            The indices of the source nodes.
+        target_indices : np.ndarray of shape (N, )
+            The indices of the target nodes.
+
+        Returns
+        -------
+        HeteroData
+            The graph with the registered edges.
+        """
+        edge_index = np.stack([source_indices, target_indices], axis=0).astype(np.int32)
         graph[(self.source_name, "to", self.target_name)].edge_index = torch.from_numpy(edge_index)
         return graph
 
     def register_edge_attribute(self, graph: HeteroData, name: str, values: np.ndarray):
+        """Register edge attributes in the graph.
+
+        Parameters
+        ----------
+        graph : HeteroData
+            The graph to register the edge attributes.
+        name : str
+            The name of the edge attributes.
+        values : np.ndarray
+            The values of the edge attributes.
+
+        Returns
+        -------
+        HeteroData
+            The graph with the registered edge attributes.
+        """
         num_edges = graph[(self.source_name, "to", self.target_name)].num_edges
         assert (
             values.shape[0] == num_edges
         ), f"Number of edge features ({values.shape[0]}) must match number of edges ({num_edges})."
-        graph[self.source_name, "to", self.target_name][name] = values.reshape(
-            num_edges, -1
-        )  # TODO: Check the [name] part works
+        graph[self.source_name, "to", self.target_name][name] = values.reshape(num_edges, -1)
         return graph
 
-    def prepare_node_data(self, graph: HeteroData):
+    def prepare_node_data(self, graph: HeteroData) -> tuple[NodeStorage, NodeStorage]:
+        """Prepare nodes information."""
         return graph[self.source_name], graph[self.target_name]
 
     def transform(self, graph: HeteroData, attrs_config: Optional[DotDict] = None) -> HeteroData:
-        # Get source and destination nodes.
+        """Transform the graph.
+
+        Parameters
+        ----------
+        graph : HeteroData
+            The graph.
+        attrs_config : DotDict
+            The configuration of the edge attributes.
+
+        Returns
+        -------
+        HeteroData
+            The graph with the edges.
+        """
         source_nodes, target_nodes = self.prepare_node_data(graph)
 
-        # Compute adjacency matrix.
-        adjmat = self.get_adj_matrix(source_nodes, target_nodes)
+        adjmat = self.get_adjacency_matrix(source_nodes, target_nodes)
 
-        # Add edges to the graph and register normed distance.
         graph = self.register_edges(graph, adjmat.col, adjmat.row)
 
         if attrs_config is not None:
@@ -64,7 +106,17 @@ class BaseEdgeBuilder:
 
 
 class KNNEdges(BaseEdgeBuilder):
-    """Computes KNN based edges and adds them to the graph."""
+    """Computes KNN based edges and adds them to the graph.
+
+    Attributes
+    ----------
+    source_name : str
+        The name of the source nodes.
+    target_name : str
+        The name of the target nodes.
+    num_nearest_neighbours : int
+        Number of nearest neighbours.
+    """
 
     def __init__(self, source_name: str, target_name: str, num_nearest_neighbours: int):
         super().__init__(source_name, target_name)
@@ -72,7 +124,16 @@ class KNNEdges(BaseEdgeBuilder):
         assert num_nearest_neighbours > 0, "Number of nearest neighbours must be positive"
         self.num_nearest_neighbours = num_nearest_neighbours
 
-    def get_adj_matrix(self, source_nodes: np.ndarray, target_nodes: np.ndarray):
+    def get_adjacency_matrix(self, source_nodes: np.ndarray, target_nodes: np.ndarray):
+        """Compute the adjacency matrix for the KNN method.
+
+        Parameters
+        ----------
+        source_nodes : np.ndarray
+            The source nodes.
+        target_nodes : np.ndarray
+            The target nodes.
+        """
         assert self.num_nearest_neighbours is not None, "number of neighbors required for knn encoder"
         logger.debug(
             "Using %d nearest neighbours for KNN-Edges between %s and %s.",
@@ -92,7 +153,19 @@ class KNNEdges(BaseEdgeBuilder):
 
 
 class CutOffEdges(BaseEdgeBuilder):
-    """Computes cut-off based edges and adds them to the graph."""
+    """Computes cut-off based edges and adds them to the graph.
+
+    Attributes
+    ----------
+    source_name : str
+        The name of the source nodes.
+    target_name : str
+        The name of the target nodes.
+    cutoff_factor : float
+        Factor to multiply the grid reference distance to get the cut-off radius.
+    radius : float
+        Cut-off radius.
+    """
 
     def __init__(self, source_name: str, target_name: str, cutoff_factor: float):
         super().__init__(source_name, target_name)
@@ -101,17 +174,43 @@ class CutOffEdges(BaseEdgeBuilder):
         self.cutoff_factor = cutoff_factor
 
     def get_cutoff_radius(self, graph: HeteroData, mask_attr: Optional[torch.Tensor] = None):
+        """Compute the cut-off radius.
+
+        The cut-off radius is computed as the product of the target nodes reference distance and the cut-off factor.
+
+        Parameters
+        ----------
+        graph : HeteroData
+            The graph.
+        mask_attr : torch.Tensor
+            The mask attribute.
+
+        Returns
+        -------
+        float
+            The cut-off radius.
+        """
         target_nodes = graph[self.target_name]
         mask = target_nodes[mask_attr] if mask_attr is not None else None
         target_grid_reference_distance = get_grid_reference_distance(target_nodes.x, mask)
         radius = target_grid_reference_distance * self.cutoff_factor
         return radius
 
-    def prepare_node_data(self, graph: HeteroData):
+    def prepare_node_data(self, graph: HeteroData) -> tuple[NodeStorage, NodeStorage]:
+        """Prepare nodes information."""
         self.radius = self.get_cutoff_radius(graph)
         return super().prepare_node_data(graph)
 
-    def get_adj_matrix(self, source_nodes: NodeStorage, target_nodes: NodeStorage):
+    def get_adjacency_matrix(self, source_nodes: NodeStorage, target_nodes: NodeStorage):
+        """Get the adjacency matrix for the cut-off method.
+
+        Parameters
+        ----------
+        source_nodes : NodeStorage
+            The source nodes.
+        target_nodes : NodeStorage
+            The target nodes.
+        """
         logger.debug("Using cut-off radius of %.1f km.", self.radius * EARTH_RADIUS)
 
         nearest_neighbour = NearestNeighbors(metric="haversine", n_jobs=4)

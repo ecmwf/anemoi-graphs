@@ -23,7 +23,16 @@ class BaseWeights(ABC, NormalizerMixin):
     @abstractmethod
     def compute(self, nodes: NodeStorage, *args, **kwargs): ...
 
+    """Compute the weights."""
+
     def get_weights(self, *args, **kwargs) -> torch.Tensor:
+        """Get the node weights.
+
+        Returns
+        -------
+        torch.Tensor
+            Weights associated to the nodes.
+        """
         weights = self.compute(*args, **kwargs)
         if weights.ndim == 1:
             weights = weights[:, np.newaxis]
@@ -34,12 +43,39 @@ class BaseWeights(ABC, NormalizerMixin):
 class UniformWeights(BaseWeights):
     """Implements a uniform weight for the nodes."""
 
-    def compute(self, nodes: NodeStorage) -> np.ndarray:
+    def compute(self, nodes: NodeStorage, *args, **kwargs) -> np.ndarray:
+        """Compute the weights.
+
+        Parameters
+        ----------
+        nodes : NodeStorage
+            Nodes of the graph.
+
+        Returns
+        -------
+        np.ndarray
+            Weights.
+        """
         return np.ones(nodes.num_nodes)
 
 
 class AreaWeights(BaseWeights):
-    """Implements the area of the nodes as the weights."""
+    """Implements the area of the nodes as the weights.
+
+    Attributes
+    ----------
+    norm : str
+        Normalization of the weights.
+    radius : float
+        Radius of the sphere.
+    centre : np.ndarray
+        Centre of the sphere.
+
+    Methods
+    -------
+    get_weights(nodes, *args, **kwargs)
+        Get the node weights.
+    """
 
     def __init__(self, norm: str = "unit-max", radius: float = 1.0, centre: np.ndarray = np.array([0, 0, 0])):
         super().__init__(norm=norm)
@@ -49,6 +85,20 @@ class AreaWeights(BaseWeights):
         self.centre = centre
 
     def compute(self, nodes: NodeStorage, *args, **kwargs) -> np.ndarray:
+        """Compute the area associated to each node.
+
+        It uses Voronoi diagrams to compute the area of each node.
+
+        Parameters
+        ----------
+        nodes : NodeStorage
+            Nodes of the graph.
+
+        Returns
+        -------
+        np.ndarray
+            Weights.
+        """
         latitudes, longitudes = nodes.x[:, 0], nodes.x[:, 1]
         points = to_sphere_xyz((latitudes, longitudes))
         sv = SphericalVoronoi(points, self.radius, self.centre)
