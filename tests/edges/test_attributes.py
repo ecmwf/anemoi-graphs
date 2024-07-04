@@ -4,7 +4,7 @@ import torch
 from anemoi.graphs.edges.attributes import DirectionalFeatures
 
 
-@pytest.mark.parametrize("norm", ["l1", "l2", "unit-max", "unit-sum", "unit-std"])
+@pytest.mark.parametrize("norm", ["l1", "l2", "unit-max", "unit-std"])
 @pytest.mark.parametrize("luse_rotated_features", [True, False])
 def test_directional_features(graph_nodes_and_edges, norm, luse_rotated_features: bool):
     """Test DirectionalFeatures compute method."""

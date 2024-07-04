@@ -36,6 +36,15 @@ class GraphCreator:
             raise Exception(f"{self.path} already exists. Use overwrite=True to overwrite.")
 
     def generate_graph(self) -> HeteroData:
+        """Generate the graph.
+
+        It instantiates the node builders and edge builders defined in the configuration
+        file and applies them to the graph.
+
+        Returns
+        -------
+            HeteroData: The generated graph.
+        """
         graph = HeteroData()
         for name, nodes_cfg in self.config.nodes.items():
             graph = instantiate(nodes_cfg.node_builder).transform(graph, name, nodes_cfg.get("attributes", {}))
@@ -48,17 +57,20 @@ class GraphCreator:
         return graph
 
     def save(self, graph: HeteroData) -> None:
+        """Save the graph to the output path."""
         if not os.path.exists(self.path) or self.overwrite:
             torch.save(graph, self.path)
             self.print(f"Graph saved at {self.path}.")
 
     def create(self) -> HeteroData:
+        """Create the graph and save it to the output path."""
         self.init()
         graph = self.generate_graph()
         self.save(graph)
         return graph
 
     def _path_readable(self) -> bool:
+        """Check if the output path is readable."""
         import torch
 
         try:

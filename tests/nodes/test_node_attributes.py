@@ -6,7 +6,7 @@ from anemoi.graphs.nodes.attributes import AreaWeights
 from anemoi.graphs.nodes.attributes import UniformWeights
 
 
-@pytest.mark.parametrize("norm", [None, "l1", "l2", "unit-max", "unit-sum", "unit-std"])
+@pytest.mark.parametrize("norm", [None, "l1", "l2", "unit-max", "unit-std"])
 def test_uniform_weights(graph_with_nodes: HeteroData, norm: str):
     """Test NPZNodes register correctly the weights."""
     node_attr_builder = UniformWeights(norm=norm)

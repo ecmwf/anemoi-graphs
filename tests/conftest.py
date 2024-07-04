@@ -68,7 +68,7 @@ def config_file(tmp_path) -> tuple[str, str]:
         },
         "edges": [
             {
-                "nodes": {"src_name": "test_nodes", "dst_name": "test_nodes"},
+                "nodes": {"source_name": "test_nodes", "target_name": "test_nodes"},
                 "edge_builder": {
                     "_target_": "anemoi.graphs.edges.KNNEdges",
                     "num_nearest_neighbours": 3,
