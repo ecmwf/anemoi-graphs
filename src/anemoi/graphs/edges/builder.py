@@ -166,7 +166,7 @@ class CutOffEdges(BaseEdgeBuilder):
 
     def __init__(self, source_name: str, target_name: str, cutoff_factor: float):
         super().__init__(source_name, target_name)
-        assert isinstance(cutoff_factor, float), "Cutoff factor must be a float"
+        assert isinstance(cutoff_factor, (int, float)), "Cutoff factor must be a float"
         assert cutoff_factor > 0, "Cutoff factor must be positive"
         self.cutoff_factor = cutoff_factor
 
