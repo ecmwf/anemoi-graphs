@@ -103,7 +103,7 @@ def get_index_in_outer_join(vector: torch.Tensor, tensor: torch.Tensor) -> int:
     Returns
     -------
     int
-        Index position of the tensor in the other tensor. -1 if tensor1 is not in tensor2
+        Index position of `vector` in `tensor`. -1 if `vector` is not in `tensor`.
     """
     mask = torch.all(tensor == vector, axis=1)
     if mask.any():
