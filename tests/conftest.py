@@ -79,7 +79,7 @@ def config_file(tmp_path) -> tuple[str, str]:
                         "norm": "l1",
                         "invert": True,
                     },
-                    "directional_features": {"_target_": "anemoi.graphs.edges.attributes.DirectionalFeatures"},
+                    "edge_dirs": {"_target_": "anemoi.graphs.edges.attributes.EdgeDirection"},
                 },
             },
         ],
