@@ -103,7 +103,7 @@ def get_index_in_outer_join(vector: torch.Tensor, tensor: torch.Tensor) -> int:
     Returns
     -------
     int
-        Index position of the tensor in the other tensor. -1 if tensor1 is not in tensor2
+        Index position of `vector` in `tensor`. -1 if `vector` is not in `tensor`.
     """
     mask = torch.all(tensor == vector, axis=1)
     if mask.any():
@@ -111,14 +111,14 @@ def get_index_in_outer_join(vector: torch.Tensor, tensor: torch.Tensor) -> int:
     return -1
 
 
-def haversine_distance(src_coords: np.ndarray, dst_coords: np.ndarray) -> np.ndarray:
+def haversine_distance(source_coords: np.ndarray, target_coords: np.ndarray) -> np.ndarray:
     """Haversine distance.
 
     Parameters
     ----------
-    src_coords : np.ndarray of shape (N, 2)
+    source_coords : np.ndarray of shape (N, 2)
         Source coordinates in radians.
-    dst_coords : np.ndarray of shape (N, 2)
+    target_coords : np.ndarray of shape (N, 2)
         Destination coordinates in radians.
 
     Returns
@@ -126,8 +126,8 @@ def haversine_distance(src_coords: np.ndarray, dst_coords: np.ndarray) -> np.nda
     np.ndarray of shape (N,)
         Haversine distance between source and destination coordinates.
     """
-    dlat = dst_coords[:, 0] - src_coords[:, 0]
-    dlon = dst_coords[:, 1] - src_coords[:, 1]
-    a = np.sin(dlat / 2) ** 2 + np.cos(src_coords[:, 0]) * np.cos(dst_coords[:, 0]) * np.sin(dlon / 2) ** 2
+    dlat = target_coords[:, 0] - source_coords[:, 0]
+    dlon = target_coords[:, 1] - source_coords[:, 1]
+    a = np.sin(dlat / 2) ** 2 + np.cos(source_coords[:, 0]) * np.cos(target_coords[:, 0]) * np.sin(dlon / 2) ** 2
     c = 2 * np.arctan2(np.sqrt(a), np.sqrt(1 - a))
     return c
