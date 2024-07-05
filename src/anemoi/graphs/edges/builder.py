@@ -17,7 +17,7 @@ logger = logging.getLogger(__name__)
 
 
 class BaseEdgeBuilder:
-    """Base class for edge builders."""
+class BaseEdgeBuilder(ABC):
 
     def __init__(self, source_name: str, target_name: str):
         super().__init__()
