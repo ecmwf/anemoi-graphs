@@ -14,6 +14,7 @@ from torch_geometric.data.storage import NodeStorage
 from anemoi.graphs import EARTH_RADIUS
 from anemoi.graphs.generate import hexagonal
 from anemoi.graphs.generate import icosahedral
+from anemoi.graphs.nodes.builder import AreaTriRefinedIcosahedralNodes
 from anemoi.graphs.nodes.builder import HexRefinedIcosahedralNodes
 from anemoi.graphs.nodes.builder import TriRefinedIcosahedralNodes
 from anemoi.graphs.utils import get_grid_reference_distance
@@ -141,6 +142,7 @@ class TriIcosahedralEdges(BaseEdgeBuilder):
 
         assert (
             graph[self.src_name].node_type == TriRefinedIcosahedralNodes.__name__
+            or graph[self.src_name].node_type == AreaTriRefinedIcosahedralNodes.__name__
         ), "IcosahedralConnection requires TriRefinedIcosahedralNodes."
 
         # TODO: Next assert doesn't exist anymore since filters were moved, make sure this is checked where appropriate
@@ -154,7 +156,7 @@ class TriIcosahedralEdges(BaseEdgeBuilder):
             src_nodes["nx_graph"],
             resolutions=src_nodes["resolutions"],
             xhops=self.xhops,
-            aoi_nneighb=None if "aoi_mask_builder" not in src_nodes else src_nodes["aoi_mask_builder"],
+            aoi_mask_builder=None if "aoi_mask_builder" not in src_nodes else src_nodes["aoi_mask_builder"],
         )  # HeteroData refuses to accept None
 
         adjmat = nx.to_scipy_sparse_array(src_nodes["nx_graph"], nodelist=list(src_nodes["nx_graph"]), format="coo")
