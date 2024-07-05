@@ -39,8 +39,13 @@ class BaseEdgeAttribute(ABC, NormalizerMixin):
 
 
 @dataclass
-class DirectionalFeatures(BaseEdgeAttribute):
+class EdgeDirection(BaseEdgeAttribute):
     """Compute directional features for edges.
+
+    If using the rotated features, the direction of the edge is computed
+    rotating the target nodes to the north pole. If not, it is computed
+    as the diference in latitude and longitude between the source and
+    target nodes.
 
     Attributes
     ----------
@@ -58,7 +63,7 @@ class DirectionalFeatures(BaseEdgeAttribute):
     """
 
     norm: Optional[str] = None
-    luse_rotated_features: bool = False
+    luse_rotated_features: bool = True
 
     def get_raw_values(self, graph: HeteroData, source_name: str, target_name: str) -> np.ndarray:
         """Compute directional features for edges.
