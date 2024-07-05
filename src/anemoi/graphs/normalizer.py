@@ -40,5 +40,5 @@ class NormalizerMixin:
                 return values
             return values / std
         raise ValueError(
-            f"Weight normalization \"{values}\" is not valid. Options are: 'l1', 'l2', 'unit-max' or 'unit-std'."
+            f"Weight normalization \"{self.norm}\" is not valid. Options are: 'l1', 'l2', 'unit-max' or 'unit-std'."
         )
