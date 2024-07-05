@@ -17,7 +17,7 @@ def test_normalizer(norm: str):
 
     normalizer = Normalizer(norm=norm)
     data = np.random.rand(10, 5)
-    normalized_data = normalizer(data)
+    normalized_data = normalizer.compute(data)
     assert isinstance(normalized_data, np.ndarray)
     assert normalized_data.shape == data.shape
 
