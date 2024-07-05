@@ -9,7 +9,7 @@ import torch
 from scipy.spatial import SphericalVoronoi
 from torch_geometric.data.storage import NodeStorage
 
-from anemoi.graphs.generate.transforms import to_sphere_xyz
+from anemoi.graphs.generate.transforms import latlon_rad_to_cartesian
 from anemoi.graphs.normalizer import NormalizerMixin
 
 logger = logging.getLogger(__name__)
@@ -104,7 +104,7 @@ class AreaWeights(BaseWeights):
             Weights.
         """
         latitudes, longitudes = nodes.x[:, 0], nodes.x[:, 1]
-        points = to_sphere_xyz((latitudes, longitudes))
+        points = latlon_rad_to_cartesian((latitudes, longitudes))
         sv = SphericalVoronoi(points, self.radius, self.centre)
         area_weights = sv.calculate_areas()
         logger.debug(
