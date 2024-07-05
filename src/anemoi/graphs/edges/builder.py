@@ -132,8 +132,8 @@ class KNNEdges(BaseEdgeBuilder):
             The target nodes.
         """
         assert self.num_nearest_neighbours is not None, "number of neighbors required for knn encoder"
-        logger.debug(
-            "Using %d nearest neighbours for KNN-Edges between %s and %s.",
+        logger.info(
+            "Using KNN-Edges (with %d nearest neighbours) between %s and %s.",
             self.num_nearest_neighbours,
             self.source_name,
             self.target_name,
@@ -208,7 +208,12 @@ class CutOffEdges(BaseEdgeBuilder):
         target_nodes : NodeStorage
             The target nodes.
         """
-        logger.debug("Using cut-off radius of %.1f km.", self.radius * EARTH_RADIUS)
+        logger.info(
+            "Using CutOff-Edges (with radius = %.1f km) between %s and %s.",
+            self.radius * EARTH_RADIUS,
+            self.source_name,
+            self.target_name,
+        )
 
         nearest_neighbour = NearestNeighbors(metric="haversine", n_jobs=4)
         nearest_neighbour.fit(source_nodes.x)
