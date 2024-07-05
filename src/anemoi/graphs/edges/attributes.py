@@ -12,7 +12,7 @@ from anemoi.graphs.edges.directional import directional_edge_features
 from anemoi.graphs.normalizer import NormalizerMixin
 from anemoi.graphs.utils import haversine_distance
 
-logger = logging.getLogger(__name__)
+LOGGER = logging.getLogger(__name__)
 
 
 @dataclass

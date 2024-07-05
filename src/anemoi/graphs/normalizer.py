@@ -2,7 +2,7 @@ import logging
 
 import numpy as np
 
-logger = logging.getLogger(__name__)
+LOGGER = logging.getLogger(__name__)
 
 
 class NormalizerMixin:
@@ -25,7 +25,7 @@ class NormalizerMixin:
             Normalized values.
         """
         if self.norm is None:
-            logger.debug("Node weights are not normalized.")
+            LOGGER.debug("Node weights are not normalized.")
             return values
         if self.norm == "l1":
             return values / np.sum(values)
@@ -36,7 +36,7 @@ class NormalizerMixin:
         if self.norm == "unit-std":
             std = np.std(values)
             if std == 0:
-                logger.warning(f"Std. dev. of the {self.__class__.__name__} is 0. Cannot normalize.")
+                LOGGER.warning(f"Std. dev. of the {self.__class__.__name__} is 0. Cannot normalize.")
                 return values
             return values / std
         raise ValueError(

@@ -14,7 +14,7 @@ from torch_geometric.data.storage import NodeStorage
 from anemoi.graphs import EARTH_RADIUS
 from anemoi.graphs.utils import get_grid_reference_distance
 
-logger = logging.getLogger(__name__)
+LOGGER = logging.getLogger(__name__)
 
 
 class BaseEdgeBuilder(ABC):
@@ -132,7 +132,7 @@ class KNNEdges(BaseEdgeBuilder):
             The target nodes.
         """
         assert self.num_nearest_neighbours is not None, "number of neighbors required for knn encoder"
-        logger.info(
+        LOGGER.info(
             "Using KNN-Edges (with %d nearest neighbours) between %s and %s.",
             self.num_nearest_neighbours,
             self.source_name,
@@ -208,7 +208,7 @@ class CutOffEdges(BaseEdgeBuilder):
         target_nodes : NodeStorage
             The target nodes.
         """
-        logger.info(
+        LOGGER.info(
             "Using CutOff-Edges (with radius = %.1f km) between %s and %s.",
             self.radius * EARTH_RADIUS,
             self.source_name,

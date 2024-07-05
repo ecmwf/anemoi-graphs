@@ -11,7 +11,7 @@ from anemoi.utils.config import DotDict
 from hydra.utils import instantiate
 from torch_geometric.data import HeteroData
 
-logger = logging.getLogger(__name__)
+LOGGER = logging.getLogger(__name__)
 
 
 class BaseNodeBuilder(ABC):
@@ -115,7 +115,7 @@ class ZarrDatasetNodes(BaseNodeBuilder):
     """
 
     def __init__(self, dataset: DotDict) -> None:
-        logger.info("Reading the dataset from %s.", dataset)
+        LOGGER.info("Reading the dataset from %s.", dataset)
         self.ds = open_dataset(dataset)
 
     def get_coordinates(self) -> torch.Tensor:

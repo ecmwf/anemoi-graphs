@@ -12,7 +12,7 @@ from torch_geometric.data.storage import NodeStorage
 from anemoi.graphs.generate.transforms import latlon_rad_to_cartesian
 from anemoi.graphs.normalizer import NormalizerMixin
 
-logger = logging.getLogger(__name__)
+LOGGER = logging.getLogger(__name__)
 
 
 @dataclass
@@ -107,7 +107,7 @@ class AreaWeights(BaseWeights):
         points = latlon_rad_to_cartesian((latitudes, longitudes))
         sv = SphericalVoronoi(points, self.radius, self.centre)
         area_weights = sv.calculate_areas()
-        logger.debug(
+        LOGGER.debug(
             "There are %d of weights, which (unscaled) add up a total weight of %.2f.",
             len(area_weights),
             np.array(area_weights).sum(),
