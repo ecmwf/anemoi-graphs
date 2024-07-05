@@ -6,9 +6,31 @@
 # nor does it submit to any jurisdiction.
 
 
-def test_graphs():
-    pass
+from pathlib import Path
+
+import torch
+from torch_geometric.data import HeteroData
+
+from anemoi.graphs import create
 
 
-if __name__ == "__main__":
-    test_graphs()
+def test_graphs(config_file: tuple[Path, str], mock_grids_path: tuple[str, int]):
+    """Test GraphCreator workflow."""
+    tmp_path, config_name = config_file
+    graph_path = tmp_path / "graph.pt"
+    config_path = tmp_path / config_name
+
+    create.GraphCreator(graph_path, config_path).create()
+
+    graph = torch.load(graph_path)
+    assert isinstance(graph, HeteroData)
+    assert "test_nodes" in graph.node_types
+    assert ("test_nodes", "to", "test_nodes") in graph.edge_types
+
+    for nodes in graph.node_stores:
+        for node_attr in nodes.node_attrs():
+            assert isinstance(nodes[node_attr], torch.Tensor)
+
+    for edges in graph.edge_stores:
+        for edge_attr in edges.edge_attrs():
+            assert isinstance(edges[edge_attr], torch.Tensor)

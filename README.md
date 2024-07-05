@@ -19,6 +19,14 @@ Install via `pip` with:
 $ pip install anemoi-graphs
 ```
 
+## Usage
+
+Create your graph using the configuration given in the config file. The resulting graph will be saved in the given path.
+
+```
+$ anemoi-graphs create recipe.yaml my_graph.pt
+```
+
 ## License
 
 ```

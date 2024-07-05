@@ -186,3 +186,6 @@ _build/
 *.sync
 _version.py
 *.code-workspace
+
+/config*
+*.pt
