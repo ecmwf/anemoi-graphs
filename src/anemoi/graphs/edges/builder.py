@@ -73,8 +73,8 @@ class BaseEdgeBuilder(ABC):
         """Prepare nodes information."""
         return graph[self.source_name], graph[self.target_name]
 
-    def transform(self, graph: HeteroData, attrs_config: Optional[DotDict] = None) -> HeteroData:
-        """Transform the graph.
+    def update_graph(self, graph: HeteroData, attrs_config: Optional[DotDict] = None) -> HeteroData:
+        """Update the graph with the edges.
 
         Parameters
         ----------

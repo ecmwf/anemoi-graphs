@@ -77,10 +77,8 @@ class BaseNodeBuilder(ABC):
         coords = np.deg2rad(coords)
         return torch.tensor(coords, dtype=torch.float32)
 
-    def transform(self, graph: HeteroData, name: str, attr_config: Optional[DotDict] = None) -> HeteroData:
-        """Transform the graph.
-
-        It includes nodes to the graph.
+    def update_graph(self, graph: HeteroData, name: str, attr_config: Optional[DotDict] = None) -> HeteroData:
+        """Update the graph with new nodes.
 
         Parameters
         ----------

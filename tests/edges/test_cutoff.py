@@ -18,5 +18,5 @@ def test_fail_init(cutoff_factor: str):
 def test_cutoff(graph_with_nodes):
     """Test CutOffEdgeBuilder."""
     builder = CutOffEdges("test_nodes", "test_nodes", 0.5)
-    graph = builder.transform(graph_with_nodes)
+    graph = builder.update_graph(graph_with_nodes)
     assert ("test_nodes", "to", "test_nodes") in graph.edge_types
