@@ -22,7 +22,7 @@ class BaseEdgeAttribute(ABC, NormalizerMixin):
     norm: Optional[str] = None
 
     @abstractmethod
-    def get_raw_values(self, graph: HeteroData, *args, **kwargs) -> np.ndarray: ...
+    def get_raw_values(self, graph: HeteroData, source_name: str, target_name: str, *args, **kwargs) -> np.ndarray: ...
 
     def post_process(self, values: np.ndarray) -> torch.Tensor:
         """Post-process the values."""
@@ -31,9 +31,16 @@ class BaseEdgeAttribute(ABC, NormalizerMixin):
 
         return torch.tensor(values)
 
-    def compute(self, *args, **kwargs) -> torch.Tensor:
+    def compute(self, graph: HeteroData, source_name: str, target_name: str, *args, **kwargs) -> torch.Tensor:
         """Compute the edge attributes."""
-        values = self.get_raw_values(*args, **kwargs)
+        assert (
+            source_name in graph.node_types
+        ), f"Node \"{source_name}\" not found in graph. Optional nodes are {', '.join(graph.node_types)}."
+        assert (
+            target_name in graph.node_types
+        ), f"Node \"{target_name}\" not found in graph. Optional nodes are {', '.join(graph.node_types)}."
+
+        values = self.get_raw_values(graph, source_name, target_name, *args, **kwargs)
         normed_values = self.normalize(values)
         return self.post_process(normed_values)
 
@@ -128,8 +135,6 @@ class EdgeLength(BaseEdgeAttribute):
         np.ndarray
             The edge lengths.
         """
-        assert source_name in graph.node_types, f"Node {source_name} not found in graph."
-        assert target_name in graph.node_types, f"Node {target_name} not found in graph."
         edge_index = graph[(source_name, "to", target_name)].edge_index
         source_coords = graph[source_name].x.numpy()[edge_index[0]]
         target_coords = graph[target_name].x.numpy()[edge_index[1]]
