@@ -21,11 +21,9 @@ class BaseWeights(ABC, NormalizerMixin):
         self.norm = norm
 
     @abstractmethod
-    def compute(self, nodes: NodeStorage, *args, **kwargs): ...
+    def get_raw_values(self, nodes: NodeStorage, *args, **kwargs): ...
 
-    """Compute the weights."""
-
-    def get_weights(self, *args, **kwargs) -> torch.Tensor:
+    def compute(self, nodes: NodeStorage, *args, **kwargs) -> torch.Tensor:
         """Get the node weights.
 
         Returns
@@ -33,7 +31,7 @@ class BaseWeights(ABC, NormalizerMixin):
         torch.Tensor
             Weights associated to the nodes.
         """
-        weights = self.compute(*args, **kwargs)
+        weights = self.get_raw_values(nodes, *args, **kwargs)
         if weights.ndim == 1:
             weights = weights[:, np.newaxis]
         norm_weights = self.normalize(weights)
@@ -43,7 +41,7 @@ class BaseWeights(ABC, NormalizerMixin):
 class UniformWeights(BaseWeights):
     """Implements a uniform weight for the nodes."""
 
-    def compute(self, nodes: NodeStorage, *args, **kwargs) -> np.ndarray:
+    def get_raw_values(self, nodes: NodeStorage, *args, **kwargs) -> np.ndarray:
         """Compute the weights.
 
         Parameters
@@ -73,8 +71,10 @@ class AreaWeights(BaseWeights):
 
     Methods
     -------
-    get_weights(nodes, *args, **kwargs)
-        Get the node weights.
+    get_raw_values(nodes, *args, **kwargs)
+        Compute the area associated to each node.    
+    compute(nodes, *args, **kwargs)
+        Compute the area attributes for each node.
     """
 
     def __init__(self, norm: str = "unit-max", radius: float = 1.0, centre: np.ndarray = np.array([0, 0, 0])):
@@ -84,7 +84,7 @@ class AreaWeights(BaseWeights):
         self.radius = radius
         self.centre = centre
 
-    def compute(self, nodes: NodeStorage, *args, **kwargs) -> np.ndarray:
+    def get_raw_values(self, nodes: NodeStorage, *args, **kwargs) -> np.ndarray:
         """Compute the area associated to each node.
 
         It uses Voronoi diagrams to compute the area of each node.

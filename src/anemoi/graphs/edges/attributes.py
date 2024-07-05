@@ -22,15 +22,15 @@ class BaseEdgeAttribute(ABC, NormalizerMixin):
     norm: Optional[str] = None
 
     @abstractmethod
-    def compute(self, graph: HeteroData, *args, **kwargs) -> np.ndarray: ...
+    def get_raw_values(self, graph: HeteroData, *args, **kwargs) -> np.ndarray: ...
 
     def post_process(self, values: np.ndarray) -> torch.Tensor:
         """Post-process the values."""
         return torch.tensor(values)
 
-    def __call__(self, *args, **kwargs) -> torch.Tensor:
+    def compute(self, *args, **kwargs) -> torch.Tensor:
         """Compute the edge attributes."""
-        values = self.compute(*args, **kwargs)
+        values = self.get_raw_values(*args, **kwargs)
         normed_values = self.normalize(values)
         if normed_values.ndim == 1:
             normed_values = normed_values[:, np.newaxis]
@@ -47,12 +47,19 @@ class DirectionalFeatures(BaseEdgeAttribute):
         Normalization method.
     luse_rotated_features : bool
         Whether to use rotated features.
+
+    Methods
+    -------
+    get_raw_values(graph, source_name, target_name)
+        Compute directions between nodes connected by edges.
+    compute(graph, source_name, target_name)
+        Compute directional attributes.
     """
 
     norm: Optional[str] = None
     luse_rotated_features: bool = False
 
-    def compute(self, graph: HeteroData, source_name: str, target_name: str) -> np.ndarray:
+    def get_raw_values(self, graph: HeteroData, source_name: str, target_name: str) -> np.ndarray:
         """Compute directional features for edges.
 
         Parameters
@@ -86,12 +93,19 @@ class EdgeLength(BaseEdgeAttribute):
         Normalization method.
     invert : bool
         Whether to invert the edge lengths, i.e. 1 - edge_length.
+
+    Methods
+    -------
+    get_raw_values(graph, source_name, target_name)
+        Compute haversine distance between nodes connected by edges.
+    compute(graph, source_name, target_name)
+        Compute edge lengths attributes.
     """
 
     norm: str = "l1"
     invert: bool = True
 
-    def compute(self, graph: HeteroData, source_name: str, target_name: str) -> np.ndarray:
+    def get_raw_values(self, graph: HeteroData, source_name: str, target_name: str) -> np.ndarray:
         """Compute haversine distance (in kilometers) between nodes connected by edges.
 
         Parameters
