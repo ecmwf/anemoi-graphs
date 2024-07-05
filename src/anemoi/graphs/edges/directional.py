@@ -35,7 +35,7 @@ def compute_directions(loc1: np.ndarray, loc2: np.ndarray, pole_vec: Optional[np
     ----------
     loc1 : np.ndarray of shape (2, num_points)
         Location of the head nodes.
-    loc2 : np.ndarray
+    loc2 : np.ndarray of shape (2, num_points)
         Location of the tail nodes.
     pole_vec : np.ndarray, optional
         The pole vector to rotate the points to. Defaults to the north pole.
