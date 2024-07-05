@@ -1,9 +1,12 @@
 import logging
 import os
 
+import hydra
 import torch
 from anemoi.utils.config import DotDict
 from hydra.utils import instantiate
+from omegaconf import DictConfig
+from omegaconf import OmegaConf
 from torch_geometric.data import HeteroData
 
 logger = logging.getLogger(__name__)
@@ -66,3 +69,13 @@ class GraphCreator:
             return True
         except FileNotFoundError:
             return False
+
+
+@hydra.main(version_base=None, config_path="../../../config", config_name="graph_recipe_lam.yaml")
+def main(config: DictConfig) -> None:
+    OmegaConf.resolve(config)
+    GraphCreator("graph.pt", config, overwrite=True).create()
+
+
+if __name__ == "__main__":
+    main()
