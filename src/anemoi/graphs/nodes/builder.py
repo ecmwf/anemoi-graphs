@@ -155,7 +155,7 @@ class NPZFileNodes(BaseNodeBuilder):
         self.grid_definition = np.load(Path(self.grid_definition_path) / f"grid-{self.resolution}.npz")
 
     def get_coordinates(self) -> torch.Tensor:
-        """Get the coordinates of the nodes.
+        """Get the lat-lon corodinates of the nodes.
 
         Returns
         -------
