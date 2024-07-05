@@ -48,28 +48,25 @@ class BaseEdgeBuilder:
         graph[(self.source_name, "to", self.target_name)].edge_index = torch.from_numpy(edge_index)
         return graph
 
-    def register_edge_attribute(self, graph: HeteroData, name: str, values: np.ndarray):
-        """Register edge attributes in the graph.
+    def register_attributes(self, graph: HeteroData, config: DotDict) -> HeteroData:
+        """Register attributes in the edges of the graph specified.
 
         Parameters
         ----------
         graph : HeteroData
-            The graph to register the edge attributes.
-        name : str
-            The name of the edge attributes.
-        values : np.ndarray
-            The values of the edge attributes.
+            The graph to register the attributes.
+        config : DotDict
+            The configuration of the attributes.
 
         Returns
         -------
         HeteroData
-            The graph with the registered edge attributes.
+            The graph with the registered attributes.
         """
-        num_edges = graph[(self.source_name, "to", self.target_name)].num_edges
-        assert (
-            values.shape[0] == num_edges
-        ), f"Number of edge features ({values.shape[0]}) must match number of edges ({num_edges})."
-        graph[self.source_name, "to", self.target_name][name] = values.reshape(num_edges, -1)
+        for attr_name, attr_config in config.items():
+            graph[self.source_name, "to", self.target_name][attr_name] = instantiate(attr_config).compute(
+                graph, self.source_name, self.target_name
+            )
         return graph
 
     def prepare_node_data(self, graph: HeteroData) -> tuple[NodeStorage, NodeStorage]:
@@ -97,10 +94,10 @@ class BaseEdgeBuilder:
 
         graph = self.register_edges(graph, adjmat.col, adjmat.row)
 
-        if attrs_config is not None:
-            for attr_name, attr_cfg in attrs_config.items():
-                attr_values = instantiate(attr_cfg)(graph, self.source_name, self.target_name)
-                graph = self.register_edge_attribute(graph, attr_name, attr_values)
+        if attrs_config is None:
+            return graph
+
+        graph = self.register_attributes(graph, attrs_config)
 
         return graph
 

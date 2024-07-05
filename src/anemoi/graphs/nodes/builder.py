@@ -32,7 +32,7 @@ class BaseNodeBuilder(ABC):
         return graph
 
     def register_attributes(self, graph: HeteroData, name: str, config: Optional[DotDict] = None) -> HeteroData:
-        """Register attributes in the graph.
+        """Register attributes in the nodes of the graph specified.
 
         Parameters
         ----------
@@ -51,8 +51,8 @@ class BaseNodeBuilder(ABC):
         if config is None:
             return graph
 
-        for nodes_attr_name, attr_cfg in config.items():
-            graph[name][nodes_attr_name] = instantiate(attr_cfg).get_weights(graph[name])
+        for attr_name, attr_config in config.items():
+            graph[name][attr_name] = instantiate(attr_config).compute(graph[name])
         return graph
 
     @abstractmethod
@@ -77,7 +77,7 @@ class BaseNodeBuilder(ABC):
         coords = np.deg2rad(coords)
         return torch.tensor(coords, dtype=torch.float32)
 
-    def transform(self, graph: HeteroData, name: str, attr_config: DotDict) -> HeteroData:
+    def transform(self, graph: HeteroData, name: str, attr_config: Optional[DotDict] = None) -> HeteroData:
         """Transform the graph.
 
         It includes nodes to the graph.
@@ -97,6 +97,10 @@ class BaseNodeBuilder(ABC):
             The graph with new nodes included.
         """
         graph = self.register_nodes(graph, name)
+
+        if attr_config is None:
+            return graph
+
         graph = self.register_attributes(graph, name, attr_config)
         return graph
 
@@ -155,7 +159,7 @@ class NPZFileNodes(BaseNodeBuilder):
         self.grid_definition = np.load(Path(self.grid_definition_path) / f"grid-{self.resolution}.npz")
 
     def get_coordinates(self) -> torch.Tensor:
-        """Get the lat-lon corodinates of the nodes.
+        """Get the coordinates of the nodes.
 
         Returns
         -------

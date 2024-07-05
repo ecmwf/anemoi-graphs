@@ -26,14 +26,15 @@ class BaseEdgeAttribute(ABC, NormalizerMixin):
 
     def post_process(self, values: np.ndarray) -> torch.Tensor:
         """Post-process the values."""
+        if values.ndim == 1:
+            values = values[:, np.newaxis]
+
         return torch.tensor(values)
 
     def compute(self, *args, **kwargs) -> torch.Tensor:
         """Compute the edge attributes."""
         values = self.get_raw_values(*args, **kwargs)
         normed_values = self.normalize(values)
-        if normed_values.ndim == 1:
-            normed_values = normed_values[:, np.newaxis]
         return self.post_process(normed_values)
 
 

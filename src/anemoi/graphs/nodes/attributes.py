@@ -23,6 +23,13 @@ class BaseWeights(ABC, NormalizerMixin):
     @abstractmethod
     def get_raw_values(self, nodes: NodeStorage, *args, **kwargs): ...
 
+    def post_process(self, values: np.ndarray) -> torch.Tensor:
+        """Post-process the values."""
+        if values.ndim == 1:
+            values = values[:, np.newaxis]
+
+        return torch.tensor(values)
+
     def compute(self, nodes: NodeStorage, *args, **kwargs) -> torch.Tensor:
         """Get the node weights.
 
@@ -32,10 +39,8 @@ class BaseWeights(ABC, NormalizerMixin):
             Weights associated to the nodes.
         """
         weights = self.get_raw_values(nodes, *args, **kwargs)
-        if weights.ndim == 1:
-            weights = weights[:, np.newaxis]
         norm_weights = self.normalize(weights)
-        return torch.tensor(norm_weights, dtype=torch.float32)
+        return self.post_process(norm_weights)
 
 
 class UniformWeights(BaseWeights):
@@ -72,7 +77,7 @@ class AreaWeights(BaseWeights):
     Methods
     -------
     get_raw_values(nodes, *args, **kwargs)
-        Compute the area associated to each node.    
+        Compute the area associated to each node.
     compute(nodes, *args, **kwargs)
         Compute the area attributes for each node.
     """
