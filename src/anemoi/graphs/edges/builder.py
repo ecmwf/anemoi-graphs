@@ -1,4 +1,5 @@
 import logging
+from abc import ABC
 from abc import abstractmethod
 from typing import Optional
 
@@ -16,7 +17,6 @@ from anemoi.graphs.utils import get_grid_reference_distance
 logger = logging.getLogger(__name__)
 
 
-class BaseEdgeBuilder:
 class BaseEdgeBuilder(ABC):
 
     def __init__(self, source_name: str, target_name: str):
