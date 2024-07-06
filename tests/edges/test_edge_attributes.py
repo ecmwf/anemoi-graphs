@@ -24,6 +24,6 @@ def test_edge_lengths(graph_nodes_and_edges, norm):
 
 @pytest.mark.parametrize("attribute_builder", [EdgeDirection(), EdgeLength()])
 def test_fail_edge_features(attribute_builder, graph_nodes_and_edges):
-    """Test EdgeDirection compute method."""
+    """Test edge attribute builder fails with unknown nodes."""
     with pytest.raises(AssertionError):
         attribute_builder.compute(graph_nodes_and_edges, "test_nodes", "unknown_nodes")

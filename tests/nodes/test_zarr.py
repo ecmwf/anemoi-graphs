@@ -9,7 +9,7 @@ from anemoi.graphs.nodes.attributes import UniformWeights
 
 
 def test_init(mocker, mock_zarr_dataset):
-    """Test ZarrNodes initialization."""
+    """Test ZarrDatasetNodes initialization."""
     mocker.patch.object(builder, "open_dataset", return_value=mock_zarr_dataset)
     node_builder = builder.ZarrDatasetNodes("dataset.zarr")
     assert isinstance(node_builder, builder.BaseNodeBuilder)
@@ -17,13 +17,13 @@ def test_init(mocker, mock_zarr_dataset):
 
 
 def test_fail_init():
-    """Test ZarrNodes initialization with invalid resolution."""
+    """Test ZarrDatasetNodes initialization with invalid resolution."""
     with pytest.raises(zarr.errors.PathNotFoundError):
         builder.ZarrDatasetNodes("invalid_path.zarr")
 
 
 def test_register_nodes(mocker, mock_zarr_dataset):
-    """Test ZarrNodes register correctly the nodes."""
+    """Test ZarrDatasetNodes register correctly the nodes."""
     mocker.patch.object(builder, "open_dataset", return_value=mock_zarr_dataset)
     node_builder = builder.ZarrDatasetNodes("dataset.zarr")
     graph = HeteroData()
@@ -38,7 +38,7 @@ def test_register_nodes(mocker, mock_zarr_dataset):
 
 @pytest.mark.parametrize("attr_class", [UniformWeights, AreaWeights])
 def test_register_attributes(mocker, graph_with_nodes: HeteroData, attr_class):
-    """Test ZarrNodes register correctly the weights."""
+    """Test ZarrDatasetNodes register correctly the weights."""
     mocker.patch.object(builder, "open_dataset", return_value=None)
     node_builder = builder.ZarrDatasetNodes("dataset.zarr")
     config = {"test_attr": {"_target_": f"anemoi.graphs.nodes.attributes.{attr_class.__name__}"}}
