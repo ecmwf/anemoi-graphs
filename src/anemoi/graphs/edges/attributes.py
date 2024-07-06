@@ -43,7 +43,7 @@ class BaseEdgeAttribute(ABC, NormalizerMixin):
         ), f"Node \"{target_name}\" not found in graph. Optional nodes are {', '.join(graph.node_types)}."
 
         values = self.get_raw_values(graph, source_name, target_name, *args, **kwargs)
-        return self.post_process(normed_values)
+        return self.post_process(values)
 
 
 @dataclass
