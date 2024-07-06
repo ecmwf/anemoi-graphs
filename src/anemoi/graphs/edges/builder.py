@@ -1,6 +1,7 @@
 import logging
 from abc import ABC
 from abc import abstractmethod
+from dataclasses import dataclass
 from typing import Optional
 
 import numpy as np
@@ -17,20 +18,19 @@ from anemoi.graphs.utils import get_grid_reference_distance
 LOGGER = logging.getLogger(__name__)
 
 
+@dataclass
 class BaseEdgeBuilder(ABC):
     """Base class for edge builders."""
 
-    def __init__(self, source_name: str, target_name: str):
-        super().__init__()
-        self.source_name = source_name
-        self.target_name = target_name
+    source_nodes: str
+    target_nodes: str
 
     @abstractmethod
     def get_adjacency_matrix(self, source_nodes: NodeStorage, target_nodes: NodeStorage): ...
 
     def prepare_node_data(self, graph: HeteroData) -> tuple[NodeStorage, NodeStorage]:
         """Prepare nodes information."""
-        return graph[self.source_name], graph[self.target_name]
+        return graph[self.source_nodes], graph[self.target_nodes]
 
     def get_edge_index(self, graph: HeteroData) -> torch.Tensor:
         """Get the edge indices of source and target nodes.
@@ -52,7 +52,7 @@ class BaseEdgeBuilder(ABC):
         # Get source & target indices of the edges
         edge_index = np.stack([adjmat.col, adjmat.row], axis=0)
 
-        return torch.from_numpy(edge_index, dtype=torch.int32)
+        return torch.from_numpy(edge_index).to(torch.float32)
 
     def register_edges(self, graph: HeteroData) -> HeteroData:
         """Register edges in the graph.
@@ -67,8 +67,8 @@ class BaseEdgeBuilder(ABC):
         HeteroData
             The graph with the registered edges.
         """
-        graph[(self.source_name, "to", self.target_name)].edge_index = self.get_edge_index()
-        graph[(self.source_name, "to", self.target_name)].edge_type = type(self).__name__
+        graph[(self.source_nodes, "to", self.target_nodes)].edge_index = self.get_edge_index(graph)
+        graph[(self.source_nodes, "to", self.target_nodes)].edge_type = type(self).__name__
         return graph
 
     def register_attributes(self, graph: HeteroData, config: DotDict) -> HeteroData:
@@ -87,8 +87,8 @@ class BaseEdgeBuilder(ABC):
             The graph with the registered attributes.
         """
         for attr_name, attr_config in config.items():
-            graph[self.source_name, "to", self.target_name][attr_name] = instantiate(attr_config).compute(
-                graph, self.source_name, self.target_name
+            graph[self.source_nodes, "to", self.target_nodes][attr_name] = instantiate(attr_config).compute(
+                graph, self.source_nodes, self.target_nodes
             )
         return graph
 
@@ -107,9 +107,7 @@ class BaseEdgeBuilder(ABC):
         HeteroData
             The graph with the edges.
         """
-        graph = self.register_edges(
-            graph,
-        )
+        graph = self.register_edges(graph)
 
         if attrs_config is None:
             return graph
@@ -124,9 +122,9 @@ class KNNEdges(BaseEdgeBuilder):
 
     Attributes
     ----------
-    source_name : str
+    source_nodes : str
         The name of the source nodes.
-    target_name : str
+    target_nodes : str
         The name of the target nodes.
     num_nearest_neighbours : int
         Number of nearest neighbours.
@@ -143,8 +141,8 @@ class KNNEdges(BaseEdgeBuilder):
         Update the graph with the edges.
     """
 
-    def __init__(self, source_name: str, target_name: str, num_nearest_neighbours: int):
-        super().__init__(source_name, target_name)
+    def __init__(self, source_nodes: str, target_nodes: str, num_nearest_neighbours: int):
+        super().__init__(source_nodes, target_nodes)
         assert isinstance(num_nearest_neighbours, int), "Number of nearest neighbours must be an integer"
         assert num_nearest_neighbours > 0, "Number of nearest neighbours must be positive"
         self.num_nearest_neighbours = num_nearest_neighbours
@@ -163,8 +161,8 @@ class KNNEdges(BaseEdgeBuilder):
         LOGGER.info(
             "Using KNN-Edges (with %d nearest neighbours) between %s and %s.",
             self.num_nearest_neighbours,
-            self.source_name,
-            self.target_name,
+            self.source_nodes,
+            self.target_nodes,
         )
 
         nearest_neighbour = NearestNeighbors(metric="haversine", n_jobs=4)
@@ -182,9 +180,9 @@ class CutOffEdges(BaseEdgeBuilder):
 
     Attributes
     ----------
-    source_name : str
+    source_nodes : str
         The name of the source nodes.
-    target_name : str
+    target_nodes : str
         The name of the target nodes.
     cutoff_factor : float
         Factor to multiply the grid reference distance to get the cut-off radius.
@@ -205,8 +203,8 @@ class CutOffEdges(BaseEdgeBuilder):
         Update the graph with the edges.
     """
 
-    def __init__(self, source_name: str, target_name: str, cutoff_factor: float):
-        super().__init__(source_name, target_name)
+    def __init__(self, source_nodes: str, target_nodes: str, cutoff_factor: float):
+        super().__init__(source_nodes, target_nodes)
         assert isinstance(cutoff_factor, (int, float)), "Cutoff factor must be a float"
         assert cutoff_factor > 0, "Cutoff factor must be positive"
         self.cutoff_factor = cutoff_factor
@@ -228,7 +226,7 @@ class CutOffEdges(BaseEdgeBuilder):
         float
             The cut-off radius.
         """
-        target_nodes = graph[self.target_name]
+        target_nodes = graph[self.target_nodes]
         mask = target_nodes[mask_attr] if mask_attr is not None else None
         target_grid_reference_distance = get_grid_reference_distance(target_nodes.x, mask)
         radius = target_grid_reference_distance * self.cutoff_factor
@@ -252,8 +250,8 @@ class CutOffEdges(BaseEdgeBuilder):
         LOGGER.info(
             "Using CutOff-Edges (with radius = %.1f km) between %s and %s.",
             self.radius * EARTH_RADIUS,
-            self.source_name,
-            self.target_name,
+            self.source_nodes,
+            self.target_nodes,
         )
 
         nearest_neighbour = NearestNeighbors(metric="haversine", n_jobs=4)
