@@ -110,6 +110,17 @@ class ZarrDatasetNodes(BaseNodeBuilder):
     ----------
     ds : zarr.core.Array
         The dataset.
+
+    Methods
+    -------
+    get_coordinates()
+        Get the lat-lon coordinates of the nodes.
+    register_nodes(graph, name)
+        Register the nodes in the graph.
+    register_attributes(graph, name, config)
+        Register the attributes in the nodes of the graph specified.
+    update_graph(graph, name, attr_config)
+        Update the graph with new nodes and attributes.
     """
 
     def __init__(self, dataset: DotDict) -> None:
@@ -138,6 +149,17 @@ class NPZFileNodes(BaseNodeBuilder):
         Path to the folder containing the grid definition files.
     grid_definition : dict[str, np.ndarray]
         The grid definition.
+
+    Methods
+    -------
+    get_coordinates()
+        Get the lat-lon coordinates of the nodes.
+    register_nodes(graph, name)
+        Register the nodes in the graph.
+    register_attributes(graph, name, config)
+        Register the attributes in the nodes of the graph specified.
+    update_graph(graph, name, attr_config)
+        Update the graph with new nodes and attributes.
     """
 
     def __init__(self, resolution: str, grid_definition_path: str) -> None:
