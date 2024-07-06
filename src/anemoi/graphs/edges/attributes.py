@@ -29,7 +29,9 @@ class BaseEdgeAttribute(ABC, NormalizerMixin):
         if values.ndim == 1:
             values = values[:, np.newaxis]
 
-        return torch.tensor(values)
+        normed_values = self.normalize(values)
+
+        return torch.tensor(normed_values, dtype=torch.float32)
 
     def compute(self, graph: HeteroData, source_name: str, target_name: str, *args, **kwargs) -> torch.Tensor:
         """Compute the edge attributes."""
@@ -41,7 +43,6 @@ class BaseEdgeAttribute(ABC, NormalizerMixin):
         ), f"Node \"{target_name}\" not found in graph. Optional nodes are {', '.join(graph.node_types)}."
 
         values = self.get_raw_values(graph, source_name, target_name, *args, **kwargs)
-        normed_values = self.normalize(values)
         return self.post_process(normed_values)
 
 

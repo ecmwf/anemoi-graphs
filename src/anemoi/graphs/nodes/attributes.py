@@ -29,7 +29,9 @@ class BaseWeights(ABC, NormalizerMixin):
         if values.ndim == 1:
             values = values[:, np.newaxis]
 
-        return torch.tensor(values)
+        norm_values = self.normalize(values)
+
+        return torch.tensor(norm_values, dtype=torch.float32)
 
     def compute(self, nodes: NodeStorage, *args, **kwargs) -> torch.Tensor:
         """Get the node weights.
@@ -40,8 +42,7 @@ class BaseWeights(ABC, NormalizerMixin):
             Weights associated to the nodes.
         """
         weights = self.get_raw_values(nodes, *args, **kwargs)
-        norm_weights = self.normalize(weights)
-        return self.post_process(norm_weights)
+        return self.post_process(weights)
 
 
 class UniformWeights(BaseWeights):
