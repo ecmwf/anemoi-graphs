@@ -1,69 +1,24 @@
 import logging
 from abc import ABC
 from abc import abstractmethod
-from dataclasses import dataclass
 from typing import Optional
 
 import numpy as np
 import torch
-from anemoi.utils.config import DotDict
-from hydra.utils import instantiate
 from torch_geometric.data import HeteroData
 
 from anemoi.graphs.edges.directional import directional_edge_features
 from anemoi.graphs.normalizer import NormalizerMixin
 from anemoi.graphs.utils import haversine_distance
 
-logger = logging.getLogger(__name__)
+LOGGER = logging.getLogger(__name__)
 
 
-class NodeAttributeBuilder:
-
-    def transform(self, graph: HeteroData, graph_config: DotDict):
-
-        for name, nodes_cfg in graph_config.nodes.items():
-            graph = self.register_node_attributes(graph, name, nodes_cfg.get("attributes", {}))
-
-    def register_node_attributes(self, graph: HeteroData, node_name: str, node_config: DotDict):
-        assert node_name in graph.keys(), f"Node {node_name} does not exist in the graph."
-        for attr_name, attr_cfg in node_config.items():
-            graph[node_name][attr_name] = instantiate(attr_cfg).compute(graph, node_name)
-        return graph
-
-
-class EdgeAttributeBuilder:
-
-    def transform(self, graph: HeteroData, graph_config: DotDict):
-        for edges_cfg in graph_config.edges:
-            graph = self.register_edge_attributes(
-                graph, edges_cfg.nodes.src_name, edges_cfg.nodes.dst_name, edges_cfg.get("attributes", {})
-            )
-        return graph
-
-    def register_edge_attributes(self, graph: HeteroData, src_name: str, dst_name: str, edge_config: DotDict):
-
-        for attr_name, attr_cfg in edge_config.items():
-            attr_values = instantiate(attr_cfg).compute(graph, src_name, dst_name)
-            graph = self.register_edge_attribute(graph, src_name, dst_name, attr_name, attr_values)
-        return graph
-
-    def register_edge_attribute(
-        self, graph: HeteroData, src_name: str, dst_name: str, attr_name: str, attr_values: torch.Tensor
-    ):
-        num_edges = graph[(src_name, "to", dst_name)].num_edges
-        assert (
-            attr_values.shape[0] == num_edges
-        ), f"Number of edge features ({attr_values.shape[0]}) must match number of edges ({num_edges})."
-
-        graph[(src_name, "to", dst_name)][attr_name] = attr_values
-        return graph
-
-
-@dataclass
 class BaseEdgeAttribute(ABC, NormalizerMixin):
     """Base class for edge attributes."""
 
-    norm: Optional[str] = None
+    def __init__(self, norm: Optional[str] = None) -> None:
+        self.norm = norm
 
     @abstractmethod
     def get_raw_values(self, graph: HeteroData, source_name: str, target_name: str, *args, **kwargs) -> np.ndarray: ...
@@ -91,9 +46,8 @@ class BaseEdgeAttribute(ABC, NormalizerMixin):
         return self.post_process(values)
 
 
-@dataclass
 class EdgeDirection(BaseEdgeAttribute):
-    """Compute directional features for edges.
+    """Edge direction feature.
 
     If using the rotated features, the direction of the edge is computed
     rotating the target nodes to the north pole. If not, it is computed
@@ -115,8 +69,9 @@ class EdgeDirection(BaseEdgeAttribute):
         Compute directional attributes.
     """
 
-    norm: str = "unit-std"
-    luse_rotated_features: bool = True
+    def __init__(self, norm: Optional[str] = None, luse_rotated_features: bool = True) -> None:
+        super().__init__(norm)
+        self.luse_rotated_features = luse_rotated_features
 
     def get_raw_values(self, graph: HeteroData, source_name: str, target_name: str) -> np.ndarray:
         """Compute directional features for edges.
@@ -142,7 +97,6 @@ class EdgeDirection(BaseEdgeAttribute):
         return edge_dirs
 
 
-@dataclass
 class EdgeLength(BaseEdgeAttribute):
     """Edge length feature.
 
@@ -161,8 +115,9 @@ class EdgeLength(BaseEdgeAttribute):
         Compute edge lengths attributes.
     """
 
-    norm: str = "unit-std"
-    invert: bool = False
+    def __init__(self, norm: Optional[str] = None, invert: bool = False) -> None:
+        super().__init__(norm)
+        self.invert = invert
 
     def get_raw_values(self, graph: HeteroData, source_name: str, target_name: str) -> np.ndarray:
         """Compute haversine distance (in kilometers) between nodes connected by edges.
