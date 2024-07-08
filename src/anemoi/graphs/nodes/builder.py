@@ -24,9 +24,6 @@ class BaseNodeBuilder(ABC):
     The node coordinates are stored in the `x` attribute of the nodes and they are stored in radians.
     """
 
-    def __init__(self, name: str) -> None:
-        self.name = name
-
     def __init__(self) -> None:
         self.aoi_mask_builder = None
 
