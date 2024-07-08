@@ -1,7 +1,6 @@
 import logging
 from abc import ABC
 from abc import abstractmethod
-from dataclasses import dataclass
 from typing import Optional
 
 import numpy as np
@@ -16,11 +15,11 @@ from anemoi.graphs.normalizer import NormalizerMixin
 LOGGER = logging.getLogger(__name__)
 
 
-@dataclass
 class BaseWeights(ABC, NormalizerMixin):
     """Base class for the weights of the nodes."""
 
-    norm: Optional[str] = None
+    def __init__(self, norm: Optional[str] = None) -> None:
+        self.norm = norm
 
     @abstractmethod
     def get_raw_values(self, nodes: NodeStorage, *args, **kwargs): ...
@@ -73,7 +72,6 @@ class UniformWeights(BaseWeights):
         return np.ones(nodes.num_nodes)
 
 
-@dataclass
 class AreaWeights(BaseWeights):
     """Implements the area of the nodes as the weights.
 
@@ -94,9 +92,12 @@ class AreaWeights(BaseWeights):
         Compute the area attributes for each node.
     """
 
-    norm: Optional[str] = "unit-max"
-    radius: float = 1.0
-    centre: np.ndarray = np.array([0, 0, 0])
+    def __init__(
+        self, norm: Optional[str] = None, radius: float = 1.0, centre: np.ndarray = np.array([0, 0, 0])
+    ) -> None:
+        super().__init__(norm)
+        self.radius = radius
+        self.centre = centre
 
     def get_raw_values(self, nodes: NodeStorage, *args, **kwargs) -> np.ndarray:
         """Compute the area associated to each node.

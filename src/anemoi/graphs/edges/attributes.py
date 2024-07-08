@@ -1,7 +1,6 @@
 import logging
 from abc import ABC
 from abc import abstractmethod
-from dataclasses import dataclass
 from typing import Optional
 
 import numpy as np
@@ -15,11 +14,11 @@ from anemoi.graphs.utils import haversine_distance
 LOGGER = logging.getLogger(__name__)
 
 
-@dataclass
 class BaseEdgeAttribute(ABC, NormalizerMixin):
     """Base class for edge attributes."""
 
-    norm: Optional[str] = None
+    def __init__(self, norm: Optional[str] = None) -> None:
+        self.norm = norm
 
     @abstractmethod
     def get_raw_values(self, graph: HeteroData, source_name: str, target_name: str, *args, **kwargs) -> np.ndarray: ...
@@ -47,9 +46,8 @@ class BaseEdgeAttribute(ABC, NormalizerMixin):
         return self.post_process(values)
 
 
-@dataclass
 class EdgeDirection(BaseEdgeAttribute):
-    """Compute directional features for edges.
+    """Edge direction feature.
 
     If using the rotated features, the direction of the edge is computed
     rotating the target nodes to the north pole. If not, it is computed
@@ -71,8 +69,9 @@ class EdgeDirection(BaseEdgeAttribute):
         Compute directional attributes.
     """
 
-    norm: str = "unit-std"
-    luse_rotated_features: bool = True
+    def __init__(self, norm: Optional[str] = None, luse_rotated_features: bool = True) -> None:
+        super().__init__(norm)
+        self.luse_rotated_features = luse_rotated_features
 
     def get_raw_values(self, graph: HeteroData, source_name: str, target_name: str) -> np.ndarray:
         """Compute directional features for edges.
@@ -98,7 +97,6 @@ class EdgeDirection(BaseEdgeAttribute):
         return edge_dirs
 
 
-@dataclass
 class EdgeLength(BaseEdgeAttribute):
     """Edge length feature.
 
@@ -117,8 +115,9 @@ class EdgeLength(BaseEdgeAttribute):
         Compute edge lengths attributes.
     """
 
-    norm: str = "unit-std"
-    invert: bool = False
+    def __init__(self, norm: Optional[str] = None, invert: bool = False) -> None:
+        super().__init__(norm)
+        self.invert = invert
 
     def get_raw_values(self, graph: HeteroData, source_name: str, target_name: str) -> np.ndarray:
         """Compute haversine distance (in kilometers) between nodes connected by edges.
