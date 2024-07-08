@@ -1,7 +1,6 @@
 import logging
 from abc import ABC
 from abc import abstractmethod
-from dataclasses import dataclass
 from pathlib import Path
 from typing import Optional
 
@@ -15,11 +14,14 @@ from torch_geometric.data import HeteroData
 LOGGER = logging.getLogger(__name__)
 
 
-@dataclass
 class BaseNodeBuilder(ABC):
-    """Base class for node builders."""
+    """Base class for node builders.
 
-    name: str
+    The node coordinates are stored in the `x` attribute of the nodes and they are stored in radians.
+    """
+
+    def __init__(self, name: str) -> None:
+        self.name = name
 
     def register_nodes(self, graph: HeteroData) -> None:
         """Register nodes in the graph.
@@ -49,7 +51,7 @@ class BaseNodeBuilder(ABC):
             The graph with the registered attributes.
         """
         for attr_name, attr_config in config.items():
-            graph[self.name][attr_name] = instantiate(attr_config).compute(graph[self.name])
+            graph[self.name][attr_name] = instantiate(attr_config).compute(graph, self.name)
         return graph
 
     @abstractmethod

@@ -33,8 +33,9 @@ class BaseEdgeAttribute(ABC, NormalizerMixin):
 
         return torch.tensor(normed_values, dtype=torch.float32)
 
-    def compute(self, graph: HeteroData, source_name: str, target_name: str, *args, **kwargs) -> torch.Tensor:
+    def compute(self, graph: HeteroData, edges_name: tuple[str, str, str], *args, **kwargs) -> torch.Tensor:
         """Compute the edge attributes."""
+        source_name, _, target_name = edges_name
         assert (
             source_name in graph.node_types
         ), f"Node \"{source_name}\" not found in graph. Optional nodes are {', '.join(graph.node_types)}."

@@ -11,7 +11,7 @@ from anemoi.graphs.nodes.builder import NPZFileNodes
 def test_init(mock_grids_path: tuple[str, int], resolution: str):
     """Test NPZFileNodes initialization."""
     grid_definition_path, _ = mock_grids_path
-    node_builder = NPZFileNodes(resolution, grid_definition_path=grid_definition_path, name="test_nodes")
+    node_builder = NPZFileNodes(resolution, grid_definition_path, "test_nodes")
     assert isinstance(node_builder, NPZFileNodes)
 
 
@@ -20,13 +20,13 @@ def test_fail_init_wrong_resolution(mock_grids_path: tuple[str, int], resolution
     """Test NPZFileNodes initialization with invalid resolution."""
     grid_definition_path, _ = mock_grids_path
     with pytest.raises(FileNotFoundError):
-        NPZFileNodes(resolution, grid_definition_path=grid_definition_path, name="test_nodes")
+        NPZFileNodes(resolution, grid_definition_path, "test_nodes")
 
 
 def test_fail_init_wrong_path():
     """Test NPZFileNodes initialization with invalid path."""
     with pytest.raises(FileNotFoundError):
-        NPZFileNodes("o16", "invalid_path", name="test_nodes")
+        NPZFileNodes("o16", "invalid_path", "test_nodes")
 
 
 @pytest.mark.parametrize("resolution", ["o16", "o48", "5km5"])
@@ -34,7 +34,7 @@ def test_register_nodes(mock_grids_path: str, resolution: str):
     """Test NPZFileNodes register correctly the nodes."""
     graph = HeteroData()
     grid_definition_path, num_nodes = mock_grids_path
-    node_builder = NPZFileNodes(resolution, grid_definition_path=grid_definition_path, name="test_nodes")
+    node_builder = NPZFileNodes(resolution, grid_definition_path, "test_nodes")
 
     graph = node_builder.register_nodes(graph)
 
@@ -48,7 +48,7 @@ def test_register_nodes(mock_grids_path: str, resolution: str):
 def test_register_attributes(graph_with_nodes: HeteroData, mock_grids_path: tuple[str, int], attr_class):
     """Test NPZFileNodes register correctly the weights."""
     grid_definition_path, _ = mock_grids_path
-    node_builder = NPZFileNodes("o16", grid_definition_path=grid_definition_path, name="test_nodes")
+    node_builder = NPZFileNodes("o16", grid_definition_path, "test_nodes")
     config = {"test_attr": {"_target_": f"anemoi.graphs.nodes.attributes.{attr_class.__name__}"}}
 
     graph = node_builder.register_attributes(graph_with_nodes, config)

@@ -7,6 +7,7 @@ from typing import Optional
 import numpy as np
 import torch
 from scipy.spatial import SphericalVoronoi
+from torch_geometric.data import HeteroData
 from torch_geometric.data.storage import NodeStorage
 
 from anemoi.graphs.generate.transforms import latlon_rad_to_cartesian
@@ -33,14 +34,22 @@ class BaseWeights(ABC, NormalizerMixin):
 
         return torch.tensor(norm_values, dtype=torch.float32)
 
-    def compute(self, nodes: NodeStorage, *args, **kwargs) -> torch.Tensor:
+    def compute(self, graph: HeteroData, nodes_name: str, *args, **kwargs) -> torch.Tensor:
         """Get the node weights.
+
+        Parameters
+        ----------
+        graph : HeteroData
+            Graph.
+        nodes_name : str
+            Name of the nodes.
 
         Returns
         -------
         torch.Tensor
             Weights associated to the nodes.
         """
+        nodes = graph[nodes_name]
         weights = self.get_raw_values(nodes, *args, **kwargs)
         return self.post_process(weights)
 

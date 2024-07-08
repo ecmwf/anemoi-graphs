@@ -52,7 +52,7 @@ class GraphCreator:
             )
 
         for edges_cfg in self.config.edges:
-            graph = instantiate(edges_cfg.edge_builder, **edges_cfg.names).update_graph(
+            graph = instantiate(edges_cfg.edge_builder, edges_cfg.source_name, edges_cfg.target_name).update_graph(
                 graph, edges_cfg.get("attributes", {})
             )
 
