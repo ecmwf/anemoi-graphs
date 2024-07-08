@@ -13,7 +13,7 @@ can use the following YAML configuration:
 .. code:: yaml
 
    nodes:
-     data:
+     - name: data
        node_builder:
          _target_: anemoi.graphs.nodes.RectilinearNodeBuilder
 

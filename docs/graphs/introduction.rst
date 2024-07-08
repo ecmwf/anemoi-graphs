@@ -20,7 +20,7 @@ nodes
 data nodes
    A set of nodes that represents one or multiple datasets. The `data
    nodes` may correspond to the input/output of our data-driven model.
-   They can be define from Zarr datasets and it is compatible with
+   They can be define from Zarr datasets and this method supports all
    :ref:`anemoi-datasets <anemoi-datasets:index-page>` operations such
    as `cutout` or `thinning`.
 
@@ -31,7 +31,7 @@ hidden nodes
    existing locations (Zarr datasets or NPZ files) or algorithmically
    from iterative refinements of polygons over the globe.
 
-orphan nodes
+isolated nodes
    A set of nodes that are not connected to any other node in the graph.
    These nodes can be used to store additional information that is not
    directly used in the training process.

@@ -38,6 +38,7 @@ of the *Anemoi* packages.
 -  :doc:`graphs/node_coordinates`
 -  :doc:`graphs/node_attributes`
 -  :doc:`graphs/edges`
+-  :doc:`graphs/edge_attributes`
 
 .. toctree::
    :maxdepth: 1
@@ -48,6 +49,7 @@ of the *Anemoi* packages.
    graphs/node_coordinates
    graphs/node_attributes
    graphs/edges
+   graphs/edge_attributes
 
 *********
  Modules

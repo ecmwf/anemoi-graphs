@@ -1,8 +1,8 @@
 .. _graphs-edges:
 
-#######
- Edges
-#######
+#####################
+ Edges - Connections
+#####################
 
 Once the `nodes`, :math:`V`, are defined, you can create the `edges`,
 :math:`E`, that will connect them. These connections are listed in the

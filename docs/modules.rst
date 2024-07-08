@@ -16,7 +16,7 @@
  Node attributes
 *****************
 
-.. automodule:: anemoi.graphs.nodes.weights
+.. automodule:: anemoi.graphs.nodes.attributes
    :members:
    :exclude-members: BaseWeights
    :no-undoc-members:
