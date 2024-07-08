@@ -71,7 +71,7 @@ class EdgeDirection(BaseEdgeAttribute):
         Compute directional attributes.
     """
 
-    norm: Optional[str] = None
+    norm: str = "unit-std"
     luse_rotated_features: bool = True
 
     def get_raw_values(self, graph: HeteroData, source_name: str, target_name: str) -> np.ndarray:
@@ -117,8 +117,8 @@ class EdgeLength(BaseEdgeAttribute):
         Compute edge lengths attributes.
     """
 
-    norm: str = "l1"
-    invert: bool = True
+    norm: str = "unit-std"
+    invert: bool = False
 
     def get_raw_values(self, graph: HeteroData, source_name: str, target_name: str) -> np.ndarray:
         """Compute haversine distance (in kilometers) between nodes connected by edges.
