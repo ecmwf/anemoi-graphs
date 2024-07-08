@@ -12,6 +12,7 @@ def test_init(mocker, mock_zarr_dataset):
     """Test ZarrDatasetNodes initialization."""
     mocker.patch.object(builder, "open_dataset", return_value=mock_zarr_dataset)
     node_builder = builder.ZarrDatasetNodes("dataset.zarr", name="test_nodes")
+
     assert isinstance(node_builder, builder.BaseNodeBuilder)
     assert isinstance(node_builder, builder.ZarrDatasetNodes)
 
