@@ -212,8 +212,11 @@ class HEALPixNodes(BaseNodeBuilder):
         Update the graph with new nodes and attributes.
     """
 
-    def __init__(self, resolution: int) -> None:
+    def __init__(self, resolution: int, name: str) -> None:
+        """Initialize the HEALPixNodes builder."""
         self.resolution = resolution
+        super().__init__(name)
+
         assert isinstance(resolution, int), "Resolution must be an integer."
         assert resolution > 0, "Resolution must be positive."
 
