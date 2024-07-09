@@ -58,6 +58,7 @@ dependencies = [
 ]
 
 optional-dependencies.all = [
+    "healpy",
 ]
 optional-dependencies.dev = [
   "nbsphinx",
