@@ -112,6 +112,7 @@ def get_cells_at_resolution(
 def add_edges_to_nx_graph(
     graph: nx.Graph,
     resolutions: list[int],
+    xhops: int = 1,
     self_loop: bool = False,
     flat: bool = True,
     neighbour_children: bool = False,
@@ -128,6 +129,8 @@ def add_edges_to_nx_graph(
         The graph to add the nodes.
     resolutions : list[int]
         Levels of mesh resolution to consider.
+    xhops: int
+        The number of hops to consider for the neighbours.
     self_loop : bool
         Whether include a self-loop in every node or not.
     flat : bool
@@ -146,7 +149,7 @@ def add_edges_to_nx_graph(
     if self_loop:
         add_self_loops(graph)
 
-    add_neighbour_edges(graph, resolutions, flat)
+    add_neighbour_edges(graph, resolutions, xhops, flat)
     add_children_edges(
         graph,
         resolutions,
@@ -166,15 +169,14 @@ def add_self_loops(graph: nx.Graph) -> None:
 def add_neighbour_edges(
     graph: nx.Graph,
     refinement_levels: tuple[int],
+    xhops: int = 1,
     flat: bool = True,
 ) -> None:
     for resolution in refinement_levels:
         cells = {node for node in graph.nodes if h3.h3_get_resolution(node) == resolution}
         for idx in cells:
-            k = 2 if resolution == 0 else 1  # refinement_levels[0]: # extra large field of vision ; only few nodes
-
             # neighbours
-            for idx_neighbour in h3.k_ring(idx, k=k) & cells:
+            for idx_neighbour in h3.k_ring(idx, k=xhops) & cells:
                 if flat:
                     add_edge(
                         graph,
