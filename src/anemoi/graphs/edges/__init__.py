@@ -1,4 +1,4 @@
-from .builder import CutOffEdgeBuilder
-from .builder import KNNEdgeBuilder
+from .builder import CutOffEdges
+from .builder import KNNEdges
 
-__all__ = ["KNNEdgeBuilder", "CutOffEdgeBuilder"]
+__all__ = ["KNNEdges", "CutOffEdges"]

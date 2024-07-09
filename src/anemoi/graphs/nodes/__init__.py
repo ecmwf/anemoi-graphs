@@ -1,4 +1,4 @@
-from .builder import NPZFileNodeBuilder
-from .builder import ZarrDatasetNodeBuilder
+from .builder import NPZFileNodes
+from .builder import ZarrDatasetNodes
 
-__all__ = ["ZarrDatasetNodeBuilder", "NPZFileNodeBuilder"]
+__all__ = ["ZarrDatasetNodes", "NPZFileNodes"]

@@ -2,7 +2,7 @@ import numpy as np
 
 
 def cartesian_to_latlon_degrees(xyz: np.ndarray) -> np.ndarray:
-    """3D to lat-lon conversion.
+    """3D to lat-lon (in degrees) conversion.
 
     Convert 3D coordinates of points to the (lat, lon) on the sphere containing
     them.
@@ -23,7 +23,7 @@ def cartesian_to_latlon_degrees(xyz: np.ndarray) -> np.ndarray:
 
 
 def cartesian_to_latlon_rad(xyz: np.ndarray) -> np.ndarray:
-    """Degrees to radians conversion.
+    """3D to lat-lon (in radians) conversion.
 
     Convert 3D coordinates of points to its coordinates on the sphere containing
     them.
@@ -43,7 +43,7 @@ def cartesian_to_latlon_rad(xyz: np.ndarray) -> np.ndarray:
     return np.array((lat, lon), dtype=np.float32).transpose()
 
 
-def to_sphere_xyz(loc: tuple[np.ndarray, np.ndarray], radius: float = 1) -> np.ndarray:
+def latlon_rad_to_cartesian(loc: tuple[np.ndarray, np.ndarray], radius: float = 1) -> np.ndarray:
     """Convert planar coordinates to 3D coordinates in a sphere.
 
     Parameters
