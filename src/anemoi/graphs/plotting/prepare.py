@@ -109,7 +109,7 @@ def _get_node_attribute_dims(graph: HeteroData) -> dict[str, int]:
     attr_dims = {}
     for nodes in graph.node_stores:
         for attr in nodes.node_attrs():
-            if attr == "x" and not isinstance(nodes[attr], torch.Tensor):
+            if attr == "x" or not isinstance(nodes[attr], torch.Tensor):
                 continue
             elif attr not in attr_dims:
                 attr_dims[attr] = nodes[attr].shape[1]

@@ -19,27 +19,10 @@ from anemoi.graphs.plotting.interactive_html import plot_orphan_nodes
 logger = logging.getLogger(__name__)
 
 
-class GraphInspectorTool:
-    """Inspect the graph."""
-
-    def __init__(
-        self,
-        path: Union[str, Path],
-        output_path: Path,
-        show_attribute_distributions: Optional[bool] = True,
-        **kwargs,
-    ):
+class GraphDescription:
+    def __init__(self, path: Union[str, Path], **kwargs):
         self.path = path
         self.graph = torch.load(self.path)
-        self.output_path = output_path
-        self.show_attribute_distributions = show_attribute_distributions
-
-        if isinstance(self.output_path, str):
-            self.output_path = Path(self.output_path)
-
-        assert self.output_path.exists(), f"Path {self.output_path} does not exist."
-        assert self.output_path.is_dir(), f"Path {self.output_path} is not a directory."
-        assert os.access(self.output_path, os.W_OK), f"Path {self.output_path} is not writable."
 
     @property
     def total_size(self):
@@ -107,15 +90,17 @@ class GraphInspectorTool:
             - List of attribute names.
         """
         edge_summary = []
-        for (src_nodes, _, dst_nodes), edges in self.graph.edge_items():
+        for (src_name, _, dst_name), edges in self.graph.edge_items():
             attributes = edges.edge_attrs()
             attributes.remove("edge_index")
 
             edge_summary.append(
                 [
-                    src_nodes,
-                    dst_nodes,
+                    src_name,
+                    dst_name,
                     number(edges.num_edges),
+                    number(self.graph[src_name].num_nodes - len(torch.unique(edges.edge_index[0]))),
+                    number(self.graph[dst_name].num_nodes - len(torch.unique(edges.edge_index[1]))),
                     sum(edges[attr].shape[1] for attr in attributes),
                     ", ".join(attributes),
                 ]
@@ -150,18 +135,48 @@ class GraphInspectorTool:
         print(
             table(
                 self.get_edge_summary(),
-                header=["Source", "Destination", "Num. edges", "Attribute dim", "Attributes"],
-                align=["<", "<", ">", ">", ">"],
+                header=[
+                    "Source",
+                    "Target",
+                    "Num. edges",
+                    "Isolated Source",
+                    "Isolated Target",
+                    "Attribute dim",
+                    "Attributes",
+                ],
+                align=["<", "<", ">", ">", ">", ">", ">"],
                 margin=3,
             )
         )
         print("🔋 Graph ready.")
         print()
 
+
+class GraphInspectorTool:
+    """Inspect the graph."""
+
+    def __init__(
+        self,
+        path: Union[str, Path],
+        output_path: Path,
+        show_attribute_distributions: Optional[bool] = True,
+        **kwargs,
+    ):
+        self.path = path
+        self.graph = torch.load(self.path)
+        self.output_path = output_path
+        self.show_attribute_distributions = show_attribute_distributions
+
+        if isinstance(self.output_path, str):
+            self.output_path = Path(self.output_path)
+
+        os.makedirs(self.output_path, exist_ok=True)
+
+        assert self.output_path.is_dir(), f"Path {self.output_path} is not a directory."
+        assert os.access(self.output_path, os.W_OK), f"Path {self.output_path} is not writable."
+
     def run_all(self):
         """Run all the inspector methods."""
-        self.describe()
-
         if self.show_attribute_distributions:
             plot_dist_edge_attributes(self.graph, self.output_path / "distribution_edge_attributes.png")
             plot_dist_node_attributes(self.graph, self.output_path / "distribution_node_attributes.png")
