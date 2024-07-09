@@ -4,7 +4,7 @@ import numpy as np
 from scipy.spatial.transform import Rotation
 
 from anemoi.graphs.generate.transforms import direction_vec
-from anemoi.graphs.generate.transforms import to_sphere_xyz
+from anemoi.graphs.generate.transforms import latlon_rad_to_cartesian
 
 
 def get_rotation_from_unit_vecs(points: np.ndarray, reference: np.ndarray) -> Rotation:
@@ -35,7 +35,7 @@ def compute_directions(loc1: np.ndarray, loc2: np.ndarray, pole_vec: Optional[np
     ----------
     loc1 : np.ndarray of shape (2, num_points)
         Location of the head nodes.
-    loc2 : np.ndarray
+    loc2 : np.ndarray of shape (2, num_points)
         Location of the tail nodes.
     pole_vec : np.ndarray, optional
         The pole vector to rotate the points to. Defaults to the north pole.
@@ -49,8 +49,8 @@ def compute_directions(loc1: np.ndarray, loc2: np.ndarray, pole_vec: Optional[np
         pole_vec = np.array([0, 0, 1])
 
     # all will be rotated relative to destination node
-    loc1_xyz = to_sphere_xyz(loc1, 1.0)
-    loc2_xyz = to_sphere_xyz(loc2, 1.0)
+    loc1_xyz = latlon_rad_to_cartesian(loc1, 1.0)
+    loc2_xyz = latlon_rad_to_cartesian(loc2, 1.0)
     r = get_rotation_from_unit_vecs(loc2_xyz, pole_vec)
     direction = direction_vec(r.apply(loc1_xyz), pole_vec)
     return direction / np.sqrt(np.power(direction, 2).sum(axis=0))
