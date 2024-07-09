@@ -199,6 +199,8 @@ class HEALPixNodes(BaseNodeBuilder):
     ----------
     resolution : int
         The resolution of the grid.
+    name : str
+        The name of the nodes.
 
     Methods
     -------
