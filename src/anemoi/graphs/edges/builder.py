@@ -39,7 +39,7 @@ class BaseEdgeBuilder(ABC):
     def get_adjacency_matrix(self, source_nodes: NodeStorage, target_nodes: NodeStorage): ...
 
     def prepare_node_data(self, graph: HeteroData) -> tuple[NodeStorage, NodeStorage]:
-        """Prepare nodes information."""
+        """Prepare node information and get source and target nodes."""
         return graph[self.source_name], graph[self.target_name]
 
     def get_edge_index(self, graph: HeteroData) -> torch.Tensor:
@@ -194,8 +194,6 @@ class CutOffEdges(BaseEdgeBuilder):
         The name of the target nodes.
     cutoff_factor : float
         Factor to multiply the grid reference distance to get the cut-off radius.
-    radius : float
-        Cut-off radius.
 
     Methods
     -------
@@ -241,7 +239,7 @@ class CutOffEdges(BaseEdgeBuilder):
         return radius
 
     def prepare_node_data(self, graph: HeteroData) -> tuple[NodeStorage, NodeStorage]:
-        """Prepare nodes information."""
+        """Prepare node information and get source and target nodes."""
         self.radius = self.get_cutoff_radius(graph)
         return super().prepare_node_data(graph)
 

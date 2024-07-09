@@ -22,6 +22,11 @@ class BaseNodeBuilder(ABC):
     """Base class for node builders.
 
     The node coordinates are stored in the `x` attribute of the nodes and they are stored in radians.
+
+    Attributes
+    ----------
+    name : str
+        name of the nodes, key for the nodes in the HeteroData graph object.
     """
 
     def __init__(self, name: str) -> None:
@@ -110,7 +115,7 @@ class ZarrDatasetNodes(BaseNodeBuilder):
 
     Attributes
     ----------
-    ds : zarr.core.Array
+    dataset : zarr.core.Array
         The dataset.
 
     Methods
@@ -127,7 +132,7 @@ class ZarrDatasetNodes(BaseNodeBuilder):
 
     def __init__(self, dataset: DotDict, name: str) -> None:
         LOGGER.info("Reading the dataset from %s.", dataset)
-        self.ds = open_dataset(dataset)
+        self.dataset = open_dataset(dataset)
         super().__init__(name)
 
     def get_coordinates(self) -> torch.Tensor:
@@ -138,7 +143,7 @@ class ZarrDatasetNodes(BaseNodeBuilder):
         torch.Tensor of shape (N, 2)
             Coordinates of the nodes.
         """
-        return self.reshape_coords(self.ds.latitudes, self.ds.longitudes)
+        return self.reshape_coords(self.dataset.latitudes, self.dataset.longitudes)
 
 
 class NPZFileNodes(BaseNodeBuilder):
@@ -203,8 +208,6 @@ class RefinedIcosahedralNodes(BaseNodeBuilder, ABC):
     ----------
     resolution : list[int] | int
         Refinement level of the mesh.
-    np_dtype : np.dtype, optional
-        The numpy data type to use, by default np.float32.
     """
 
     def __init__(
@@ -230,7 +233,6 @@ class RefinedIcosahedralNodes(BaseNodeBuilder, ABC):
         graph[self.name]["resolutions"] = self.resolutions
         graph[self.name]["nx_graph"] = self.nx_graph
         graph[self.name]["node_ordering"] = self.node_ordering
-        # TODO: AOI mask builder is not used in the current implementation.
         return super().register_attributes(graph, config)
 
 
@@ -238,7 +240,6 @@ class TriRefinedIcosahedralNodes(RefinedIcosahedralNodes):
     """It depends on the trimesh Python library."""
 
     def create_nodes(self) -> np.ndarray:
-        # TODO: AOI mask builder is not used in the current implementation.
         return create_icosahedral_nodes(resolutions=self.resolutions)
 
 
@@ -246,5 +247,4 @@ class HexRefinedIcosahedralNodes(RefinedIcosahedralNodes):
     """It depends on the h3 Python library."""
 
     def create_nodes(self) -> np.ndarray:
-        # TODO: AOI mask builder is not used in the current implementation.
         return create_hexagonal_nodes(self.resolutions)
