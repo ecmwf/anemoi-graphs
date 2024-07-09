@@ -188,5 +188,4 @@ _version.py
 *.code-workspace
 
 /config*
-outputs/
 *.pt
