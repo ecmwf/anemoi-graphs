@@ -84,7 +84,7 @@ class GraphInspectorTool:
                     name,
                     number(nodes.num_nodes),
                     ", ".join(attributes),
-                    sum(nodes[attr].shape[1] for attr in attributes),
+                    sum(nodes[attr].shape[1] for attr in attributes if isinstance(nodes[attr], torch.Tensor)),
                     number(nodes.x[:, 0].min().item() / 2 / math.pi * 360),
                     number(nodes.x[:, 0].max().item() / 2 / math.pi * 360),
                     number(nodes.x[:, 1].min().item() / 2 / math.pi * 360),
