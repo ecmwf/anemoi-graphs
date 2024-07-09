@@ -22,9 +22,8 @@ By default, the grids file are supposed to be in the `grids` folder in
 the same directory as the recipe file. The grids definition files are
 expected to be name `"grid_{resolution}.npz"`.
 
+.. note::
 
-.. note:: 
-  
    The NPZ file should contain the following keys:
 
    -  `longitudes`: The longitudes of the grid.
