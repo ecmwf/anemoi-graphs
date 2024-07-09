@@ -3,9 +3,9 @@
 ################
 
 The cut-off method is method to establish connections between two sets
-of nodes. Given two set of nodes, (`source`, `destination`), the cut-off
-method connects all source nodes, :math:`V_{src}`, in a neighbourhood of
-the destination nodes, :math:`V_{dst}`.
+of nodes. Given two set of nodes, (`source`, `target`), the cut-off
+method connects all source nodes, :math:`V_{source}`, in a neighbourhood
+of the target nodes, :math:`V_{target}`.
 
 .. image:: ../../_static/cutoff.jpg
    :alt: Cut-off radius image
@@ -18,11 +18,11 @@ The neighbourhood is defined by a `cut-off radius`, computed as,
    cutoff\_radius = cuttoff\_factor \times nodes\_reference\_dist
 
 where :math:`nodes\_reference\_dist` is the maximum distance between a
-destination node and its closest source node.
+target node and its closest source node.
 
 .. math::
 
-   nodes\_reference\_dist = \max_{x \in V_{dst}} \left\{  \min_{y \in V_{src}, y \neq x} \left\{ d(x, y) \right\} \right\}
+   nodes\_reference\_dist = \max_{x \in V_{target}} \left\{  \min_{y \in V_{source}, y \neq x} \left\{ d(x, y) \right\} \right\}
 
 where :math:`d(x, y)` is the `Haversine distance
 <https://en.wikipedia.org/wiki/Haversine_formula>`_ between nodes
@@ -36,12 +36,11 @@ YAML configuration:
 .. code:: yaml
 
    edges:
-     - nodes:
-         src_name: source
-         dst_name: destination
-       edge_builder:
-         _target_: anemoi.graphs.edges.CutOffEdges
-         cutoff_factor: 0.6
+      -  source_name: source
+         target_name: destination
+         edge_builder:
+            _target_: anemoi.graphs.edges.CutOffEdges
+            cutoff_factor: 0.6
 
 .. note::
 

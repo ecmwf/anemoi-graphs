@@ -67,6 +67,7 @@ of the *Anemoi* packages.
 
 -  :doc:`cli/introduction`
 -  :doc:`cli/create`
+-  :doc:`cli/inspect`
 
 .. toctree::
    :maxdepth: 1
@@ -75,13 +76,13 @@ of the *Anemoi* packages.
 
    cli/introduction
    cli/create
+   cli/inspect
 
 ***********
  Tutorials
 ***********
 
 -  :doc:`usage/getting_started`
--  :doc:`usage/limited_area`
 
 .. toctree::
    :maxdepth: 1
@@ -89,7 +90,6 @@ of the *Anemoi* packages.
    :caption: Usage
 
    usage/getting_started
-   usage/limited_area
 
 *****************
  Anemoi packages

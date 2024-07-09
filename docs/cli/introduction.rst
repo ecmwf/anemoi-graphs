@@ -16,6 +16,7 @@ The commands are:
     :maxdepth: 1
 
     create
+    inspect
 
 .. argparse::
     :module: anemoi.graphs.__main__

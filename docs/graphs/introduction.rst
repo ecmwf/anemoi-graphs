@@ -68,8 +68,7 @@ following classes define different behaviours:
 -  :doc:`node_coordinates/npz_file`
 -  :doc:`node_coordinates/tri_refined_icosahedron`
 -  :doc:`node_coordinates/hex_refined_icosahedron`
--  :doc:`node_coordinates/stretched_tri_refined_icosahedron`
--  :doc:`node_coordinates/rectilinear`
+-  :doc:`node_coordinates/healpix`
 
 Apart from the ``node_builder`` section, the nodes configuration may
 contain an optional ``attributes`` section to define additional node
@@ -77,5 +76,4 @@ attributes (weights, mask, ...). For example, the weights can be used to
 define the importance of each node in the loss function, or the masks
 can be used to build connections only between subsets of nodes.
 
--  :doc:`node_attributes/masks`
 -  :doc:`node_attributes/weights`

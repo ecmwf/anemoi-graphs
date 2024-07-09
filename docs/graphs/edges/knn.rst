@@ -3,7 +3,7 @@
 #####################
 
 The knn method is a method to establish connections between two sets of
-nodes. Given two set of nodes, (`source`, `destination`), the knn method
+nodes. Given two set of nodes, (`source`, `target`), the knn method
 connects all destination nodes, to its ``num_nearest_neighbours``
 closest source nodes.
 
@@ -13,12 +13,11 @@ YAML configuration:
 .. code:: yaml
 
    edges:
-     - nodes:
-         src_name: source
-         dst_name: destination
-       edge_builder:
-         _target_: anemoi.graphs.edges.KNNEdges
-         num_nearest_neighbours: 3
+     -  source_name: source
+        target_name: destination
+        edge_builder:
+          _target_: anemoi.graphs.edges.KNNEdges
+          num_nearest_neighbours: 3
 
 .. note::
 

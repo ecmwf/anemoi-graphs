@@ -20,5 +20,4 @@ nodes.
 .. toctree::
    :maxdepth: 1
 
-   node_attributes/masks
    node_attributes/weights

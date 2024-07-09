@@ -2,19 +2,25 @@
  Triangular refined Icosahedron
 ################################
 
+This class allows us to define nodes based on refining an icoshaedron
+with triangles.
+
 To define the `node coordinates` based on icosahedral refinements of an
 icosahedron, you can use the following YAML configuration:
 
 .. code:: yaml
 
    nodes:
-     - name: data
+     data:
        node_builder:
          _target_: anemoi.graphs.nodes.TriRefinedIcosahedronNodes
          resolution: 4
+       attributes: ...
 
 where resolution is the number of refinements to apply to the
 icosahedron.
 
-The class ``TriRefinedIcosahedronNodes`` requires `trimesh
-<https://trimesh.org>`_ __Python__ package.
+.. warning::
+
+   This class will require the `trimesh <https://trimesh.org>`_ package
+   to be installed. You can install it with `pip install trimesh`.

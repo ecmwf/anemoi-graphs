@@ -34,5 +34,4 @@ reach the desired resolution.
 
    node_coordinates/tri_refined_icosahedron
    node_coordinates/hex_refined_icosahedron
-   node_coordinates/stretched_tri_refined_icosahedron
-   node_coordinates/rectilinear
+   node_coordinates/healpix

@@ -13,10 +13,11 @@ the following YAML configuration:
 .. code:: yaml
 
    nodes:
-     - name: data
-       coords:
+     data:
+       node_builder:
          _target_: anemoi.graphs.nodes.ZarrDatasetNodes
          dataset: /path/to/dataset.zarr
+       attributes: ...
 
 where `dataset` is the path to the Zarr dataset. The
 ``ZarrDatasetNodes`` class supports operations compatible with
@@ -27,7 +28,7 @@ Below, an example of how to use the "cutout" operation directly within
 .. code:: yaml
 
    nodes:
-     - name: data
+     data:
        node_builder:
          _target_: anemoi.graphs.nodes.ZarrDatasetNodes
          dataset:
@@ -35,3 +36,4 @@ Below, an example of how to use the "cutout" operation directly within
              dataset: /path/to/lam_dataset.zarr
              dataset: /path/to/boundary_forcing.zarr
            adjust: "all"
+       attributes: ...

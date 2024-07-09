@@ -12,7 +12,7 @@ The simplest use case is to build an encoder-processor-decoder graph for
 a global weather model. In this case, the recipe must contain a
 ``nodes`` section where the keys will be the names of the sets of nodes,
 that will later be used to build the connections. Each nodes
-configuration must include a ``coords`` section describing how to
+configuration must include a ``node_builder`` section describing how to
 generate the nodes, and it may contain an optional ``attributes``
 section to define additional attributes (weights, mask, ...).
 
@@ -22,10 +22,11 @@ section to define additional attributes (weights, mask, ...).
 Once the nodes are defined, you need to create the edges between them
 through which information will flow. To this aim, the recipe file must
 include a ``edges`` section. These connections are defined between pairs
-of nodes (source and target, specified by `src_nodes` and `dst_nodes`).
+of nodes (source and target, specified by `source_name` and
+`target_name`).
 
 There are several methods to build these edges such as cutoff
-(`CutOffConnection`) or nearest neighbors (`KNNConnection`). For a
+(`CutOffEdges`) or nearest neighbors (`KNNEdges`). For a
 encoder-processor-decoder graph you will need to build two set of
 `edges`. Ones that connect the `data` nodes with the `hidden` nodes to
 encode the input data into the latent space, normally referred as
