@@ -188,3 +188,49 @@ class NPZFileNodes(BaseNodeBuilder):
         """
         coords = self.reshape_coords(self.grid_definition["latitudes"], self.grid_definition["longitudes"])
         return coords
+
+
+class HEALPixNodes(BaseNodeBuilder):
+    """Nodes from HEALPix grid.
+
+    HEALPix is an acronym for Hierarchical Equal Area isoLatitude Pixelization of a sphere.
+
+    Attributes
+    ----------
+    resolution : int
+        The resolution of the grid.
+
+    Methods
+    -------
+    get_coordinates()
+        Get the lat-lon coordinates of the nodes.
+    register_nodes(graph, name)
+        Register the nodes in the graph.
+    register_attributes(graph, name, config)
+        Register the attributes in the nodes of the graph specified.
+    update_graph(graph, name, attr_config)
+        Update the graph with new nodes and attributes.
+    """
+
+    def __init__(self, resolution: int) -> None:
+        self.resolution = resolution
+        assert isinstance(resolution, int), "Resolution must be an integer."
+        assert resolution > 0, "Resolution must be positive."
+
+    def get_coordinates(self) -> torch.Tensor:
+        """Get the coordinates of the nodes.
+
+        Returns
+        -------
+        torch.Tensor of shape (N, 2)
+            Coordinates of the nodes.
+        """
+        import healpy as hp
+
+        spatial_res_degrees = hp.nside2resol(2**self.resolution, arcmin=True) / 60
+        LOGGER.info(f"Creating HEALPix nodes with resolution {spatial_res_degrees:.2} deg.")
+
+        npix = hp.nside2npix(2**self.resolution)
+        hpxlon, hpxlat = hp.pix2ang(2**self.resolution, range(npix), nest=True, lonlat=True)
+
+        return self.reshape_coords(hpxlat, hpxlon)
