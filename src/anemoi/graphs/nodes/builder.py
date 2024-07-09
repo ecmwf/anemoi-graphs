@@ -211,31 +211,28 @@ class RefinedIcosahedralNodes(BaseNodeBuilder, ABC):
     def __init__(
         self,
         resolution: Union[int, list[int]],
-        np_dtype: np.dtype = np.float32,
+        name: str,
     ) -> None:
-        # TODO: Discuss np_dtype
-        self.np_dtype = np_dtype
-
         if isinstance(resolution, int):
             self.resolutions = list(range(resolution + 1))
         else:
             self.resolutions = resolution
 
-        super().__init__()
+        super().__init__(name)
 
     def get_coordinates(self) -> torch.Tensor:
         self.nx_graph, coords_rad, self.node_ordering = self.create_nodes()
-        return torch.tensor(coords_rad[self.node_ordering])
+        return torch.tensor(coords_rad[self.node_ordering], dtype=torch.float32)
 
     @abstractmethod
     def create_nodes(self) -> np.ndarray: ...
 
-    def register_attributes(self, graph: HeteroData, name: str, config: DotDict) -> HeteroData:
-        graph[name]["resolutions"] = self.resolutions
-        graph[name]["nx_graph"] = self.nx_graph
-        graph[name]["node_ordering"] = self.node_ordering
+    def register_attributes(self, graph: HeteroData, config: DotDict) -> HeteroData:
+        graph[self.name]["resolutions"] = self.resolutions
+        graph[self.name]["nx_graph"] = self.nx_graph
+        graph[self.name]["node_ordering"] = self.node_ordering
         # TODO: AOI mask builder is not used in the current implementation.
-        return super().register_attributes(graph, name, config)
+        return super().register_attributes(graph, config)
 
 
 class TriRefinedIcosahedralNodes(RefinedIcosahedralNodes):

@@ -2,32 +2,33 @@ import pytest
 import torch
 from torch_geometric.data import HeteroData
 
-from anemoi.graphs.nodes import builder
+from anemoi.graphs.nodes.builder import BaseNodeBuilder
+from anemoi.graphs.nodes.builder import HexRefinedIcosahedralNodes
 
 
 @pytest.mark.parametrize("resolution", [0, 2])
 def test_init(resolution: list[int]):
     """Test TrirefinedIcosahedralNodes initialization."""
 
-    node_builder = builder.HexRefinedIcosahedralNodes(resolution)
-    assert isinstance(node_builder, builder.BaseNodeBuilder)
-    assert isinstance(node_builder, builder.HexRefinedIcosahedralNodes)
+    node_builder = HexRefinedIcosahedralNodes(resolution, "test_nodes")
+    assert isinstance(node_builder, BaseNodeBuilder)
+    assert isinstance(node_builder, HexRefinedIcosahedralNodes)
 
 
 def test_get_coordinates():
     """Test get_coordinates method."""
-    node_builder = builder.HexRefinedIcosahedralNodes(0)
+    node_builder = HexRefinedIcosahedralNodes(0, "test_nodes")
     coords = node_builder.get_coordinates()
     assert isinstance(coords, torch.Tensor)
     assert coords.shape == (122, 2)
 
 
-def test_transform():
-    """Test transform method."""
-    node_builder = builder.HexRefinedIcosahedralNodes(0)
+def test_update_graph():
+    """Test update_graph method."""
+    node_builder = HexRefinedIcosahedralNodes(0, "test_nodes")
     graph = HeteroData()
-    graph = node_builder.transform(graph, "test", {})
-    assert "resolutions" in graph["test"]
-    assert "nx_graph" in graph["test"]
-    assert "node_ordering" in graph["test"]
-    assert len(graph["test"]["node_ordering"]) == graph["test"].num_nodes
+    graph = node_builder.update_graph(graph, {})
+    assert "resolutions" in graph["test_nodes"]
+    assert "nx_graph" in graph["test_nodes"]
+    assert "node_ordering" in graph["test_nodes"]
+    assert len(graph["test_nodes"]["node_ordering"]) == graph["test_nodes"].num_nodes

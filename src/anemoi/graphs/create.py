@@ -26,7 +26,6 @@ class GraphCreator:
         else:
             self.config = config
 
-
         self.path = path  # Output path
         self.cache = cache
         self.print = print

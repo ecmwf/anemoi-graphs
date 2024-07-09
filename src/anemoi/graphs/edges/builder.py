@@ -270,36 +270,39 @@ class CutOffEdges(BaseEdgeBuilder):
 class TriIcosahedralEdges(BaseEdgeBuilder):
     """Computes icosahedral edges and adds them to a HeteroData graph."""
 
-    def __init__(self, src_name: str, xhops: int):
-        super().__init__(src_name, src_name)
+    def __init__(self, source_name: str, target_name: str, xhops: int):
+        super().__init__(source_name, target_name)
 
+        assert source_name == target_name, "TriIcosahedralEdges requires source and target nodes to be the same."
         assert isinstance(xhops, int), "Number of xhops must be an integer"
         assert xhops > 0, "Number of xhops must be positive"
 
         self.xhops = xhops
 
-    def transform(self, graph: HeteroData, attrs_config: Optional[DotDict] = None) -> HeteroData:
+    def update_graph(self, graph: HeteroData, attrs_config: Optional[DotDict] = None) -> HeteroData:
 
         assert (
-            graph[self.src_name].node_type == TriRefinedIcosahedralNodes.__name__
-        ), "IcosahedralConnection requires TriRefinedIcosahedralNodes."
+            graph[self.source_name].node_type == TriRefinedIcosahedralNodes.__name__
+        ), f"{self.__class__.__name__} requires TriRefinedIcosahedralNodes."
 
         # TODO: Next assert doesn't exist anymore since filters were moved, make sure this is checked where appropriate
         # assert filter_src is None and filter_dst is None, "InheritConnection does not support filtering with attributes."
 
-        return super().transform(graph, attrs_config)
+        return super().update_graph(graph, attrs_config)
 
-    def get_adj_matrix(self, src_nodes: NodeStorage, dst_nodes: NodeStorage):
+    def get_adjacency_matrix(self, source_nodes: NodeStorage, target_nodes: NodeStorage):
 
-        src_nodes["nx_graph"] = icosahedral.add_edges_to_nx_graph(
-            src_nodes["nx_graph"],
-            resolutions=src_nodes["resolutions"],
+        source_nodes["nx_graph"] = icosahedral.add_edges_to_nx_graph(
+            source_nodes["nx_graph"],
+            resolutions=source_nodes["resolutions"],
             xhops=self.xhops,
         )  # HeteroData refuses to accept None
 
-        adjmat = nx.to_scipy_sparse_array(src_nodes["nx_graph"], nodelist=list(src_nodes["nx_graph"]), format="coo")
-        graph_1_sorted = dict(zip(range(len(src_nodes["nx_graph"].nodes)), list(src_nodes["nx_graph"].nodes)))
-        graph_2_sorted = dict(zip(src_nodes.node_ordering, range(len(src_nodes.node_ordering))))
+        adjmat = nx.to_scipy_sparse_array(
+            source_nodes["nx_graph"], nodelist=list(source_nodes["nx_graph"]), format="coo"
+        )
+        graph_1_sorted = dict(zip(range(len(source_nodes["nx_graph"].nodes)), list(source_nodes["nx_graph"].nodes)))
+        graph_2_sorted = dict(zip(source_nodes.node_ordering, range(len(source_nodes.node_ordering))))
         sort_func1 = np.vectorize(graph_1_sorted.get)
         sort_func2 = np.vectorize(graph_2_sorted.get)
         adjmat.row = sort_func2(sort_func1(adjmat.row))
@@ -310,35 +313,42 @@ class TriIcosahedralEdges(BaseEdgeBuilder):
 class HexagonalEdges(BaseEdgeBuilder):
     """Computes hexagonal edges and adds them to a HeteroData graph."""
 
-    def __init__(self, src_name: str, add_neighbouring_children: bool = False, depth_children: Optional[int] = 1):
-        super().__init__(src_name, src_name)
+    def __init__(
+        self,
+        source_name: str,
+        target_name: str,
+        add_neighbouring_children: bool = False,
+        depth_children: Optional[int] = 1,
+    ):
+        super().__init__(source_name, source_name)
         self.add_neighbouring_children = add_neighbouring_children
 
+        assert source_name == target_name, "TriIcosahedralEdges requires source and target nodes to be the same."
         assert isinstance(depth_children, int), "Depth of children must be an integer"
         assert depth_children > 0, "Depth of children must be positive"
         self.depth_children = depth_children
 
-    def transform(self, graph: HeteroData, attrs_config: Optional[DotDict] = None) -> HeteroData:
+    def update_graph(self, graph: HeteroData, attrs_config: Optional[DotDict] = None) -> HeteroData:
         assert (
-            graph[self.src_name].node_type == HexRefinedIcosahedralNodes.__name__
-        ), "HexagonalEdges requires HexRefinedIcosahedralNodes."
+            graph[self.source_name].node_type == HexRefinedIcosahedralNodes.__name__
+        ), f"{self.__class__.__name__} requires HexRefinedIcosahedralNodes."
 
         # TODO: Next assert doesn't exist anymore since filters were moved, make sure this is checked where appropriate
         # assert filter_src is None and filter_dst is None, "InheritConnection does not support filtering with attributes."
 
-        return super().transform(graph, attrs_config)
+        return super().update_graph(graph, attrs_config)
 
-    def get_adj_matrix(self, src_nodes: NodeStorage, dst_nodes: NodeStorage):
+    def get_adjacency_matrix(self, source_nodes: NodeStorage, target_nodes: NodeStorage):
 
-        src_nodes["nx_graph"] = hexagonal.add_edges_to_nx_graph(
-            src_nodes["nx_graph"],
-            resolutions=src_nodes["resolutions"],
+        source_nodes["nx_graph"] = hexagonal.add_edges_to_nx_graph(
+            source_nodes["nx_graph"],
+            resolutions=source_nodes["resolutions"],
             neighbour_children=self.add_neighbouring_children,
             depth_children=self.depth_children,
         )
 
-        adjmat = nx.to_scipy_sparse_array(src_nodes["nx_graph"], format="coo")
-        graph_2_sorted = dict(zip(src_nodes["node_ordering"], range(len(src_nodes.node_ordering))))
+        adjmat = nx.to_scipy_sparse_array(source_nodes["nx_graph"], format="coo")
+        graph_2_sorted = dict(zip(source_nodes["node_ordering"], range(len(source_nodes.node_ordering))))
         sort_func = np.vectorize(graph_2_sorted.get)
         adjmat.row = sort_func(adjmat.row)
         adjmat.col = sort_func(adjmat.col)
