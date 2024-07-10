@@ -2,8 +2,8 @@
  HEALPix Nodes
 ###############
 
-This method allows us to define nodes based on Hierarchical Equal Area
-isoLatitude Pixelization of a sphere (HEALPix). The resolution of the
+This method allows us to define nodes based on the Hierarchical Equal
+Area isoLatitude Pixelation of a sphere (HEALPix). The resolution of the
 HEALPix grid is defined by the `resolution` parameter, which corresponds
 to the number of refinements of the sphere.
 

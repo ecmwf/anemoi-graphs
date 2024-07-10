@@ -12,9 +12,8 @@ for each (`source name`, `target name`) pair specified.
 .. code:: yaml
 
    edges:
-     - nodes:
-         src_name: data
-         dst_name: hidden
+     - source_name: data
+       target_name: hidden
        edge_builder:
          _target_: anemoi.graphs.edges.CutOff
          cutoff_factor: 0.7

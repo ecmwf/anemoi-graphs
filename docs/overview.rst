@@ -30,17 +30,17 @@ Similarly, the edges :math:`V` can be classified into 3 categories:
    data.
 
 When building the graph with `anemoi-graphs`, there is no difference
-between these categories. But it is important to have this distinction
-in mind when designing a weather graph that will be used in a
+between these categories. However, it is important to keep this
+distinction in mind when designing a weather graph to be used in a
 data-driven model with :ref:`anemoi-training
 <anemoi-training:index-page>`.
 
 *******************
- Desing principles
+ Design principles
 *******************
 
-Particularly, when designing a graph for weather model, you may want to
-follow the guidelines below:
+In particular, when designing a graph for a weather model, the following
+guidelines should be followed:
 
 -  Use a coarser resolution for the `hidden nodes`. This will reduce the
    computational cost of training and inference.
@@ -50,10 +50,10 @@ follow the guidelines below:
    `hidden nodes`. This will reduce the computational cost.
 -  All output nodes should have incoming connections from a few
    surrounding `hidden nodes`.
--  The number of incoming connections in each set of nodes is desired to
-   be similar, in order to make training more stable.
--  Think whether your use case requires long-range connections between
-   the `hidden nodes` or not.
+-  The number of incoming connections in each set of nodes should be be
+   similar to make the training more stable.
+-  Think whether or not your use case requires long-range connections
+   between the `hidden nodes` or not.
 
 ************
  Installing

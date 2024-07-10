@@ -15,11 +15,11 @@ following YAML configuration:
          resolution: o48
 
 where `grids_definition_path` is the path to the folder containing the
-grids definition files and `resolution` is the resolution of the grid to
-use.
+grid definition files and `resolution` is the resolution of the grid to
+be used.
 
-By default, the grids file are supposed to be in the `grids` folder in
-the same directory as the recipe file. The grids definition files are
+By default, the grid files are supposed to be in the `grids` folder in
+the same directory as the recipe file. The grid definition files are
 expected to be name `"grid_{resolution}.npz"`.
 
 .. note::

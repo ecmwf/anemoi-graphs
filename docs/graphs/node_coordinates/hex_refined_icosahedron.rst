@@ -2,13 +2,13 @@
  Hexagonal refined Icosahedron
 ###############################
 
-This method allow us to define the nodes based on the Hexagonal
+This method allows us to define the nodes based on the Hexagonal
 Hierarchical Geospatial Indexing System, which uses hexagons to divide
 the sphere. With each refinement, each hexagon into seven smaller
 hexagons.
 
-To define the `node coordinates` based on hexagonal refinements of an
-icosahedron, you can use the following YAML configuration:
+To define the `node coordinates` based on the hexagonal refinements of
+an icosahedron, you can use the following YAML configuration:
 
 .. code:: yaml
 
@@ -19,7 +19,7 @@ icosahedron, you can use the following YAML configuration:
          resolution: 4
        attributes: ...
 
-where resolution is the number of refinements to apply.
+where resolution is the number of refinements to be applied.
 
 .. csv-table:: Hexagonal Hierarchical refinements specifications
    :file: ./hex_refined.csv

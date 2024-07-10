@@ -2,9 +2,9 @@
  From Zarr dataset
 ###################
 
-This class build a set of nodes from a Zarr dataset. The nodes are
-defined by the coordinates of the dataset. The Zarr ZarrDataset supports
-operations compatible with :ref:`anemoi-datasets
+This class builds a set of nodes from a Zarr dataset. The nodes are
+defined by the coordinates of the dataset. The ZarrDataset class
+supports operations compatible with :ref:`anemoi-datasets
 <anemoi-datasets:index-page>`.
 
 To define the `node coordinates` based on a Zarr dataset, you can use

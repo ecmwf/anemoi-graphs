@@ -2,8 +2,8 @@
  Triangular refined Icosahedron
 ################################
 
-This class allows us to define nodes based on refining an icoshaedron
-with triangles.
+This class allows us to define nodes based on iterative refinements of
+an icoshaedron with triangles.
 
 To define the `node coordinates` based on icosahedral refinements of an
 icosahedron, you can use the following YAML configuration:
@@ -17,7 +17,7 @@ icosahedron, you can use the following YAML configuration:
          resolution: 4
        attributes: ...
 
-where resolution is the number of refinements to apply to the
+where resolution is the number of refinements to be applied to the
 icosahedron.
 
 .. warning::
