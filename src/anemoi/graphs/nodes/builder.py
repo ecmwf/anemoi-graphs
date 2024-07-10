@@ -111,13 +111,11 @@ class ZarrDatasetNodes(BaseNodeBuilder):
 
     Methods
     -------
-    get_coordinates()
-        Get the lat-lon coordinates of the nodes.
-    register_nodes(graph, name)
+    register_nodes(graph)
         Register the nodes in the graph.
-    register_attributes(graph, name, config)
+    register_attributes(graph, config)
         Register the attributes in the nodes of the graph specified.
-    update_graph(graph, name, attr_config)
+    update_graph(graph, attr_config)
         Update the graph with new nodes and attributes.
     """
 
@@ -151,13 +149,11 @@ class NPZFileNodes(BaseNodeBuilder):
 
     Methods
     -------
-    get_coordinates()
-        Get the lat-lon coordinates of the nodes.
-    register_nodes(graph, name)
+    register_nodes(graph)
         Register the nodes in the graph.
-    register_attributes(graph, name, config)
+    register_attributes(graph, config)
         Register the attributes in the nodes of the graph specified.
-    update_graph(graph, name, attr_config)
+    update_graph(graph, attr_config)
         Update the graph with new nodes and attributes.
     """
 

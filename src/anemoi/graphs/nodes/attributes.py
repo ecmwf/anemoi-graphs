@@ -54,7 +54,13 @@ class BaseWeights(ABC, NormalizerMixin):
 
 
 class UniformWeights(BaseWeights):
-    """Implements a uniform weight for the nodes."""
+    """Implements a uniform weight for the nodes.
+    
+    Methods
+    -------
+    compute(self, graph, nodes_name)
+        Compute the area attributes for each node.
+    """
 
     def get_raw_values(self, nodes: NodeStorage, *args, **kwargs) -> np.ndarray:
         """Compute the weights.
@@ -86,9 +92,7 @@ class AreaWeights(BaseWeights):
 
     Methods
     -------
-    get_raw_values(nodes, *args, **kwargs)
-        Compute the area associated to each node.
-    compute(nodes, *args, **kwargs)
+    compute(self, graph, nodes_name)
         Compute the area attributes for each node.
     """
 
