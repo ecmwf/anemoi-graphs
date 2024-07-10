@@ -208,16 +208,8 @@ class CutOffEdges(BaseEdgeBuilder):
     def get_cutoff_radius(self, graph: HeteroData, mask_attr: Optional[torch.Tensor] = None):
         """Compute the cut-off radius.
 
-        The cut-off radius is computed as the product of the target nodes reference distance and the cut-off factor.
-
-        .. math::
-            r_{\text{cut-off}} = r_{\text{ref}} \times \text{cutoff\_factor}
-
-        where :math:`r_{\text{ref}}` is the reference distance of the target nodes  :math:`V_{target}`, computed as
-
-        .. math::
-
-            r_{\text{ref}} = \max_{x \in V_{target}} \left\{  \min_{y \in V_{source}, y \neq x} \left\{ d(x, y) \right\} \right\}
+        The cut-off radius is computed as the product of the target nodes
+        reference distance and the cut-off factor.
 
         Parameters
         ----------

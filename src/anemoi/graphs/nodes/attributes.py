@@ -55,7 +55,7 @@ class BaseWeights(ABC, NormalizerMixin):
 
 class UniformWeights(BaseWeights):
     """Implements a uniform weight for the nodes.
-    
+
     Methods
     -------
     compute(self, graph, nodes_name)
