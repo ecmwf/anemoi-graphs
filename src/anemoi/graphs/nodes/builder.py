@@ -199,7 +199,7 @@ class NPZFileNodes(BaseNodeBuilder):
         return coords
 
 
-class MultiScaleNodes(BaseNodeBuilder, ABC):
+class IcosahedralNodes(BaseNodeBuilder, ABC):
     """Processor mesh based on a triangular mesh.
 
     It is based on the icosahedral mesh, which is a mesh of triangles that covers the sphere.
@@ -236,14 +236,14 @@ class MultiScaleNodes(BaseNodeBuilder, ABC):
         return super().register_attributes(graph, config)
 
 
-class TriIcosahedralNodes(MultiScaleNodes):
+class TriNodes(IcosahedralNodes):
     """It depends on the trimesh Python library."""
 
     def create_nodes(self) -> np.ndarray:
         return create_icosahedral_nodes(resolutions=self.resolutions)
 
 
-class HexagonalNodes(MultiScaleNodes):
+class HexNodes(IcosahedralNodes):
     """It depends on the h3 Python library."""
 
     def create_nodes(self) -> np.ndarray:
