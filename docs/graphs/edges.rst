@@ -6,7 +6,7 @@
 
 Once the `nodes`, :math:`V`, are defined, you can create the `edges`,
 :math:`E`, that will connect them. These connections are listed in the
-``edges`` section of the recipe file, and they are build independently
+``edges`` section of the recipe file, and they are created independently
 for each (`source name`, `target name`) pair specified.
 
 .. code:: yaml
@@ -18,7 +18,7 @@ for each (`source name`, `target name`) pair specified.
          _target_: anemoi.graphs.edges.CutOff
          cutoff_factor: 0.7
 
-Below, you can find the available methods to build the edges:
+Below are the available methods for defining the edges:
 
 .. toctree::
    :maxdepth: 1

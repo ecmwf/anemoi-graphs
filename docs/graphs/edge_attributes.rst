@@ -11,16 +11,16 @@ package:
  Edge length
 *************
 
-The `edge length` is a scalar value that represents the distance between
+The `edge length` is a scalar value representing the distance between
 the source and target nodes. This attribute is calculated using the
-Haversine formula, which is a method to calculate the distance between
-two points on the Earth surface given their latitude and longitude
+Haversine formula, which is a method of calculating the distance between
+two points on the Earth's surface given their latitude and longitude
 coordinates.
 
 .. code:: yaml
 
    edges:
-     - nodes: ...
+     - ...
        edge_builder: ...
        attributes:
          edge_length:
@@ -30,14 +30,14 @@ coordinates.
  Edge direction
 ****************
 
-The `edge direction` is a 2D vector that represents the direction of the
-edge. This attribute is calculated using the difference between the
+The `edge direction` is a 2D vector representing the direction of the
+edge. This attribute is calculated from the difference between the
 latitude and longitude coordinates of the source and target nodes.
 
 .. code:: yaml
 
    edges:
-     - nodes: ...
+     - ...
        edge_builder: ...
        attributes:
          edge_length:
