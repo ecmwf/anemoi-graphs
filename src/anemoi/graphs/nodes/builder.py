@@ -23,6 +23,11 @@ class BaseNodeBuilder(ABC):
     """Base class for node builders.
 
     The node coordinates are stored in the `x` attribute of the nodes and they are stored in radians.
+
+    Attributes
+    ----------
+    name : str
+        name of the nodes, key for the nodes in the HeteroData graph object.
     """
 
     def __init__(self, name: str) -> None:
@@ -113,7 +118,7 @@ class ZarrDatasetNodes(BaseNodeBuilder):
 
     Attributes
     ----------
-    ds : zarr.core.Array
+    dataset : zarr.core.Array
         The dataset.
 
     Methods
@@ -130,7 +135,7 @@ class ZarrDatasetNodes(BaseNodeBuilder):
 
     def __init__(self, dataset: DotDict, name: str) -> None:
         LOGGER.info("Reading the dataset from %s.", dataset)
-        self.ds = open_dataset(dataset)
+        self.dataset = open_dataset(dataset)
         super().__init__(name)
 
     def get_coordinates(self) -> torch.Tensor:
@@ -254,7 +259,7 @@ class AreaNPZFileNodes(NPZFileNodes):
         return coords
 
 
-class RefinedIcosahedralNodes(BaseNodeBuilder, ABC):
+class IcosahedralNodes(BaseNodeBuilder, ABC):
     """Processor mesh based on a triangular mesh.
 
     It is based on the icosahedral mesh, which is a mesh of triangles that covers the sphere.
@@ -263,8 +268,6 @@ class RefinedIcosahedralNodes(BaseNodeBuilder, ABC):
     ----------
     resolution : list[int] | int
         Refinement level of the mesh.
-    np_dtype : np.dtype, optional
-        The numpy data type to use, by default np.float32.
     """
 
     def __init__(
@@ -294,21 +297,21 @@ class RefinedIcosahedralNodes(BaseNodeBuilder, ABC):
         return super().register_attributes(graph, config)
 
 
-class TriRefinedIcosahedralNodes(RefinedIcosahedralNodes):
+class TriNodes(IcosahedralNodes):
     """It depends on the trimesh Python library."""
 
     def create_nodes(self) -> np.ndarray:
         return create_icosahedral_nodes(resolutions=self.resolutions)
 
 
-class HexRefinedIcosahedralNodes(RefinedIcosahedralNodes):
+class HexNodes(IcosahedralNodes):
     """It depends on the h3 Python library."""
 
     def create_nodes(self) -> np.ndarray:
         return create_hexagonal_nodes(self.resolutions)
 
 
-class AreaTriRefinedIcosahedralNodes(TriRefinedIcosahedralNodes):
+class AreaTriRefinedIcosahedralNodes(TriNodes):
     """Class to build icosahedral nodes with a limited area of interest."""
 
     def __init__(
@@ -329,7 +332,7 @@ class AreaTriRefinedIcosahedralNodes(TriRefinedIcosahedralNodes):
         return super().register_nodes(graph)
 
 
-class AreaHexRefinedIcosahedralNodes(HexRefinedIcosahedralNodes):
+class AreaHexRefinedIcosahedralNodes(HexNodes):
     """Class to build icosahedral nodes with a limited area of interest."""
 
     def __init__(

@@ -2,7 +2,7 @@ import pytest
 from torch_geometric.data import HeteroData
 
 from anemoi.graphs.edges import TriIcosahedralEdges
-from anemoi.graphs.nodes import TriRefinedIcosahedralNodes
+from anemoi.graphs.nodes import TriNodes
 
 
 class TestTriIcosahedralEdgesInit:
@@ -28,7 +28,7 @@ class TestTriIcosahedralEdgesTransform:
     def ico_graph(self) -> HeteroData:
         """Return a HeteroData object with TriRefinedIcosahedralNodes."""
         graph = HeteroData()
-        graph = TriRefinedIcosahedralNodes(1, "test_nodes").update_graph(graph, {})
+        graph = TriNodes(1, "test_nodes").update_graph(graph, {})
         graph["fail_nodes"].x = [1, 2, 3]
         graph["fail_nodes"].node_type = "FailNodes"
         return graph

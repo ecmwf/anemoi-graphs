@@ -15,8 +15,9 @@ from torch_geometric.data.storage import NodeStorage
 from anemoi.graphs import EARTH_RADIUS
 from anemoi.graphs.generate import hexagonal
 from anemoi.graphs.generate import icosahedral
-from anemoi.graphs.nodes.builder import HexRefinedIcosahedralNodes
-from anemoi.graphs.nodes.builder import TriRefinedIcosahedralNodes
+from anemoi.graphs.nodes.builder import BaseNodeBuilder
+from anemoi.graphs.nodes.builder import HexNodes
+from anemoi.graphs.nodes.builder import TriNodes
 from anemoi.graphs.utils import get_grid_reference_distance
 
 LOGGER = logging.getLogger(__name__)
@@ -38,7 +39,7 @@ class BaseEdgeBuilder(ABC):
     def get_adjacency_matrix(self, source_nodes: NodeStorage, target_nodes: NodeStorage): ...
 
     def prepare_node_data(self, graph: HeteroData) -> tuple[NodeStorage, NodeStorage]:
-        """Prepare nodes information."""
+        """Prepare node information and get source and target nodes."""
         return graph[self.source_name], graph[self.target_name]
 
     def get_edge_index(self, graph: HeteroData) -> torch.Tensor:
@@ -193,8 +194,6 @@ class CutOffEdges(BaseEdgeBuilder):
         The name of the target nodes.
     cutoff_factor : float
         Factor to multiply the grid reference distance to get the cut-off radius.
-    radius : float
-        Cut-off radius.
 
     Methods
     -------
@@ -240,7 +239,7 @@ class CutOffEdges(BaseEdgeBuilder):
         return radius
 
     def prepare_node_data(self, graph: HeteroData) -> tuple[NodeStorage, NodeStorage]:
-        """Prepare nodes information."""
+        """Prepare node information and get source and target nodes."""
         self.radius = self.get_cutoff_radius(graph)
         return super().prepare_node_data(graph)
 
@@ -267,31 +266,42 @@ class CutOffEdges(BaseEdgeBuilder):
         return adj_matrix
 
 
-class TriIcosahedralEdges(BaseEdgeBuilder):
-    """Computes icosahedral edges and adds them to a HeteroData graph."""
+class MultiScaleEdges(BaseEdgeBuilder, ABC):
+    """Base class for multi-scale edges in the nodes of a graph."""
 
     def __init__(self, source_name: str, target_name: str, xhops: int):
         super().__init__(source_name, target_name)
-
-        assert source_name == target_name, "TriIcosahedralEdges requires source and target nodes to be the same."
+        assert source_name == target_name, f"{self.__class__.__name__} requires source and target nodes to be the same."
         assert isinstance(xhops, int), "Number of xhops must be an integer"
         assert xhops > 0, "Number of xhops must be positive"
-
         self.xhops = xhops
 
-    def update_graph(self, graph: HeteroData, attrs_config: Optional[DotDict] = None) -> HeteroData:
+    @abstractmethod
+    def base_node_class(self) -> BaseNodeBuilder: ...
 
+    def post_process_adjmat(self, nodes: NodeStorage, adjmat):
+        graph_sorted = dict(zip(nodes["node_ordering"], range(len(nodes.node_ordering))))
+        sort_func = np.vectorize(graph_sorted.get)
+        adjmat.row = sort_func(adjmat.row)
+        adjmat.col = sort_func(adjmat.col)
+        return adjmat
+
+    def update_graph(self, graph: HeteroData, attrs_config: DotDict | None = None) -> HeteroData:
         assert (
-            graph[self.source_name].node_type == TriRefinedIcosahedralNodes.__name__
-        ), f"{self.__class__.__name__} requires TriRefinedIcosahedralNodes."
-
-        # TODO: Next assert doesn't exist anymore since filters were moved, make sure this is checked where appropriate
-        # assert filter_src is None and filter_dst is None, "InheritConnection does not support filtering with attributes."
+            graph[self.source_name].node_type == self.base_node_class.__name__
+        ), f"{self.__class__.__name__} requires {self.base_node_class.__name__}."
 
         return super().update_graph(graph, attrs_config)
 
-    def get_adjacency_matrix(self, source_nodes: NodeStorage, target_nodes: NodeStorage):
 
+class TriIcosahedralEdges(MultiScaleEdges):
+    """Computes icosahedral edges and adds them to a HeteroData graph."""
+
+    @property
+    def base_node_class(self) -> BaseNodeBuilder:
+        return TriNodes
+
+    def get_adjacency_matrix(self, source_nodes: NodeStorage, target_nodes: NodeStorage):
         source_nodes["nx_graph"] = icosahedral.add_edges_to_nx_graph(
             source_nodes["nx_graph"],
             resolutions=source_nodes["resolutions"],
@@ -302,54 +312,28 @@ class TriIcosahedralEdges(BaseEdgeBuilder):
             source_nodes["nx_graph"], nodelist=list(source_nodes["nx_graph"]), format="coo"
         )
         graph_1_sorted = dict(zip(range(len(source_nodes["nx_graph"].nodes)), list(source_nodes["nx_graph"].nodes)))
-        graph_2_sorted = dict(zip(source_nodes.node_ordering, range(len(source_nodes.node_ordering))))
         sort_func1 = np.vectorize(graph_1_sorted.get)
-        sort_func2 = np.vectorize(graph_2_sorted.get)
-        adjmat.row = sort_func2(sort_func1(adjmat.row))
-        adjmat.col = sort_func2(sort_func1(adjmat.col))
+        adjmat.row = sort_func1(adjmat.row)
+        adjmat.col = sort_func1(adjmat.col)
+
+        self.post_process_adjmat(source_nodes, adjmat)
         return adjmat
 
 
-class HexagonalEdges(BaseEdgeBuilder):
+class HexagonalEdges(MultiScaleEdges):
     """Computes hexagonal edges and adds them to a HeteroData graph."""
 
-    def __init__(
-        self,
-        source_name: str,
-        target_name: str,
-        add_neighbouring_children: bool = False,
-        depth_children: Optional[int] = 1,
-    ):
-        super().__init__(source_name, source_name)
-        self.add_neighbouring_children = add_neighbouring_children
-
-        assert source_name == target_name, "TriIcosahedralEdges requires source and target nodes to be the same."
-        assert isinstance(depth_children, int), "Depth of children must be an integer"
-        assert depth_children > 0, "Depth of children must be positive"
-        self.depth_children = depth_children
-
-    def update_graph(self, graph: HeteroData, attrs_config: Optional[DotDict] = None) -> HeteroData:
-        assert (
-            graph[self.source_name].node_type == HexRefinedIcosahedralNodes.__name__
-        ), f"{self.__class__.__name__} requires HexRefinedIcosahedralNodes."
-
-        # TODO: Next assert doesn't exist anymore since filters were moved, make sure this is checked where appropriate
-        # assert filter_src is None and filter_dst is None, "InheritConnection does not support filtering with attributes."
-
-        return super().update_graph(graph, attrs_config)
+    @property
+    def base_node_class(self) -> BaseNodeBuilder:
+        return HexNodes
 
     def get_adjacency_matrix(self, source_nodes: NodeStorage, target_nodes: NodeStorage):
-
         source_nodes["nx_graph"] = hexagonal.add_edges_to_nx_graph(
             source_nodes["nx_graph"],
             resolutions=source_nodes["resolutions"],
-            neighbour_children=self.add_neighbouring_children,
-            depth_children=self.depth_children,
+            xhops=self.xhops,
         )
 
         adjmat = nx.to_scipy_sparse_array(source_nodes["nx_graph"], format="coo")
-        graph_2_sorted = dict(zip(source_nodes["node_ordering"], range(len(source_nodes.node_ordering))))
-        sort_func = np.vectorize(graph_2_sorted.get)
-        adjmat.row = sort_func(adjmat.row)
-        adjmat.col = sort_func(adjmat.col)
+        self.post_process_adjmat(source_nodes, adjmat)
         return adjmat
