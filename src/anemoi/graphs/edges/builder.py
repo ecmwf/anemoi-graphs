@@ -280,7 +280,7 @@ class MultiScaleEdges(BaseEdgeBuilder, ABC):
     def base_node_class(self) -> BaseNodeBuilder: ...
 
     def post_process_adjmat(self, nodes: NodeStorage, adjmat):
-        graph_sorted = dict(zip(nodes["node_ordering"], range(len(nodes.node_ordering))))
+        graph_sorted = dict(zip(nodes["_node_ordering"], range(len(nodes["_node_ordering"]))))
         sort_func = np.vectorize(graph_sorted.get)
         adjmat.row = sort_func(adjmat.row)
         adjmat.col = sort_func(adjmat.col)
@@ -302,16 +302,16 @@ class TriIcosahedralEdges(MultiScaleEdges):
         return TriNodes
 
     def get_adjacency_matrix(self, source_nodes: NodeStorage, target_nodes: NodeStorage):
-        source_nodes["nx_graph"] = icosahedral.add_edges_to_nx_graph(
-            source_nodes["nx_graph"],
-            resolutions=source_nodes["resolutions"],
+        source_nodes["_nx_graph"] = icosahedral.add_edges_to_nx_graph(
+            source_nodes["_nx_graph"],
+            resolutions=source_nodes["_resolutions"],
             xhops=self.xhops,
         )  # HeteroData refuses to accept None
 
         adjmat = nx.to_scipy_sparse_array(
-            source_nodes["nx_graph"], nodelist=list(source_nodes["nx_graph"]), format="coo"
+            source_nodes["_nx_graph"], nodelist=list(source_nodes["_nx_graph"]), format="coo"
         )
-        graph_1_sorted = dict(zip(range(len(source_nodes["nx_graph"].nodes)), list(source_nodes["nx_graph"].nodes)))
+        graph_1_sorted = dict(zip(range(len(source_nodes["_nx_graph"].nodes)), list(source_nodes["_nx_graph"].nodes)))
         sort_func1 = np.vectorize(graph_1_sorted.get)
         adjmat.row = sort_func1(adjmat.row)
         adjmat.col = sort_func1(adjmat.col)
@@ -328,12 +328,12 @@ class HexagonalEdges(MultiScaleEdges):
         return HexNodes
 
     def get_adjacency_matrix(self, source_nodes: NodeStorage, target_nodes: NodeStorage):
-        source_nodes["nx_graph"] = hexagonal.add_edges_to_nx_graph(
-            source_nodes["nx_graph"],
-            resolutions=source_nodes["resolutions"],
+        source_nodes["_nx_graph"] = hexagonal.add_edges_to_nx_graph(
+            source_nodes["_nx_graph"],
+            resolutions=source_nodes["_resolutions"],
             xhops=self.xhops,
         )
 
-        adjmat = nx.to_scipy_sparse_array(source_nodes["nx_graph"], format="coo")
+        adjmat = nx.to_scipy_sparse_array(source_nodes["_nx_graph"], format="coo")
         self.post_process_adjmat(source_nodes, adjmat)
         return adjmat
