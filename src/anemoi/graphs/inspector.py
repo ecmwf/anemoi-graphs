@@ -21,6 +21,7 @@ logger = logging.getLogger(__name__)
 
 class GraphDescription:
     """Class for descripting the graph."""
+
     def __init__(self, path: Union[str, Path], **kwargs):
         self.path = path
         self.graph = torch.load(self.path)
