@@ -105,10 +105,10 @@ def plot_interactive_subgraph(
         fig.show()
 
 
-def plot_orphan_nodes(graph: HeteroData, out_file: Optional[Union[str, Path]] = None) -> None:
-    """Plot orphan nodes.
+def plot_isolated_nodes(graph: HeteroData, out_file: Optional[Union[str, Path]] = None) -> None:
+    """Plot isolated nodes.
 
-    This method creates an interactive visualization of the orphan nodes in the graph.
+    This method creates an interactive visualization of the isolated nodes in the graph.
 
     Parameters
     ----------
@@ -117,24 +117,24 @@ def plot_orphan_nodes(graph: HeteroData, out_file: Optional[Union[str, Path]] = 
     out_file : str | Path, optional
         Name of the file to save the plot. Default is None.
     """
-    orphans = {}
+    isolated = {}
     for (src_nodes, _, dst_nodes), sub_graph in graph.edge_items():
-        head_orphans = np.ones(graph[src_nodes].num_nodes, dtype=bool)
-        tail_orphans = np.ones(graph[dst_nodes].num_nodes, dtype=bool)
-        head_orphans[sub_graph.edge_index[0]] = False
-        tail_orphans[sub_graph.edge_index[1]] = False
-        if np.any(head_orphans):
-            orphans[f"{src_nodes} orphans (--> {dst_nodes})"] = node_list(graph, src_nodes, mask=list(head_orphans))
-        if np.any(tail_orphans):
-            orphans[f"{dst_nodes} orphans ({src_nodes} -->)"] = node_list(graph, dst_nodes, mask=list(tail_orphans))
+        head_isolated = np.ones(graph[src_nodes].num_nodes, dtype=bool)
+        tail_isolated = np.ones(graph[dst_nodes].num_nodes, dtype=bool)
+        head_isolated[sub_graph.edge_index[0]] = False
+        tail_isolated[sub_graph.edge_index[1]] = False
+        if np.any(head_isolated):
+            isolated[f"{src_nodes} isolated (--> {dst_nodes})"] = node_list(graph, src_nodes, mask=list(head_isolated))
+        if np.any(tail_isolated):
+            isolated[f"{dst_nodes} isolated ({src_nodes} -->)"] = node_list(graph, dst_nodes, mask=list(tail_isolated))
 
-    if len(orphans) == 0:
+    if len(isolated) == 0:
         logger.info("No orphan nodes found.")
         return
 
-    colorbar = plt.cm.rainbow(np.linspace(0, 1, len(orphans)))
+    colorbar = plt.cm.rainbow(np.linspace(0, 1, len(isolated)))
     nodes = []
-    for name, (lat, lon) in orphans.items():
+    for name, (lat, lon) in isolated.items():
         nodes.append(
             go.Scattergeo(
                 lat=lat,
