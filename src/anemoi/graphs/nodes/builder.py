@@ -223,7 +223,7 @@ class NPZFileNodes(BaseNodeBuilder):
         return coords
 
 
-class AreaNPZFileNodes(NPZFileNodes):
+class LimitedAreaNPZFileNodes(NPZFileNodes):
     """Processor mesh based on an NPZ defined grids using an area of interest."""
 
     def __init__(
@@ -311,7 +311,7 @@ class HexNodes(IcosahedralNodes):
         return create_hexagonal_nodes(self.resolutions)
 
 
-class AreaTriRefinedIcosahedralNodes(TriNodes):
+class LimitedAreaTriNodes(TriNodes):
     """Class to build icosahedral nodes with a limited area of interest."""
 
     def __init__(
@@ -332,7 +332,7 @@ class AreaTriRefinedIcosahedralNodes(TriNodes):
         return super().register_nodes(graph)
 
 
-class AreaHexRefinedIcosahedralNodes(HexNodes):
+class LimitedAreaHexNodes(HexNodes):
     """Class to build icosahedral nodes with a limited area of interest."""
 
     def __init__(

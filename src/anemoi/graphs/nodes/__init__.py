@@ -1,7 +1,7 @@
-from .builder import AreaHexRefinedIcosahedralNodes
-from .builder import AreaNPZFileNodes
-from .builder import AreaTriRefinedIcosahedralNodes
 from .builder import HexNodes
+from .builder import LimitedAreaHexNodes
+from .builder import LimitedAreaNPZFileNodes
+from .builder import LimitedAreaTriNodes
 from .builder import LimitedAreaZarrDatasetNodes
 from .builder import NPZFileNodes
 from .builder import TriNodes
@@ -13,7 +13,7 @@ __all__ = [
     "TriNodes",
     "HexNodes",
     "LimitedAreaZarrDatasetNodes",
-    "AreaNPZFileNodes",
-    "AreaTriRefinedIcosahedralNodes",
-    "AreaHexRefinedIcosahedralNodes",
+    "LimitedAreaNPZFileNodes",
+    "LimitedAreaTriNodes",
+    "LimitedAreaHexNodes",
 ]
