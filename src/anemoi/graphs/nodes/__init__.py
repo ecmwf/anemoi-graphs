@@ -1,6 +1,6 @@
-from .builder import HexRefinedIcosahedralNodes
+from .builder import HexagonalNodes
 from .builder import NPZFileNodes
-from .builder import TriRefinedIcosahedralNodes
+from .builder import TriIcosahedralNodes
 from .builder import ZarrDatasetNodes
 
-__all__ = ["ZarrDatasetNodes", "NPZFileNodes", "TriRefinedIcosahedralNodes", "HexRefinedIcosahedralNodes"]
+__all__ = ["ZarrDatasetNodes", "NPZFileNodes", "TriIcosahedralNodes", "HexagonalNodes"]

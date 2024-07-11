@@ -16,8 +16,8 @@ from anemoi.graphs import EARTH_RADIUS
 from anemoi.graphs.generate import hexagonal
 from anemoi.graphs.generate import icosahedral
 from anemoi.graphs.nodes.builder import BaseNodeBuilder
-from anemoi.graphs.nodes.builder import HexRefinedIcosahedralNodes
-from anemoi.graphs.nodes.builder import TriRefinedIcosahedralNodes
+from anemoi.graphs.nodes.builder import HexagonalNodes
+from anemoi.graphs.nodes.builder import TriIcosahedralNodes
 from anemoi.graphs.utils import get_grid_reference_distance
 
 LOGGER = logging.getLogger(__name__)
@@ -299,7 +299,7 @@ class TriIcosahedralEdges(MultiScaleEdges):
 
     @property
     def base_node_class(self) -> BaseNodeBuilder:
-        return TriRefinedIcosahedralNodes
+        return TriIcosahedralNodes
 
     def get_adjacency_matrix(self, source_nodes: NodeStorage, target_nodes: NodeStorage):
         source_nodes["nx_graph"] = icosahedral.add_edges_to_nx_graph(
@@ -325,7 +325,7 @@ class HexagonalEdges(MultiScaleEdges):
 
     @property
     def base_node_class(self) -> BaseNodeBuilder:
-        return HexRefinedIcosahedralNodes
+        return HexagonalNodes
 
     def get_adjacency_matrix(self, source_nodes: NodeStorage, target_nodes: NodeStorage):
         source_nodes["nx_graph"] = hexagonal.add_edges_to_nx_graph(
