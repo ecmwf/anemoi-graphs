@@ -63,7 +63,7 @@ class GraphCreator:
         """Save the graph to the output path."""
         if not os.path.exists(self.path) or self.overwrite:
             torch.save(graph, self.path)
-            self.print(f"Graph saved at {self.path}.")
+            LOGGER.info(f"Graph saved at {self.path}.")
 
     def create(self) -> HeteroData:
         """Create the graph and save it to the output path."""
