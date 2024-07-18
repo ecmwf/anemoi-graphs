@@ -183,13 +183,12 @@ class GraphInspectorTool:
 
     def run_all(self):
         """Run all the inspector methods."""
-
         plot_isolated_nodes(self.graph, self.output_path / "isolated_nodes.html")
 
         logger.info("Saving interactive plots of subgraphs ...")
-        for src_nodes, _, dst_nodes in self.graph.edge_types:
-            ofile = self.output_path / f"{src_nodes}_to_{dst_nodes}.html"
-            plot_interactive_subgraph(self.graph, (src_nodes, dst_nodes), out_file=ofile)
+        for edges_subgraph in self.graph.edge_types:
+            ofile = self.output_path / f"{edges_subgraph[0]}_to_{edges_subgraph[2]}.html"
+            plot_interactive_subgraph(self.graph, edges_subgraph, out_file=ofile)
 
         if self.show_attribute_distributions:
             plot_dist_edge_attributes(self.graph, self.output_path / "distribution_edge_attributes.png")
@@ -197,7 +196,5 @@ class GraphInspectorTool:
 
         if self.show_nodes:
             logger.info("Saving interactive plots of nodes ...")
-            for nodes_name, nodes_store in self.graph.node_items():
-                ofile = self.output_path / f"{nodes_name}_nodes.html"
-                title = f"Map of {nodes_name} nodes"
-                plot_interactive_nodes(title, nodes_store.x[:, 0].numpy(), nodes_store.x[:, 1].numpy(), out_file=ofile)
+            for nodes_name in self.graph.node_types:
+                plot_interactive_nodes(self.graph, nodes_name, out_file=self.output_path / f"{nodes_name}_nodes.html")

@@ -8,6 +8,7 @@ import numpy as np
 import plotly.graph_objects as go
 from torch_geometric.data import HeteroData
 
+from anemoi.graphs.plotting.prepare import compute_isolated_nodes
 from anemoi.graphs.plotting.prepare import compute_node_adjacencies
 from anemoi.graphs.plotting.prepare import edge_list
 from anemoi.graphs.plotting.prepare import node_list
@@ -20,7 +21,7 @@ logger = logging.getLogger(__name__)
 
 def plot_interactive_subgraph(
     graph: HeteroData,
-    edges_to_plot: tuple[str, str],
+    edges_to_plot: tuple[str, str, str],
     out_file: Optional[Union[str, Path]] = None,
 ) -> None:
     """Plots a bipartite graph (bi-graph).
@@ -36,14 +37,14 @@ def plot_interactive_subgraph(
     out_file : str | Path, optional
         Name of the file to save the plot. Default is None.
     """
-    src_nodes, dst_nodes = edges_to_plot
-    edge_x, edge_y = edge_list(graph, edges_to_plot)
-    assert src_nodes in graph.node_types, f"edges_to_plot ({src_nodes}) should be in the graph"
-    assert dst_nodes in graph.node_types, f"edges_to_plot ({dst_nodes}) should be in the graph"
-    lats_nodes1, lons_nodes1 = node_list(graph, src_nodes)
-    lats_nodes2, lons_nodes2 = node_list(graph, dst_nodes)
-    dst_num_nodes = graph[dst_nodes].num_nodes
-    node_adjacencies, node_text = compute_node_adjacencies(graph, edges_to_plot[0], edges_to_plot[1], dst_num_nodes)
+    source_name, _, target_name = edges_to_plot
+    edge_x, edge_y = edge_list(graph, source_nodes_name=source_name, target_nodes_name=target_name)
+    assert source_name in graph.node_types, f"edges_to_plot ({source_name}) should be in the graph"
+    assert target_name in graph.node_types, f"edges_to_plot ({target_name}) should be in the graph"
+    lats_source_nodes, lons_source_nodes = node_list(graph, source_name)
+    lats_target_nodes, lons_target_nodes = node_list(graph, target_name)
+    dst_num_nodes = graph[target_name].num_nodes
+    node_adjacencies, node_text = compute_node_adjacencies(graph, edges_to_plot[0], edges_to_plot[2], dst_num_nodes)
 
     edge_trace = go.Scattergeo(
         lat=edge_x,
@@ -54,9 +55,9 @@ def plot_interactive_subgraph(
         name="Connections",
     )
 
-    node_trace1 = go.Scattergeo(
-        lat=lats_nodes1,
-        lon=lons_nodes1,
+    source_node_trace = go.Scattergeo(
+        lat=lats_source_nodes,
+        lon=lons_source_nodes,
         mode="markers",
         hoverinfo="text",
         name=edges_to_plot[0],
@@ -68,9 +69,9 @@ def plot_interactive_subgraph(
         },
     )
 
-    node_trace2 = go.Scattergeo(
-        lat=lats_nodes2,
-        lon=lons_nodes2,
+    target_node_trace = go.Scattergeo(
+        lat=lats_target_nodes,
+        lon=lons_target_nodes,
         mode="markers",
         hoverinfo="text",
         name=edges_to_plot[1],
@@ -96,7 +97,7 @@ def plot_interactive_subgraph(
         xaxis=plotly_axis_config,
         yaxis=plotly_axis_config,
     )
-    fig = go.Figure(data=[edge_trace, node_trace1, node_trace2], layout=layout)
+    fig = go.Figure(data=[edge_trace, source_node_trace, target_node_trace], layout=layout)
     fig.update_geos(fitbounds="locations")
 
     if out_file is not None:
@@ -117,24 +118,15 @@ def plot_isolated_nodes(graph: HeteroData, out_file: Optional[Union[str, Path]] 
     out_file : str | Path, optional
         Name of the file to save the plot. Default is None.
     """
-    isolated = {}
-    for (src_nodes, _, dst_nodes), sub_graph in graph.edge_items():
-        head_isolated = np.ones(graph[src_nodes].num_nodes, dtype=bool)
-        tail_isolated = np.ones(graph[dst_nodes].num_nodes, dtype=bool)
-        head_isolated[sub_graph.edge_index[0]] = False
-        tail_isolated[sub_graph.edge_index[1]] = False
-        if np.any(head_isolated):
-            isolated[f"{src_nodes} isolated (--> {dst_nodes})"] = node_list(graph, src_nodes, mask=list(head_isolated))
-        if np.any(tail_isolated):
-            isolated[f"{dst_nodes} isolated ({src_nodes} -->)"] = node_list(graph, dst_nodes, mask=list(tail_isolated))
+    isolated_nodes = compute_isolated_nodes(graph)
 
-    if len(isolated) == 0:
+    if len(isolated_nodes) == 0:
         logger.info("No orphan nodes found.")
         return
 
-    colorbar = plt.cm.rainbow(np.linspace(0, 1, len(isolated)))
+    colorbar = plt.cm.rainbow(np.linspace(0, 1, len(isolated_nodes)))
     nodes = []
-    for name, (lat, lon) in isolated.items():
+    for name, (lat, lon) in isolated_nodes.items():
         nodes.append(
             go.Scattergeo(
                 lat=lat,
@@ -167,7 +159,7 @@ def plot_isolated_nodes(graph: HeteroData, out_file: Optional[Union[str, Path]] 
 
 
 def plot_interactive_nodes(
-    title: str, lats: np.ndarray, lons: np.ndarray, mask: np.ndarray = None, out_file: Optional[str] = None
+    graph: HeteroData, nodes_name: str, mask: np.ndarray = None, out_file: Optional[str] = None
 ) -> None:
     """Plot nodes.
 
@@ -175,25 +167,26 @@ def plot_interactive_nodes(
 
     Parameters
     ----------
-    title : str
-        The title of the graph.
-    lats : np.ndarray
-        Array of latitudes.
-    lons : np.ndarray
-        Array of longitudes.
+    graph : HeteroData
+        Graph.
+    nodes_name : str
+        Name of the nodes to plot.
     mask : np.ndarray
         Array of boolean values to mask the nodes.
     out_file : str, optional
         Name of the file to save the plot. Default is None.
     """
+    node_latitudes = graph[nodes_name].x[:, 0].numpy()
+    node_longitudes = graph[nodes_name].x[:, 1].numpy()
+
     if mask is None:
-        mask = np.ones_like(lats, dtype=bool)
+        mask = np.ones_like(node_latitudes, dtype=bool)
 
     colors = ["blue" if m else "red" for m in mask]
 
     node_trace = go.Scattergeo(
-        lat=lats,
-        lon=lons,
+        lat=node_latitudes,
+        lon=node_longitudes,
         mode="markers",
         hoverinfo="text",
         marker={"color": colors, "size": 5},
@@ -202,7 +195,7 @@ def plot_interactive_nodes(
     fig = go.Figure(
         data=[node_trace],
         layout=go.Layout(
-            title="<br>" + title,
+            title=f"<br>Map of {nodes_name} nodes",
             titlefont_size=16,
             showlegend=False,
             hovermode="closest",

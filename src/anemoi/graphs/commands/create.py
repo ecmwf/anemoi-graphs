@@ -1,5 +1,5 @@
 from anemoi.graphs.create import GraphCreator
-from anemoi.graphs.create import GraphDescription
+from anemoi.graphs.inspector import GraphDescription
 
 from . import Command
 
