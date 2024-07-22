@@ -280,7 +280,7 @@ class MultiScaleEdges(BaseEdgeBuilder, ABC):
     def base_node_class(self) -> BaseNodeBuilder: ...
 
     def post_process_adjmat(self, nodes: NodeStorage, adjmat):
-        graph_sorted = dict(zip(nodes["node_ordering"], range(len(nodes.node_ordering))))
+        graph_sorted = {node_pos: i for i, node_pos in enumerate(nodes["node_ordering"])}
         sort_func = np.vectorize(graph_sorted.get)
         adjmat.row = sort_func(adjmat.row)
         adjmat.col = sort_func(adjmat.col)
