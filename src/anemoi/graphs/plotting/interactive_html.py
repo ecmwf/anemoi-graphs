@@ -44,7 +44,7 @@ def plot_interactive_subgraph(
     lats_source_nodes, lons_source_nodes = node_list(graph, source_name)
     lats_target_nodes, lons_target_nodes = node_list(graph, target_name)
     dst_num_nodes = graph[target_name].num_nodes
-    node_adjacencies, node_text = compute_node_adjacencies(graph, edges_to_plot[0], edges_to_plot[2], dst_num_nodes)
+    node_adjacencies, node_text = compute_node_adjacencies(graph, source_name, target_name, dst_num_nodes)
 
     edge_trace = go.Scattergeo(
         lat=edge_x,
@@ -60,7 +60,7 @@ def plot_interactive_subgraph(
         lon=lons_source_nodes,
         mode="markers",
         hoverinfo="text",
-        name=edges_to_plot[0],
+        name=source_name,
         marker={
             "showscale": False,
             "color": "red",
@@ -74,7 +74,7 @@ def plot_interactive_subgraph(
         lon=lons_target_nodes,
         mode="markers",
         hoverinfo="text",
-        name=edges_to_plot[1],
+        name=target_name,
         text=node_text,
         marker={
             "showscale": True,
@@ -87,7 +87,7 @@ def plot_interactive_subgraph(
         },
     )
     layout = go.Layout(
-        title="<br>" + f"Graph {edges_to_plot[0]} --> {edges_to_plot[1]}",
+        title="<br>" + f"Graph {source_name} --> {target_name}",
         titlefont_size=16,
         showlegend=True,
         hovermode="closest",
