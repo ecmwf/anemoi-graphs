@@ -311,10 +311,10 @@ class TriIcosahedralEdges(MultiScaleEdges):
         adjmat = nx.to_scipy_sparse_array(
             source_nodes["nx_graph"], nodelist=list(source_nodes["nx_graph"]), format="coo"
         )
-        graph_1_sorted = dict(zip(range(len(source_nodes["nx_graph"].nodes)), list(source_nodes["nx_graph"].nodes)))
-        sort_func1 = np.vectorize(graph_1_sorted.get)
-        adjmat.row = sort_func1(adjmat.row)
-        adjmat.col = sort_func1(adjmat.col)
+        graph_sorted = {i: node for i, node in enumerate(source_nodes["nx_graph"].nodes)}
+        sort_func = np.vectorize(graph_sorted.get)
+        adjmat.row = sort_func(adjmat.row)
+        adjmat.col = sort_func(adjmat.col)
 
         self.post_process_adjmat(source_nodes, adjmat)
         return adjmat
