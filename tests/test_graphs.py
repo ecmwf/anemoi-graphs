@@ -20,7 +20,7 @@ def test_graphs(config_file: tuple[Path, str], mock_grids_path: tuple[str, int])
     graph_path = tmp_path / "graph.pt"
     config_path = tmp_path / config_name
 
-    create.GraphCreator(graph_path, config_path).create()
+    create.GraphCreator(config_path, graph_path).create()
 
     graph = torch.load(graph_path)
     assert isinstance(graph, HeteroData)
