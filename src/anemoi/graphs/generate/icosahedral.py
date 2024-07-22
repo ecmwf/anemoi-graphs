@@ -189,6 +189,6 @@ def add_neigbours_edges(
         else:
             node, node_neighbour = node_idx, neighbour_idx
 
-        # add edge to the graph
+        # add edge to the graph (if both source and target nodes are in the graph)
         if node in graph and node_neighbour in graph:
             graph.add_edge(node_neighbour, node, weight=edge_length)
