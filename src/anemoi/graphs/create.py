@@ -14,8 +14,8 @@ class GraphCreator:
 
     def __init__(
         self,
-        path,
         config=None,
+        path=None,
         cache=None,
         print=print,
         overwrite=False,
@@ -61,9 +61,14 @@ class GraphCreator:
 
     def save(self, graph: HeteroData) -> None:
         """Save the graph to the output path."""
-        if not os.path.exists(self.path) or self.overwrite:
+        if self.path is None:
+            LOGGER.info("No output path specified. The graph will not be saved.")
+        elif not self.path.exists() or self.overwrite:
+            self.path.parent.mkdir(parents=True, exist_ok=True)
             torch.save(graph, self.path)
             LOGGER.info(f"Graph saved at {self.path}.")
+        else:
+            LOGGER.info("Graph already exists. Use overwrite=True to overwrite.")
 
     def create(self) -> HeteroData:
         """Create the graph and save it to the output path."""
