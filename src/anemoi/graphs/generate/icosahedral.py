@@ -141,9 +141,10 @@ def get_x_hops(tri_mesh: trimesh.Trimesh, hops: int, valid_nodes: Optional[list[
         edges = edges[np.isin(tri_mesh.edges_unique, valid_nodes).all(axis=1)]
     else:
         valid_nodes = list(range(len(tri_mesh.vertices)))
-    g = nx.from_edgelist(edges)
+    graph = nx.from_edgelist(edges)
 
-    neighbours = {ii: set(nx.ego_graph(g, ii, radius=hops, center=False) if ii in g else []) for ii in valid_nodes}
+    # For each node, get the nodes at a distance of 'hops' connections
+    neighbours = {i: set(nx.ego_graph(graph, i, radius=hops, center=False) if i in graph else []) for i in valid_nodes}
 
     return neighbours
 
