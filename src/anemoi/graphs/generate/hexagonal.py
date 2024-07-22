@@ -197,33 +197,60 @@ def add_children_edges(
         depth = len(refinement_levels)
 
     for i_level, resolution_parent in enumerate(refinement_levels[0:-1]):
-        parent_cells = [node for node in graph.nodes if h3.h3_get_resolution(node) == resolution_parent]
+        parent_cells = get_parent_cells_at_resolution(graph, resolution_parent)
+
         for parent_idx in parent_cells:
             # add own children
             for resolution_child in refinement_levels[i_level + 1 : i_level + depth + 1]:
                 for child_idx in h3.h3_to_children(parent_idx, res=resolution_child):
-                    if flat:
-                        add_edge(
-                            graph,
-                            h3.h3_to_center_child(parent_idx, refinement_levels[-1]),
-                            h3.h3_to_center_child(child_idx, refinement_levels[-1]),
-                        )
-                    else:
-                        add_edge(graph, parent_idx, child_idx)
+                    add_edges_between_nodes(graph, parent_idx, child_idx, flat, refinement_levels)
 
-            # add neighbour children
+            # add children of neighbouring nodes
             if has_neighbour_children:
-                for idx_parent_neighbour in h3.k_ring(parent_idx, k=1) & parent_cells:
+                # iterates over the 1-hop neighbours of the parent nodes at the current resolution level by using the & operator
+                for parent_neighbour_idx in h3.k_ring(parent_idx, k=1) & parent_cells:
                     for resolution_child in refinement_levels[i_level + 1 : i_level + depth + 1]:
-                        for idx_child_neighbour in h3.h3_to_children(idx_parent_neighbour, res=resolution_child):
-                            if flat:
-                                add_edge(
-                                    graph,
-                                    h3.h3_to_center_child(parent_idx, refinement_levels[-1]),
-                                    h3.h3_to_center_child(idx_child_neighbour, refinement_levels[-1]),
-                                )
-                            else:
-                                add_edge(graph, parent_idx, idx_child_neighbour)
+                        for child_neighbour_idx in h3.h3_to_children(parent_neighbour_idx, res=resolution_child):
+                            add_edges_between_nodes(graph, parent_idx, child_neighbour_idx, flat, refinement_levels)
+
+
+def get_parent_cells_at_resolution(graph: nx.Graph, parent_resolution: int):
+    parent_cells = [node for node in graph.nodes if h3.h3_get_resolution(node) == parent_resolution]
+    return parent_cells
+
+
+def add_edges_between_nodes(
+    graph: nx.Graph, parent_node: str, child_node: str, flat: bool, refinement_levels: tuple[int]
+) -> None:
+    """Add an edge between parent and child nodes in the graph.
+
+    Parameters
+    ----------
+    graph : nx.Graph
+        The graph to which the edge will be added.
+    parent_node : str
+        The parent node in the graph.
+    child_node : str
+        The child node in the graph.
+    flat : bool
+        If True, add an edge between the center child of the parent node and the center child of the child node.
+        If False, add an edge between the parent node and the child node.
+    refinement_levels : tuple[int]
+        The levels of refinement for the graph.
+
+    Returns
+    -------
+    None
+    """
+
+    if flat:
+        add_edge(
+            graph,
+            h3.h3_to_center_child(parent_node, refinement_levels[-1]),
+            h3.h3_to_center_child(child_node, refinement_levels[-1]),
+        )
+    else:
+        add_edge(graph, parent_node, child_node)
 
 
 def add_edge(
@@ -234,15 +261,15 @@ def add_edge(
 ) -> None:
     """Add edge between two nodes to a graph.
 
-    The edge will only be added in case both tail and head nodes are included in the graph, G.
+    The edge will only be added in case both target and source nodes are included in the graph.
 
     Parameters
     ----------
     graph : networkx.Graph
         The graph to add the nodes.
-    idx1 : str
+    source_node_h3_idx : str
         The H3 index of the tail of the edge.
-    idx2 : str
+    target_node_h3_idx : str
         The H3 index of the head of the edge.
     allow_self_loop : bool
         Whether to allow self-loops or not. Defaults to not allowing self-loops.
