@@ -305,7 +305,7 @@ class TriIcosahedralEdges(MultiScaleEdges):
         source_nodes["nx_graph"] = icosahedral.add_edges_to_nx_graph(
             source_nodes["nx_graph"],
             resolutions=source_nodes["resolutions"],
-            xhops=self.xhops,
+            x_hops=self.xhops,
         )  # HeteroData refuses to accept None
 
         adjmat = nx.to_scipy_sparse_array(
@@ -331,7 +331,7 @@ class HexagonalEdges(MultiScaleEdges):
         source_nodes["nx_graph"] = hexagonal.add_edges_to_nx_graph(
             source_nodes["nx_graph"],
             resolutions=source_nodes["resolutions"],
-            xhops=self.xhops,
+            x_hops=self.xhops,
         )
 
         adjmat = nx.to_scipy_sparse_array(source_nodes["nx_graph"], format="coo")

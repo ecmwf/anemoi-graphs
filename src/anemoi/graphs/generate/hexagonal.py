@@ -46,7 +46,6 @@ def create_hexagonal_nodes(
     # Sort nodes by latitude and longitude
     node_ordering = np.lexsort(coords.T[::-1], axis=0)
 
-    # Should these be sorted here or in the edge builder?
     coords = coords[node_ordering]
 
     return graph, coords, node_ordering
@@ -112,13 +111,13 @@ def get_cells_at_resolution(
 def add_edges_to_nx_graph(
     graph: nx.Graph,
     resolutions: list[int],
-    xhops: int = 1,
+    x_hops: int = 1,
     self_loop: bool = False,
     flat: bool = True,
     neighbour_children: bool = False,
     depth_children: int = 1,
 ) -> nx.Graph:
-    """Creates a global mesh from a refined icosahedro.
+    """Creates a global mesh from a refined icosahedron.
 
     This method relies on the H3 python library, which covers the earth with hexagons (and 5 pentagons). At each
     refinement level, a hexagon cell has 7 child cells (aperture 7).
@@ -149,7 +148,7 @@ def add_edges_to_nx_graph(
     if self_loop:
         add_self_loops(graph)
 
-    add_neighbour_edges(graph, resolutions, xhops, flat)
+    add_neighbour_edges(graph, resolutions, x_hops, flat)
     add_children_edges(
         graph,
         resolutions,
@@ -191,46 +190,46 @@ def add_children_edges(
     graph: nx.Graph,
     refinement_levels: tuple[int],
     flat: bool = True,
-    neighbour_children: bool = False,
+    has_neighbour_children: bool = False,
     depth: Optional[int] = None,
 ) -> None:
     if depth is None:
         depth = len(refinement_levels)
 
-    for ip, resolution_parent in enumerate(refinement_levels[0:-1]):
+    for i_level, resolution_parent in enumerate(refinement_levels[0:-1]):
         parent_cells = [node for node in graph.nodes if h3.h3_get_resolution(node) == resolution_parent]
-        for idx_parent in parent_cells:
+        for parent_idx in parent_cells:
             # add own children
-            for resolution_child in refinement_levels[ip + 1 : ip + depth + 1]:
-                for idx_child in h3.h3_to_children(idx_parent, res=resolution_child):
+            for resolution_child in refinement_levels[i_level + 1 : i_level + depth + 1]:
+                for child_idx in h3.h3_to_children(parent_idx, res=resolution_child):
                     if flat:
                         add_edge(
                             graph,
-                            h3.h3_to_center_child(idx_parent, refinement_levels[-1]),
-                            h3.h3_to_center_child(idx_child, refinement_levels[-1]),
+                            h3.h3_to_center_child(parent_idx, refinement_levels[-1]),
+                            h3.h3_to_center_child(child_idx, refinement_levels[-1]),
                         )
                     else:
-                        add_edge(graph, idx_parent, idx_child)
+                        add_edge(graph, parent_idx, child_idx)
 
             # add neighbour children
-            if neighbour_children:
-                for idx_parent_neighbour in h3.k_ring(idx_parent, k=1) & parent_cells:
-                    for resolution_child in refinement_levels[ip + 1 : ip + depth + 1]:
+            if has_neighbour_children:
+                for idx_parent_neighbour in h3.k_ring(parent_idx, k=1) & parent_cells:
+                    for resolution_child in refinement_levels[i_level + 1 : i_level + depth + 1]:
                         for idx_child_neighbour in h3.h3_to_children(idx_parent_neighbour, res=resolution_child):
                             if flat:
                                 add_edge(
                                     graph,
-                                    h3.h3_to_center_child(idx_parent, refinement_levels[-1]),
+                                    h3.h3_to_center_child(parent_idx, refinement_levels[-1]),
                                     h3.h3_to_center_child(idx_child_neighbour, refinement_levels[-1]),
                                 )
                             else:
-                                add_edge(graph, idx_parent, idx_child_neighbour)
+                                add_edge(graph, parent_idx, idx_child_neighbour)
 
 
 def add_edge(
     graph: nx.Graph,
-    idx1: str,
-    idx2: str,
+    source_node_h3_idx: str,
+    target_node_h3_idx: str,
     allow_self_loop: bool = False,
 ) -> None:
     """Add edge between two nodes to a graph.
@@ -248,10 +247,12 @@ def add_edge(
     allow_self_loop : bool
         Whether to allow self-loops or not. Defaults to not allowing self-loops.
     """
-    if not graph.has_node(idx1) or not graph.has_node(idx2):
+    if not graph.has_node(source_node_h3_idx) or not graph.has_node(target_node_h3_idx):
         return
 
-    if allow_self_loop or idx1 != idx2:
-        loc1 = np.deg2rad(h3.h3_to_geo(idx1))
-        loc2 = np.deg2rad(h3.h3_to_geo(idx2))
-        graph.add_edge(idx1, idx2, weight=haversine_distances([loc1, loc2])[0][1])
+    if allow_self_loop or source_node_h3_idx != target_node_h3_idx:
+        source_location = np.deg2rad(h3.h3_to_geo(source_node_h3_idx))
+        target_location = np.deg2rad(h3.h3_to_geo(target_node_h3_idx))
+        graph.add_edge(
+            source_node_h3_idx, target_node_h3_idx, weight=haversine_distances([source_location, target_location])[0][1]
+        )

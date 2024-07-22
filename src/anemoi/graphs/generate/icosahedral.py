@@ -52,8 +52,8 @@ def create_icosahedral_nodes(
 def create_icosahedral_nx_graph_from_coords(coords_rad: np.ndarray, node_ordering: list[int]):
 
     graph = nx.DiGraph()
-    for ii, coords in enumerate(coords_rad[node_ordering]):
-        node_id = node_ordering[ii]
+    for i, coords in enumerate(coords_rad[node_ordering]):
+        node_id = node_ordering[i]
         graph.add_node(node_id, hcoords_rad=coords)
 
     assert list(graph.nodes.keys()) == list(node_ordering), "Nodes are not correctly added to the graph."
@@ -63,16 +63,16 @@ def create_icosahedral_nx_graph_from_coords(coords_rad: np.ndarray, node_orderin
 
 def get_node_ordering(coords_rad: np.ndarray) -> np.ndarray:
     # Get indices to sort points by lon & lat in radians.
-    ind1 = np.argsort(coords_rad[:, 1])
-    ind2 = np.argsort(coords_rad[ind1][:, 0])[::-1]
-    node_ordering = np.arange(coords_rad.shape[0])[ind1][ind2]
+    index_latitude = np.argsort(coords_rad[:, 1])
+    index_longitude = np.argsort(coords_rad[index_latitude][:, 0])[::-1]
+    node_ordering = np.arange(coords_rad.shape[0])[index_latitude][index_longitude]
     return node_ordering
 
 
 def add_edges_to_nx_graph(
     graph: nx.DiGraph,
     resolutions: list[int],
-    xhops: int = 1,
+    x_hops: int = 1,
 ) -> None:
     """Adds the edges to the graph.
 
@@ -82,21 +82,21 @@ def add_edges_to_nx_graph(
         The graph to add the edges. It should correspond to the mesh nodes, without edges.
     resolutions : list[int]
         Levels of mesh refinement levels to consider.
-    xhops : int, optional
+    x_hops : int, optional
         Number of hops between 2 nodes to consider them neighbours, by default 1.
     aoi_mask_builder : KNNAreaMaskBuilder
         NearestNeighbors with the cloud of points to limit the mesh area, by default None.
     margin_radius_km : float, optional
         Margin radius in km to consider when creating the processor mesh, by default 0.0.
     """
-    assert xhops > 0, "xhops == 0, graph would have no edges ..."
+    assert x_hops > 0, "x_hops == 0, graph would have no edges ..."
 
     sphere = trimesh.creation.icosphere(subdivisions=resolutions[-1], radius=1.0)
     vertices_rad = cartesian_to_latlon_rad(sphere.vertices)
-    x_hops = get_x_hops(sphere, xhops, valid_nodes=list(graph.nodes))
+    node_neighbours = get_neighbours_within_hops(sphere, x_hops, valid_nodes=list(graph.nodes))
 
-    for i, i_neighbours in x_hops.items():
-        add_neigbours_edges(graph, vertices_rad, i, i_neighbours)
+    for idx_node, idx_neighbours in node_neighbours.items():
+        add_neigbours_edges(graph, vertices_rad, idx_node, idx_neighbours)
 
     tree = BallTree(vertices_rad, metric="haversine")
 
@@ -108,16 +108,20 @@ def add_edges_to_nx_graph(
         # TODO AOI mask builder is not used in the current implementation.
         valid_nodes = None
 
-        x_hops = get_x_hops(r_sphere, xhops, valid_nodes=valid_nodes)
+        node_neighbours = get_neighbours_within_hops(r_sphere, x_hops, valid_nodes=valid_nodes)
 
-        _, idx = tree.query(r_vertices_rad, k=1)
-        for i, i_neighbours in x_hops.items():
-            add_neigbours_edges(graph, r_vertices_rad, i, i_neighbours, idx=idx)
+        _, vertex_mapping_index = tree.query(r_vertices_rad, k=1)
+        for idx_node, idx_neighbours in node_neighbours.items():
+            add_neigbours_edges(
+                graph, r_vertices_rad, idx_node, idx_neighbours, vertex_mapping_index=vertex_mapping_index
+            )
 
     return graph
 
 
-def get_x_hops(tri_mesh: trimesh.Trimesh, hops: int, valid_nodes: Optional[list[int]] = None) -> dict[int, set[int]]:
+def get_neighbours_within_hops(
+    tri_mesh: trimesh.Trimesh, x_hops: int, valid_nodes: Optional[list[int]] = None
+) -> dict[int, set[int]]:
     """Get the neigbour connections in the graph.
 
     Parameters
@@ -143,8 +147,10 @@ def get_x_hops(tri_mesh: trimesh.Trimesh, hops: int, valid_nodes: Optional[list[
         valid_nodes = list(range(len(tri_mesh.vertices)))
     graph = nx.from_edgelist(edges)
 
-    # For each node, get the nodes at a distance of 'hops' connections
-    neighbours = {i: set(nx.ego_graph(graph, i, radius=hops, center=False) if i in graph else []) for i in valid_nodes}
+    # Get a dictionary of the neighbours within 'x_hop' neighbourhood of each node in the graph
+    neighbours = {
+        i: set(nx.ego_graph(graph, i, radius=x_hops, center=False) if i in graph else []) for i in valid_nodes
+    }
 
     return neighbours
 
@@ -155,7 +161,7 @@ def add_neigbours_edges(
     node_idx: int,
     neighbour_indices: Iterable[int],
     self_loops: bool = False,
-    idx: Optional[np.ndarray] = None,
+    vertex_mapping_index: Optional[np.ndarray] = None,
 ) -> None:
     """Adds the edges of one node to its neighbours.
 
@@ -171,7 +177,7 @@ def add_neigbours_edges(
         The neighbours of the node.
     self_loops : bool, optional
         Whether is supported to add self-loops, by default False.
-    idx : np.ndarray, optional
+    vertex_mapping_index : np.ndarray, optional
         Index to map the vertices from the refined sphere to the original one, by default None.
     """
     for neighbour_idx in neighbour_indices:
@@ -182,10 +188,10 @@ def add_neigbours_edges(
         location_neighbour = vertices[neighbour_idx]
         edge_length = haversine_distances([location_neighbour, location_node])[0][1]
 
-        if idx is not None:
+        if vertex_mapping_index is not None:
             # Use the same method to add edge in all spheres
-            node_neighbour = idx[neighbour_idx][0]
-            node = idx[node_idx][0]
+            node_neighbour = vertex_mapping_index[neighbour_idx][0]
+            node = vertex_mapping_index[node_idx][0]
         else:
             node, node_neighbour = node_idx, neighbour_idx
 
