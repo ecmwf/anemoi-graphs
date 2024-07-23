@@ -10,11 +10,11 @@ class TestTriIcosahedralEdgesInit:
         """Test TriIcosahedralEdges initialization."""
         assert isinstance(HexagonalEdges("test_nodes", "test_nodes", 1), HexagonalEdges)
 
-    @pytest.mark.parametrize("xhops", [-0.5, "hello", None, -4])
-    def test_fail_init(self, xhops: int):
-        """Test HexagonalEdges initialization with invalid xhops."""
+    @pytest.mark.parametrize("x_hops", [-0.5, "hello", None, -4])
+    def test_fail_init(self, x_hops: int):
+        """Test HexagonalEdges initialization with invalid x_hops."""
         with pytest.raises(AssertionError):
-            HexagonalEdges("test_nodes", "test_nodes", xhops)
+            HexagonalEdges("test_nodes", "test_nodes", x_hops)
 
     def test_fail_init_diff_nodes(self):
         """Test HexagonalEdges initialization with invalid nodes."""

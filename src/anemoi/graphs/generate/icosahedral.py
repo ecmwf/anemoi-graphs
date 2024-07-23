@@ -31,8 +31,8 @@ def create_icosahedral_nodes(
     -------
     graph : networkx.Graph
         The specified graph (nodes & edges).
-    vertices_rad : np.ndarray
-        The vertices (not ordered) of the mesh in radians.
+    coords_rad : np.ndarray
+        The node coordinates (not ordered) in radians.
     node_ordering : list[int]
         Order of the nodes in the graph to be sorted by latitude and longitude.
     """
@@ -62,6 +62,7 @@ def create_icosahedral_nx_graph_from_coords(coords_rad: np.ndarray, node_orderin
 
 
 def get_node_ordering(coords_rad: np.ndarray) -> np.ndarray:
+    """Get the node ordering to sort the nodes by latitude and longitude."""
     # Get indices to sort points by lon & lat in radians.
     index_latitude = np.argsort(coords_rad[:, 1])
     index_longitude = np.argsort(coords_rad[index_latitude][:, 0])[::-1]
@@ -73,8 +74,11 @@ def add_edges_to_nx_graph(
     graph: nx.DiGraph,
     resolutions: list[int],
     x_hops: int = 1,
-) -> None:
+) -> nx.DiGraph:
     """Adds the edges to the graph.
+
+    This method includes multi-scale connections to the existing graph. The different scales
+    are defined by the resolutions (or refinement levels) specified.
 
     Parameters
     ----------
@@ -88,6 +92,11 @@ def add_edges_to_nx_graph(
         NearestNeighbors with the cloud of points to limit the mesh area, by default None.
     margin_radius_km : float, optional
         Margin radius in km to consider when creating the processor mesh, by default 0.0.
+
+    Returns
+    -------
+    graph : nx.DiGraph
+        The graph with the added edges.
     """
     assert x_hops > 0, "x_hops == 0, graph would have no edges ..."
 
@@ -100,9 +109,12 @@ def add_edges_to_nx_graph(
 
     tree = BallTree(vertices_rad, metric="haversine")
 
+    # Build the multi-scale connections
     for resolution in resolutions[:-1]:
-        # Defined refined sphere
+        # Define the refined sphere at specified 'resolution' level
         r_sphere = trimesh.creation.icosphere(subdivisions=resolution, radius=1.0)
+
+        # Get the vertices of the refined sphere
         r_vertices_rad = cartesian_to_latlon_rad(r_sphere.vertices)
 
         # TODO AOI mask builder is not used in the current implementation.
@@ -128,7 +140,7 @@ def get_neighbours_within_hops(
     ----------
     tri_mesh : trimesh.Trimesh
         The mesh to consider.
-    hops : int
+    x_hops : int
         Number of hops between 2 nodes to consider them neighbours.
     valid_nodes : list[int], optional
         List of valid nodes to consider, by default None. It is useful to consider only a subset of the nodes to save
@@ -147,7 +159,7 @@ def get_neighbours_within_hops(
         valid_nodes = list(range(len(tri_mesh.vertices)))
     graph = nx.from_edgelist(edges)
 
-    # Get a dictionary of the neighbours within 'x_hop' neighbourhood of each node in the graph
+    # Get a dictionary of the neighbours within 'x_hops' neighbourhood of each node in the graph
     neighbours = {
         i: set(nx.ego_graph(graph, i, radius=x_hops, center=False) if i in graph else []) for i in valid_nodes
     }
