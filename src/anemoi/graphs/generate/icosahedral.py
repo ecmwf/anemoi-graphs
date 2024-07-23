@@ -74,8 +74,11 @@ def add_edges_to_nx_graph(
     graph: nx.DiGraph,
     resolutions: list[int],
     x_hops: int = 1,
-) -> None:
+) -> nx.DiGraph:
     """Adds the edges to the graph.
+
+    This method includes multi-scale connections to the existing graph. The different scales
+    are defined by the resolutions (or refinement levels) specified.
 
     Parameters
     ----------
@@ -89,6 +92,11 @@ def add_edges_to_nx_graph(
         NearestNeighbors with the cloud of points to limit the mesh area, by default None.
     margin_radius_km : float, optional
         Margin radius in km to consider when creating the processor mesh, by default 0.0.
+
+    Returns
+    -------
+    graph : nx.DiGraph
+        The graph with the added edges.
     """
     assert x_hops > 0, "x_hops == 0, graph would have no edges ..."
 
@@ -101,9 +109,12 @@ def add_edges_to_nx_graph(
 
     tree = BallTree(vertices_rad, metric="haversine")
 
+    # Build the multi-scale connections
     for resolution in resolutions[:-1]:
-        # Defined refined sphere
+        # Define the refined sphere at specified 'resolution' level
         r_sphere = trimesh.creation.icosphere(subdivisions=resolution, radius=1.0)
+
+        # Get the vertices of the refined sphere
         r_vertices_rad = cartesian_to_latlon_rad(r_sphere.vertices)
 
         # TODO AOI mask builder is not used in the current implementation.

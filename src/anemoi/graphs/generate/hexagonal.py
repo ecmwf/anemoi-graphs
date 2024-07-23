@@ -105,15 +105,15 @@ def add_edges_to_nx_graph(
     x_hops: int = 1,
     depth_children: int = 1,
 ) -> nx.Graph:
-    """Creates a global mesh from a refined icosahedron.
+    """Adds the edges to the graph.
 
-    This method relies on the H3 python library, which covers the earth with hexagons (and 5 pentagons). At each
-    refinement level, a hexagon cell has 7 child cells (aperture 7).
+    This method includes multi-scale connections to the existing graph. The different scales
+    are defined by the resolutions (or refinement levels) specified. 
 
     Parameters
     ----------
     graph : networkx.Graph
-        The graph to add the nodes.
+        The graph to add the edges.
     resolutions : list[int]
         Levels of mesh resolution to consider.
     x_hops: int
@@ -125,7 +125,7 @@ def add_edges_to_nx_graph(
     Returns
     -------
     graph : networkx.Graph
-        The specified graph (nodes & edges).
+        The graph with the added edges.
     """
 
     graph = add_neighbour_edges(graph, resolutions, x_hops)
