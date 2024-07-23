@@ -3,7 +3,6 @@ from typing import Optional
 import h3
 import networkx as nx
 import numpy as np
-import torch
 from sklearn.metrics.pairwise import haversine_distances
 
 

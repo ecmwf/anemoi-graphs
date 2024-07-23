@@ -269,12 +269,12 @@ class CutOffEdges(BaseEdgeBuilder):
 class MultiScaleEdges(BaseEdgeBuilder, ABC):
     """Base class for multi-scale edges in the nodes of a graph."""
 
-    def __init__(self, source_name: str, target_name: str, xhops: int):
+    def __init__(self, source_name: str, target_name: str, x_hops: int):
         super().__init__(source_name, target_name)
         assert source_name == target_name, f"{self.__class__.__name__} requires source and target nodes to be the same."
-        assert isinstance(xhops, int), "Number of xhops must be an integer"
-        assert xhops > 0, "Number of xhops must be positive"
-        self.xhops = xhops
+        assert isinstance(x_hops, int), "Number of x_hops must be an integer"
+        assert x_hops > 0, "Number of x_hops must be positive"
+        self.x_hops = x_hops
 
     @abstractmethod
     def base_node_class(self) -> BaseNodeBuilder: ...
@@ -305,7 +305,7 @@ class TriIcosahedralEdges(MultiScaleEdges):
         source_nodes["nx_graph"] = icosahedral.add_edges_to_nx_graph(
             source_nodes["nx_graph"],
             resolutions=source_nodes["resolutions"],
-            x_hops=self.xhops,
+            x_hops=self.x_hops,
         )  # HeteroData refuses to accept None
 
         adjmat = nx.to_scipy_sparse_array(
@@ -331,7 +331,7 @@ class HexagonalEdges(MultiScaleEdges):
         source_nodes["nx_graph"] = hexagonal.add_edges_to_nx_graph(
             source_nodes["nx_graph"],
             resolutions=source_nodes["resolutions"],
-            x_hops=self.xhops,
+            x_hops=self.x_hops,
         )
 
         adjmat = nx.to_scipy_sparse_array(source_nodes["nx_graph"], format="coo")
