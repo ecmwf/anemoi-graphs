@@ -129,7 +129,7 @@ def get_neighbours_within_hops(
     ----------
     tri_mesh : trimesh.Trimesh
         The mesh to consider.
-    hops : int
+    x_hops : int
         Number of hops between 2 nodes to consider them neighbours.
     valid_nodes : list[int], optional
         List of valid nodes to consider, by default None. It is useful to consider only a subset of the nodes to save
@@ -148,7 +148,7 @@ def get_neighbours_within_hops(
         valid_nodes = list(range(len(tri_mesh.vertices)))
     graph = nx.from_edgelist(edges)
 
-    # Get a dictionary of the neighbours within 'x_hop' neighbourhood of each node in the graph
+    # Get a dictionary of the neighbours within 'x_hops' neighbourhood of each node in the graph
     neighbours = {
         i: set(nx.ego_graph(graph, i, radius=x_hops, center=False) if i in graph else []) for i in valid_nodes
     }
