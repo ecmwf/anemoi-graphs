@@ -23,8 +23,6 @@ def create_hexagonal_nodes(
     area : dict
         A region, in GeoJSON data format, to be contained by all cells. Defaults to None, which computes the global
         mesh.
-    aoi_mask_builder : KNNAreaMaskBuilder, optional
-        KNNAreaMaskBuilder with the cloud of points to limit the mesh area, by default None.
 
     Returns
     -------
@@ -61,19 +59,17 @@ def add_nodes_for_resolution(
         The graph to add the nodes.
     resolution : int
         The H3 refinement level. It can be an integer from 0 to 15.
-    self_loop : int
-        Whether to include self-loops in the nodes added or not.
     area_kwargs: dict
         Additional arguments to pass to the get_cells_at_resolution function.
     """
 
-    cells = get_cells_at_resolution(resolution, **area_kwargs)
+    nodes = get_nodes_at_resolution(resolution, **area_kwargs)
 
-    for idx in cells:
+    for idx in nodes:
         graph.add_node(idx, hcoords_rad=np.deg2rad(h3.h3_to_geo(idx)))
 
 
-def get_cells_at_resolution(
+def get_nodes_at_resolution(
     resolution: int,
     area: Optional[dict] = None,
 ) -> set[str]:
@@ -87,26 +83,23 @@ def get_cells_at_resolution(
         The H3 refinement level. It can be an integer from 0 to 15.
     area : dict
         An area as GeoJSON dictionary specifying a polygon. Defaults to None.
-    aoi_mask_builder : KNNAreaMaskBuilder, optional
-        KNNAreaMaskBuilder computes nask to limit the mesh area, by default None.
 
     Returns
     -------
     cells : set[str]
         The set of H3 indexes at the specified resolution level.
     """
-    cells = h3.uncompact(h3.get_res0_indexes(), resolution) if area is None else h3.polyfill(area, resolution)
+    nodes = h3.uncompact(h3.get_res0_indexes(), resolution) if area is None else h3.polyfill(area, resolution)
 
     # TODO: AOI not used in the current implementation.
 
-    return cells
+    return nodes
 
 
 def add_edges_to_nx_graph(
     graph: nx.Graph,
     resolutions: list[int],
     x_hops: int = 1,
-    include_neighbour_children: bool = False,
     depth_children: int = 1,
 ) -> nx.Graph:
     """Creates a global mesh from a refined icosahedron.
@@ -122,8 +115,6 @@ def add_edges_to_nx_graph(
         Levels of mesh resolution to consider.
     x_hops: int
         The number of hops to consider for the neighbours.
-    neighbour_children : bool
-        Whether to include connections with the children from the neighbours.
     depth_children : int
         The number of resolution levels to consider for the connections of children. Defaults to 1, which includes
         connections up to the next resolution level.
@@ -146,13 +137,14 @@ def add_edges_to_nx_graph(
 def add_neighbour_edges(
     graph: nx.Graph,
     refinement_levels: tuple[int],
-    xhops: int = 1,
+    x_hops: int = 1,
 ) -> None:
     for resolution in refinement_levels:
-        cells = {node for node in graph.nodes if h3.h3_get_resolution(node) == resolution}
-        for idx in cells:
+        nodes = select_nodes_from_graph_at_resolution(graph, resolution)
+
+        for idx in nodes:
             # neighbours
-            for idx_neighbour in h3.k_ring(idx, k=xhops) & cells:
+            for idx_neighbour in h3.k_ring(idx, k=x_hops) & set(nodes):
                 add_edge(
                     graph,
                     h3.h3_to_center_child(idx, refinement_levels[-1]),
@@ -163,9 +155,9 @@ def add_neighbour_edges(
 def add_edges_to_children(
     graph: nx.Graph,
     refinement_levels: tuple[int],
-    depth: Optional[int] = None,
+    depth_children: Optional[int] = None,
 ) -> None:
-    """_summary_
+    """Adds edges to the children of the nodes at the specified resolution levels.
 
     Parameters
     ----------
@@ -173,51 +165,30 @@ def add_edges_to_children(
         graph to which the edges will be added
     refinement_levels : tuple[int]
         set of refinement levels
-    depth : Optional[int], optional
-        _description_, by default None
+    depth_children : Optional[int], optional
+        The number of resolution levels to consider for the connections of children. Defaults to 1, which includes
+        connections up to the next resolution level, by default None
     """
-    if depth is None:
-        depth = len(refinement_levels)
+    if depth_children is None:
+        depth_children = len(refinement_levels)
 
     for i_level, resolution_parent in enumerate(refinement_levels[0:-1]):
-        parent_cells = get_parent_cells_at_resolution(graph, resolution_parent)
+        parent_cells = select_nodes_from_graph_at_resolution(graph, resolution_parent)
 
         for parent_idx in parent_cells:
             # add own children
-            for resolution_child in refinement_levels[i_level + 1 : i_level + depth + 1]:
+            for resolution_child in refinement_levels[i_level + 1 : i_level + depth_children + 1]:
                 for child_idx in h3.h3_to_children(parent_idx, res=resolution_child):
-                    add_edges_between_nodes(graph, parent_idx, child_idx, refinement_levels)
+                    add_edge(
+                        graph,
+                        h3.h3_to_center_child(parent_idx, refinement_levels[-1]),
+                        h3.h3_to_center_child(child_idx, refinement_levels[-1]),
+                    )
 
 
-def get_parent_cells_at_resolution(graph: nx.Graph, parent_resolution: int):
-    parent_cells = [node for node in graph.nodes if h3.h3_get_resolution(node) == parent_resolution]
+def select_nodes_from_graph_at_resolution(graph: nx.Graph, resolution: int):
+    parent_cells = [node for node in graph.nodes if h3.h3_get_resolution(node) == resolution]
     return parent_cells
-
-
-def add_edges_between_nodes(graph: nx.Graph, parent_node: str, child_node: str, refinement_levels: tuple[int]) -> None:
-    """Add an edge between parent and child nodes in the graph.
-
-    Parameters
-    ----------
-    graph : nx.Graph
-        The graph to which the edge will be added.
-    parent_node : str
-        The parent node in the graph.
-    child_node : str
-        The child node in the graph.
-    refinement_levels : tuple[int]
-        The levels of refinement for the graph.
-
-    Returns
-    -------
-    None
-    """
-
-    add_edge(
-        graph,
-        h3.h3_to_center_child(parent_node, refinement_levels[-1]),
-        h3.h3_to_center_child(child_node, refinement_levels[-1]),
-    )
 
 
 def add_edge(
