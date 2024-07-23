@@ -31,8 +31,8 @@ def create_icosahedral_nodes(
     -------
     graph : networkx.Graph
         The specified graph (nodes & edges).
-    vertices_rad : np.ndarray
-        The vertices (not ordered) of the mesh in radians.
+    coords_rad : np.ndarray
+        The node coordinates (not ordered) in radians.
     node_ordering : list[int]
         Order of the nodes in the graph to be sorted by latitude and longitude.
     """
@@ -62,6 +62,7 @@ def create_icosahedral_nx_graph_from_coords(coords_rad: np.ndarray, node_orderin
 
 
 def get_node_ordering(coords_rad: np.ndarray) -> np.ndarray:
+    """Get the node ordering to sort the nodes by latitude and longitude."""
     # Get indices to sort points by lon & lat in radians.
     index_latitude = np.argsort(coords_rad[:, 1])
     index_longitude = np.argsort(coords_rad[index_latitude][:, 0])[::-1]

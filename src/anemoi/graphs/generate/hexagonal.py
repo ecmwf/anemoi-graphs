@@ -10,7 +10,7 @@ from sklearn.metrics.pairwise import haversine_distances
 def create_hexagonal_nodes(
     resolutions: list[int],
     area: Optional[dict] = None,
-) -> tuple[nx.Graph, torch.Tensor, list[int]]:
+) -> tuple[nx.Graph, np.ndarray, list[int]]:
     """Creates a global mesh from a refined icosahedro.
 
     This method relies on the H3 python library, which covers the earth with hexagons (and 5 pentagons). At each
@@ -28,6 +28,10 @@ def create_hexagonal_nodes(
     -------
     graph : networkx.Graph
         The specified graph (nodes & edges).
+    coords_rad : np.ndarray
+        The node coordinates (not ordered) in radians.
+    node_ordering : list[int]
+        Order of the nodes in the graph to be sorted by latitude and longitude.
     """
     graph = nx.Graph()
 
@@ -36,14 +40,12 @@ def create_hexagonal_nodes(
     for resolution in resolutions:
         add_nodes_for_resolution(graph, resolution, **area_kwargs)
 
-    coords = np.array([h3.h3_to_geo(node) for node in graph.nodes])
+    coords = np.deg2rad(np.array([h3.h3_to_geo(node) for node in graph.nodes]))
 
     # Sort nodes by latitude and longitude
     node_ordering = np.lexsort(coords.T[::-1], axis=0)
 
-    coords = coords[node_ordering]
-
-    return graph, coords, node_ordering
+    return graph, coords, list(node_ordering)
 
 
 def add_nodes_for_resolution(
