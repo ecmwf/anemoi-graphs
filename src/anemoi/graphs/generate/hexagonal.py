@@ -14,7 +14,7 @@ def create_hexagonal_nodes(
     """Creates a global mesh from a refined icosahedro.
 
     This method relies on the H3 python library, which covers the earth with hexagons (and 5 pentagons). At each
-    refinement level, a hexagon cell has 7 child cells (aperture 7).
+    refinement level, a hexagon cell (nodes) has 7 child cells (aperture 7).
 
     Parameters
     ----------
@@ -60,7 +60,7 @@ def add_nodes_for_resolution(
     resolution : int
         The H3 refinement level. It can be an integer from 0 to 15.
     area_kwargs: dict
-        Additional arguments to pass to the get_cells_at_resolution function.
+        Additional arguments to pass to the get_nodes_at_resolution function.
     """
 
     nodes = get_nodes_at_resolution(resolution, **area_kwargs)
@@ -73,9 +73,9 @@ def get_nodes_at_resolution(
     resolution: int,
     area: Optional[dict] = None,
 ) -> set[str]:
-    """Get cells at a specified refinement level over the entire globe.
+    """Get nodes at a specified refinement level over the entire globe.
 
-    If area is not None, it will return the cells within the specified area
+    If area is not None, it will return the nodes within the specified area
 
     Parameters
     ----------
@@ -86,7 +86,7 @@ def get_nodes_at_resolution(
 
     Returns
     -------
-    cells : set[str]
+    nodes : set[str]
         The set of H3 indexes at the specified resolution level.
     """
     nodes = h3.uncompact(h3.get_res0_indexes(), resolution) if area is None else h3.polyfill(area, resolution)
@@ -173,9 +173,9 @@ def add_edges_to_children(
         depth_children = len(refinement_levels)
 
     for i_level, resolution_parent in enumerate(refinement_levels[0:-1]):
-        parent_cells = select_nodes_from_graph_at_resolution(graph, resolution_parent)
+        parent_nodes = select_nodes_from_graph_at_resolution(graph, resolution_parent)
 
-        for parent_idx in parent_cells:
+        for parent_idx in parent_nodes:
             # add own children
             for resolution_child in refinement_levels[i_level + 1 : i_level + depth_children + 1]:
                 for child_idx in h3.h3_to_children(parent_idx, res=resolution_child):
@@ -187,8 +187,8 @@ def add_edges_to_children(
 
 
 def select_nodes_from_graph_at_resolution(graph: nx.Graph, resolution: int):
-    parent_cells = [node for node in graph.nodes if h3.h3_get_resolution(node) == resolution]
-    return parent_cells
+    parent_nodes = [node for node in graph.nodes if h3.h3_get_resolution(node) == resolution]
+    return parent_nodes
 
 
 def add_edge(
