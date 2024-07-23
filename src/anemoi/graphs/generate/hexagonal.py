@@ -34,7 +34,7 @@ def create_hexagonal_nodes(
     area_kwargs = {"area": area}
 
     for resolution in resolutions:
-        add_nodes_for_resolution(graph, resolution, **area_kwargs)
+        graph = add_nodes_for_resolution(graph, resolution, **area_kwargs)
 
     coords = np.array([h3.h3_to_geo(node) for node in graph.nodes])
 
