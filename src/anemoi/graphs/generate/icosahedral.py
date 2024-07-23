@@ -109,7 +109,7 @@ def add_edges_to_nx_graph(
 
     tree = BallTree(vertices_rad, metric="haversine")
 
-    # Build the multi-scale connections
+    # Build the multi-scale connections
     for resolution in resolutions[:-1]:
         # Define the refined sphere at specified 'resolution' level
         r_sphere = trimesh.creation.icosphere(subdivisions=resolution, radius=1.0)

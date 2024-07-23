@@ -108,7 +108,7 @@ def add_edges_to_nx_graph(
     """Adds the edges to the graph.
 
     This method includes multi-scale connections to the existing graph. The different scales
-    are defined by the resolutions (or refinement levels) specified. 
+    are defined by the resolutions (or refinement levels) specified.
 
     Parameters
     ----------
