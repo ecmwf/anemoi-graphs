@@ -50,7 +50,7 @@ def add_nodes_for_resolution(
     graph: nx.Graph,
     resolution: int,
     **area_kwargs: Optional[dict],
-) -> None:
+) -> nx.Graph:
     """Add all nodes at a specified refinement level to a graph.
 
     Parameters
@@ -67,6 +67,8 @@ def add_nodes_for_resolution(
 
     for idx in nodes:
         graph.add_node(idx, hcoords_rad=np.deg2rad(h3.h3_to_geo(idx)))
+
+    return graph
 
 
 def get_nodes_at_resolution(
@@ -125,8 +127,8 @@ def add_edges_to_nx_graph(
         The specified graph (nodes & edges).
     """
 
-    add_neighbour_edges(graph, resolutions, x_hops)
-    add_edges_to_children(
+    graph = add_neighbour_edges(graph, resolutions, x_hops)
+    graph = add_edges_to_children(
         graph,
         resolutions,
         depth_children,
@@ -138,25 +140,27 @@ def add_neighbour_edges(
     graph: nx.Graph,
     refinement_levels: tuple[int],
     x_hops: int = 1,
-) -> None:
+) -> nx.Graph:
     for resolution in refinement_levels:
         nodes = select_nodes_from_graph_at_resolution(graph, resolution)
 
         for idx in nodes:
             # neighbours
             for idx_neighbour in h3.k_ring(idx, k=x_hops) & set(nodes):
-                add_edge(
+                graph = add_edge(
                     graph,
                     h3.h3_to_center_child(idx, refinement_levels[-1]),
                     h3.h3_to_center_child(idx_neighbour, refinement_levels[-1]),
                 )
+
+    return graph
 
 
 def add_edges_to_children(
     graph: nx.Graph,
     refinement_levels: tuple[int],
     depth_children: Optional[int] = None,
-) -> None:
+) -> nx.Graph:
     """Adds edges to the children of the nodes at the specified resolution levels.
 
     Parameters
@@ -179,11 +183,13 @@ def add_edges_to_children(
             # add own children
             for resolution_child in refinement_levels[i_level + 1 : i_level + depth_children + 1]:
                 for child_idx in h3.h3_to_children(parent_idx, res=resolution_child):
-                    add_edge(
+                    graph = add_edge(
                         graph,
                         h3.h3_to_center_child(parent_idx, refinement_levels[-1]),
                         h3.h3_to_center_child(child_idx, refinement_levels[-1]),
                     )
+
+    return graph
 
 
 def select_nodes_from_graph_at_resolution(graph: nx.Graph, resolution: int):
@@ -195,7 +201,7 @@ def add_edge(
     graph: nx.Graph,
     source_node_h3_idx: str,
     target_node_h3_idx: str,
-) -> None:
+) -> nx.Graph:
     """Add edge between two nodes to a graph.
 
     The edge will only be added in case both target and source nodes are included in the graph.
@@ -210,7 +216,7 @@ def add_edge(
         The H3 index of the head of the edge.
     """
     if not graph.has_node(source_node_h3_idx) or not graph.has_node(target_node_h3_idx):
-        return
+        return graph
 
     if source_node_h3_idx != target_node_h3_idx:
         source_location = np.deg2rad(h3.h3_to_geo(source_node_h3_idx))
@@ -218,3 +224,5 @@ def add_edge(
         graph.add_edge(
             source_node_h3_idx, target_node_h3_idx, weight=haversine_distances([source_location, target_location])[0][1]
         )
+
+    return graph
