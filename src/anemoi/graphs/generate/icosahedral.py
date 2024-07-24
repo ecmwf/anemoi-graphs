@@ -77,8 +77,8 @@ def add_edges_to_nx_graph(
 ) -> nx.DiGraph:
     """Adds the edges to the graph.
 
-    This method includes multi-scale connections to the existing graph. The different scales
-    are defined by the resolutions (or refinement levels) specified.
+    This method adds multi-scale connections to the existing graph. The corresponfing nodes or vertices
+    are defined by an isophere at the different esolutions (or refinement levels) specified.
 
     Parameters
     ----------
@@ -111,10 +111,10 @@ def add_edges_to_nx_graph(
 
     # Build the multi-scale connections
     for resolution in resolutions[:-1]:
-        # Define the refined sphere at specified 'resolution' level
+        # Define the isophere at specified 'resolution' level
         r_sphere = trimesh.creation.icosphere(subdivisions=resolution, radius=1.0)
 
-        # Get the vertices of the refined sphere
+        # Get the vertices of the isophere
         r_vertices_rad = cartesian_to_latlon_rad(r_sphere.vertices)
 
         # TODO AOI mask builder is not used in the current implementation.
