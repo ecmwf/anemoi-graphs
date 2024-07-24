@@ -309,12 +309,8 @@ class TriIcosahedralEdges(MultiScaleEdges):
         )  # HeteroData refuses to accept None
 
         adjmat = nx.to_scipy_sparse_array(
-            source_nodes["nx_graph"], nodelist=list(source_nodes["nx_graph"]), format="coo"
+            source_nodes["nx_graph"], nodelist=list(range(len(source_nodes["nx_graph"]))), format="coo"
         )
-        graph_sorted = {i: node for i, node in enumerate(source_nodes["nx_graph"].nodes)}
-        sort_func = np.vectorize(graph_sorted.get)
-        adjmat.row = sort_func(adjmat.row)
-        adjmat.col = sort_func(adjmat.col)
 
         self.post_process_adjmat(source_nodes, adjmat)
         return adjmat
