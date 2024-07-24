@@ -1,6 +1,5 @@
 from .builder import CutOffEdges
-from .builder import HexagonalEdges
 from .builder import KNNEdges
-from .builder import TriIcosahedralEdges
+from .builder import MultiScaleEdges
 
-__all__ = ["KNNEdges", "CutOffEdges", "TriIcosahedralEdges", "HexagonalEdges"]
+__all__ = ["KNNEdges", "CutOffEdges", "MultiScaleEdges"]
