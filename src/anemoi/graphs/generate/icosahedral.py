@@ -102,7 +102,7 @@ def add_edges_to_nx_graph(
 
     sphere = trimesh.creation.icosphere(subdivisions=resolutions[-1], radius=1.0)
     vertices_rad = cartesian_to_latlon_rad(sphere.vertices)
-    node_neighbours = get_neighbours_within_hops(sphere, x_hops, valid_nodes=list(graph.nodes))
+    node_neighbours = get_neighbours_within_hops(sphere, x_hops)
 
     for idx_node, idx_neighbours in node_neighbours.items():
         add_neigbours_edges(graph, vertices_rad, idx_node, idx_neighbours)
@@ -118,9 +118,8 @@ def add_edges_to_nx_graph(
         r_vertices_rad = cartesian_to_latlon_rad(r_sphere.vertices)
 
         # TODO AOI mask builder is not used in the current implementation.
-        valid_nodes = None
 
-        node_neighbours = get_neighbours_within_hops(r_sphere, x_hops, valid_nodes=valid_nodes)
+        node_neighbours = get_neighbours_within_hops(r_sphere, x_hops)
 
         _, vertex_mapping_index = tree.query(r_vertices_rad, k=1)
         for idx_node, idx_neighbours in node_neighbours.items():
@@ -131,9 +130,7 @@ def add_edges_to_nx_graph(
     return graph
 
 
-def get_neighbours_within_hops(
-    tri_mesh: trimesh.Trimesh, x_hops: int, valid_nodes: Optional[list[int]] = None
-) -> dict[int, set[int]]:
+def get_neighbours_within_hops(tri_mesh: trimesh.Trimesh, x_hops: int) -> dict[int, set[int]]:
     """Get the neigbour connections in the graph.
 
     Parameters
@@ -153,10 +150,8 @@ def get_neighbours_within_hops(
         i-th vertex of the mesh.
     """
     edges = tri_mesh.edges_unique
-    if valid_nodes is not None:
-        edges = edges[np.isin(tri_mesh.edges_unique, valid_nodes).all(axis=1)]
-    else:
-        valid_nodes = list(range(len(tri_mesh.vertices)))
+
+    valid_nodes = list(range(len(tri_mesh.vertices)))
     graph = nx.from_edgelist(edges)
 
     # Get a dictionary of the neighbours within 'x_hops' neighbourhood of each node in the graph
