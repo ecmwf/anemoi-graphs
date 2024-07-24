@@ -13,7 +13,7 @@ icosahedron, you can use the following YAML configuration:
    nodes:
      data:
        node_builder:
-         _target_: anemoi.graphs.nodes.TriRefinedIcosahedronNodes
+         _target_: anemoi.graphs.nodes.TriNodes
          resolution: 4
        attributes: ...
 

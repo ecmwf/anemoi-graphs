@@ -15,7 +15,7 @@ an icosahedron, you can use the following YAML configuration:
    nodes:
      data:
        node_builder:
-         _target_: anemoi.graphs.nodes.HexRefinedIcosahedronNodes
+         _target_: anemoi.graphs.nodes.HexNodes
          resolution: 4
        attributes: ...
 

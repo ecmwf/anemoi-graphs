@@ -25,5 +25,4 @@ Below are the available methods for defining the edges:
 
    edges/cutoff
    edges/knn
-   edges/multi_scale_tri_refinement
-   edges/multi_scale_hex_refinement
+   edges/multi_scale
