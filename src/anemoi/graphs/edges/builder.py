@@ -15,7 +15,6 @@ from torch_geometric.data.storage import NodeStorage
 from anemoi.graphs import EARTH_RADIUS
 from anemoi.graphs.generate import hexagonal
 from anemoi.graphs.generate import icosahedral
-from anemoi.graphs.nodes.builder import BaseNodeBuilder
 from anemoi.graphs.nodes.builder import HexNodes
 from anemoi.graphs.nodes.builder import TriNodes
 from anemoi.graphs.utils import get_grid_reference_distance
@@ -266,21 +265,53 @@ class CutOffEdges(BaseEdgeBuilder):
         return adj_matrix
 
 
-class MultiScaleEdges(BaseEdgeBuilder, ABC):
+class MultiScaleEdges(BaseEdgeBuilder):
     """Base class for multi-scale edges in the nodes of a graph."""
 
-    def __init__(self, source_name: str, target_name: str, xhops: int):
+    def __init__(self, source_name: str, target_name: str, x_hops: int):
         super().__init__(source_name, target_name)
         assert source_name == target_name, f"{self.__class__.__name__} requires source and target nodes to be the same."
-        assert isinstance(xhops, int), "Number of xhops must be an integer"
-        assert xhops > 0, "Number of xhops must be positive"
-        self.xhops = xhops
+        assert isinstance(x_hops, int), "Number of x_hops must be an integer"
+        assert x_hops > 0, "Number of x_hops must be positive"
+        self.x_hops = x_hops
 
-    @abstractmethod
-    def base_node_class(self) -> BaseNodeBuilder: ...
+    def adjacency_from_tri_nodes(self, source_nodes: NodeStorage):
+        source_nodes["_nx_graph"] = icosahedral.add_edges_to_nx_graph(
+            source_nodes["_nx_graph"],
+            resolutions=source_nodes["_resolutions"],
+            x_hops=self.x_hops,
+        )  # HeteroData refuses to accept None
+
+        adjmat = nx.to_scipy_sparse_array(
+            source_nodes["_nx_graph"], nodelist=list(range(len(source_nodes["_nx_graph"]))), format="coo"
+        )
+        return adjmat
+
+    def adjacency_from_hex_nodes(self, source_nodes: NodeStorage):
+
+        source_nodes["_nx_graph"] = hexagonal.add_edges_to_nx_graph(
+            source_nodes["_nx_graph"],
+            resolutions=source_nodes["_resolutions"],
+            x_hops=self.x_hops,
+        )
+
+        adjmat = nx.to_scipy_sparse_array(source_nodes["_nx_graph"], format="coo")
+        return adjmat
+
+    def get_adjacency_matrix(self, source_nodes: NodeStorage, target_nodes: NodeStorage):
+        if self.node_type == TriNodes.__name__:
+            adjmat = self.adjacency_from_tri_nodes(source_nodes)
+        elif self.node_type == HexNodes.__name__:
+            adjmat = self.adjacency_from_hex_nodes(source_nodes)
+        else:
+            raise ValueError(f"Invalid node type {self.node_type}")
+
+        adjmat = self.post_process_adjmat(source_nodes, adjmat)
+
+        return adjmat
 
     def post_process_adjmat(self, nodes: NodeStorage, adjmat):
-        graph_sorted = dict(zip(nodes["_node_ordering"], range(len(nodes["_node_ordering"]))))
+        graph_sorted = {node_pos: i for i, node_pos in enumerate(nodes["_node_ordering"])}
         sort_func = np.vectorize(graph_sorted.get)
         adjmat.row = sort_func(adjmat.row)
         adjmat.col = sort_func(adjmat.col)
@@ -288,52 +319,10 @@ class MultiScaleEdges(BaseEdgeBuilder, ABC):
 
     def update_graph(self, graph: HeteroData, attrs_config: DotDict | None = None) -> HeteroData:
         assert (
-            graph[self.source_name].node_type == self.base_node_class.__name__
-        ), f"{self.__class__.__name__} requires {self.base_node_class.__name__}."
+            graph[self.source_name].node_type == TriNodes.__name__
+            or graph[self.source_name].node_type == HexNodes.__name__
+        ), f"{self.__class__.__name__} requires {TriNodes.__name__} or {HexNodes.__name__}."
+
+        self.node_type = graph[self.source_name].node_type
 
         return super().update_graph(graph, attrs_config)
-
-
-class TriIcosahedralEdges(MultiScaleEdges):
-    """Computes icosahedral edges and adds them to a HeteroData graph."""
-
-    @property
-    def base_node_class(self) -> BaseNodeBuilder:
-        return TriNodes
-
-    def get_adjacency_matrix(self, source_nodes: NodeStorage, target_nodes: NodeStorage):
-        source_nodes["_nx_graph"] = icosahedral.add_edges_to_nx_graph(
-            source_nodes["_nx_graph"],
-            resolutions=source_nodes["_resolutions"],
-            xhops=self.xhops,
-        )  # HeteroData refuses to accept None
-
-        adjmat = nx.to_scipy_sparse_array(
-            source_nodes["_nx_graph"], nodelist=list(source_nodes["_nx_graph"]), format="coo"
-        )
-        graph_1_sorted = dict(zip(range(len(source_nodes["_nx_graph"].nodes)), list(source_nodes["_nx_graph"].nodes)))
-        sort_func1 = np.vectorize(graph_1_sorted.get)
-        adjmat.row = sort_func1(adjmat.row)
-        adjmat.col = sort_func1(adjmat.col)
-
-        self.post_process_adjmat(source_nodes, adjmat)
-        return adjmat
-
-
-class HexagonalEdges(MultiScaleEdges):
-    """Computes hexagonal edges and adds them to a HeteroData graph."""
-
-    @property
-    def base_node_class(self) -> BaseNodeBuilder:
-        return HexNodes
-
-    def get_adjacency_matrix(self, source_nodes: NodeStorage, target_nodes: NodeStorage):
-        source_nodes["_nx_graph"] = hexagonal.add_edges_to_nx_graph(
-            source_nodes["_nx_graph"],
-            resolutions=source_nodes["_resolutions"],
-            xhops=self.xhops,
-        )
-
-        adjmat = nx.to_scipy_sparse_array(source_nodes["_nx_graph"], format="coo")
-        self.post_process_adjmat(source_nodes, adjmat)
-        return adjmat

@@ -215,11 +215,7 @@ class IcosahedralNodes(BaseNodeBuilder, ABC):
         resolution: Union[int, list[int]],
         name: str,
     ) -> None:
-        if isinstance(resolution, int):
-            self.resolutions = list(range(resolution + 1))
-        else:
-            self.resolutions = resolution
-
+        self.resolutions = list(range(resolution + 1)) if isinstance(resolution, int) else resolution
         super().__init__(name)
 
     def get_coordinates(self) -> torch.Tensor:
