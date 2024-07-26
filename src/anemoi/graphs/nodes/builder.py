@@ -146,7 +146,7 @@ class ZarrDatasetNodes(BaseNodeBuilder):
         torch.Tensor of shape (N, 2)
             Coordinates of the nodes.
         """
-        return self.reshape_coords(self.ds.latitudes, self.ds.longitudes)
+        return self.reshape_coords(self.dataset.latitudes, self.dataset.longitudes)
 
 
 class LimitedAreaZarrDatasetNodes(ZarrDatasetNodes):
