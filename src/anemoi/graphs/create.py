@@ -1,6 +1,7 @@
 import logging
 from itertools import chain
 from pathlib import Path
+from pathlib import PurePath
 from typing import Optional
 from typing import Union
 
@@ -17,9 +18,9 @@ class GraphCreator:
 
     def __init__(
         self,
-        config: Union[Path.PurePath, DotDict],
+        config: Union[PurePath, DotDict],
     ):
-        self.config = DotDict.from_file(config) if isinstance(config, Path.PurePath) else config
+        self.config = DotDict.from_file(config) if isinstance(config, PurePath) else config
 
     def generate_graph(self) -> HeteroData:
         """Generate the graph.
