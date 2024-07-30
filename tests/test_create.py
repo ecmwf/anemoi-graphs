@@ -24,7 +24,7 @@ class TestGraphCreator:
         graph_path = tmp_path / name if isinstance(name, str) else None
         config_path = tmp_path / config_name
 
-        graph = GraphCreator(config=config_path, path=graph_path).create()
+        graph = GraphCreator(config=config_path).create(save_path=graph_path)
 
         assert isinstance(graph, HeteroData)
         assert "test_nodes" in graph.node_types
