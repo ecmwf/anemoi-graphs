@@ -290,10 +290,10 @@ class IcosahedralNodes(BaseNodeBuilder, ABC):
     def create_nodes(self) -> np.ndarray: ...
 
     def register_attributes(self, graph: HeteroData, config: DotDict) -> HeteroData:
-        graph[self.name]["resolutions"] = self.resolutions
-        graph[self.name]["nx_graph"] = self.nx_graph
-        graph[self.name]["node_ordering"] = self.node_ordering
-        graph[self.name]["aoi_mask_builder"] = self.aoi_mask_builder
+        graph[self.name]["_resolutions"] = self.resolutions
+        graph[self.name]["_nx_graph"] = self.nx_graph
+        graph[self.name]["_node_ordering"] = self.node_ordering
+        graph[self.name]["_aoi_mask_builder"] = self.aoi_mask_builder
         return super().register_attributes(graph, config)
 
 
