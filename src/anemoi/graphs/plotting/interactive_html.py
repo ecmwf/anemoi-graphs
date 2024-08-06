@@ -158,9 +158,7 @@ def plot_isolated_nodes(graph: HeteroData, out_file: Optional[Union[str, Path]] 
         fig.show()
 
 
-def plot_interactive_nodes(
-    graph: HeteroData, nodes_name: str, mask: np.ndarray = None, out_file: Optional[str] = None
-) -> None:
+def plot_interactive_nodes(graph: HeteroData, nodes_name: str, out_file: Optional[str] = None) -> None:
     """Plot nodes.
 
     This method creates an interactive visualization of a set of nodes.
@@ -171,31 +169,54 @@ def plot_interactive_nodes(
         Graph.
     nodes_name : str
         Name of the nodes to plot.
-    mask : np.ndarray
-        Array of boolean values to mask the nodes.
     out_file : str, optional
         Name of the file to save the plot. Default is None.
     """
-    node_latitudes = graph[nodes_name].x[:, 0].numpy()
-    node_longitudes = graph[nodes_name].x[:, 1].numpy()
+    node_latitudes = np.rad2deg(graph[nodes_name].x[:, 0].numpy())
+    node_longitudes = np.rad2deg(graph[nodes_name].x[:, 1].numpy())
+    node_attrs = graph[nodes_name].node_attrs()
+    node_attrs.remove("x")
 
-    if mask is None:
-        mask = np.ones_like(node_latitudes, dtype=bool)
+    node_traces = {}
+    for node_attr in node_attrs:
+        node_attr_values = graph[nodes_name][node_attr].float().numpy()
+        if node_attr_values.ndim > 1 and node_attr_values.shape[1] > 1:
+            continue
 
-    colors = ["blue" if m else "red" for m in mask]
+        node_traces[node_attr] = go.Scattergeo(
+            lat=node_latitudes,
+            lon=node_longitudes,
+            name=" ".join(node_attr.split("_")).capitalize(),
+            mode="markers",
+            hoverinfo="text",
+            marker={
+                "color": node_attr_values.squeeze().tolist(),
+                "showscale": True,
+                "colorscale": "RdBu",
+                "colorbar": {"thickness": 15, "title": node_attr, "xanchor": "left"},
+                "size": 5,
+            },
+            visible=False,
+        )
 
-    node_trace = go.Scattergeo(
-        lat=node_latitudes,
-        lon=node_longitudes,
-        mode="markers",
-        hoverinfo="text",
-        marker={"color": colors, "size": 5},
-    )
+    # Create and add slider
+    slider_steps = []
+    for i, node_attr in enumerate(node_traces.keys()):
+        step = dict(
+            label=f"Node attribute: {node_attr}",
+            method="update",
+            args=[{"visible": [False] * len(node_traces)}],
+        )
+        step["args"][0]["visible"][i] = True  # Toggle i'th trace to "visible"
+        slider_steps.append(step)
 
     fig = go.Figure(
-        data=[node_trace],
+        data=list(node_traces.values()),
         layout=go.Layout(
             title=f"<br>Map of {nodes_name} nodes",
+            sliders=[
+                dict(active=0, currentvalue={"visible": False}, len=0.4, x=0.5, xanchor="center", steps=slider_steps)
+            ],
             titlefont_size=16,
             showlegend=False,
             hovermode="closest",
@@ -205,6 +226,7 @@ def plot_interactive_nodes(
             yaxis=plotly_axis_config,
         ),
     )
+    fig.data[0].visible = True
 
     if out_file is not None:
         fig.write_html(out_file)
