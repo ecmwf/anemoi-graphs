@@ -28,6 +28,8 @@ class BaseNodeBuilder(ABC):
     ----------
     name : str
         name of the nodes, key for the nodes in the HeteroData graph object.
+    aoi_mask_builder : KNNAreaMaskBuilder
+        The area of interest mask builder, if any. Defaults to None.
     """
 
     def __init__(self, name: str) -> None:
@@ -67,21 +69,21 @@ class BaseNodeBuilder(ABC):
         return graph
 
     @abstractmethod
-    def get_coordinates(self) -> np.ndarray: ...
+    def get_coordinates(self) -> torch.Tensor: ...
 
-    def reshape_coords(self, latitudes: np.ndarray, longitudes: np.ndarray) -> np.ndarray:
+    def reshape_coords(self, latitudes: np.ndarray, longitudes: np.ndarray) -> torch.Tensor:
         """Reshape latitude and longitude coordinates.
 
         Parameters
         ----------
-        latitudes : np.ndarray of shape (N, )
+        latitudes : np.ndarray of shape (num_nodes, )
             Latitude coordinates, in degrees.
-        longitudes : np.ndarray of shape (N, )
+        longitudes : np.ndarray of shape (num_nodes, )
             Longitude coordinates, in degrees.
 
         Returns
         -------
-        torch.Tensor of shape (N, 2)
+        torch.Tensor of shape (num_nodes, 2)
             A 2D tensor with the coordinates, in radians.
         """
         coords = np.stack([latitudes, longitudes], axis=-1).reshape((-1, 2))
@@ -143,8 +145,8 @@ class ZarrDatasetNodes(BaseNodeBuilder):
 
         Returns
         -------
-        torch.Tensor of shape (N, 2)
-            Coordinates of the nodes.
+        torch.Tensor of shape (num_nodes, 2)
+            A 2D tensor with the coordinates, in radians.
         """
         return self.reshape_coords(self.dataset.latitudes, self.dataset.longitudes)
 
@@ -216,15 +218,15 @@ class NPZFileNodes(BaseNodeBuilder):
 
         Returns
         -------
-        torch.Tensor of shape (N, 2)
-            Coordinates of the nodes.
+        torch.Tensor of shape (num_nodes, 2)
+            A 2D tensor with the coordinates, in radians.
         """
         coords = self.reshape_coords(self.grid_definition["latitudes"], self.grid_definition["longitudes"])
         return coords
 
 
 class LimitedAreaNPZFileNodes(NPZFileNodes):
-    """Processor mesh based on an NPZ defined grids using an area of interest."""
+    """Nodes from NPZ defined grids using an area of interest."""
 
     def __init__(
         self,
@@ -251,7 +253,7 @@ class LimitedAreaNPZFileNodes(NPZFileNodes):
             "Limiting the processor mesh to a radius of %.2f km from the output mesh.",
             self.aoi_mask_builder.margin_radius_km,
         )
-        aoi_mask = self.aoi_mask_builder.get_mask(np.deg2rad(coords))
+        aoi_mask = self.aoi_mask_builder.get_mask(coords)
 
         LOGGER.info("Dropping %d nodes from the processor mesh.", len(aoi_mask) - aoi_mask.sum())
         coords = coords[aoi_mask]
@@ -260,11 +262,9 @@ class LimitedAreaNPZFileNodes(NPZFileNodes):
 
 
 class IcosahedralNodes(BaseNodeBuilder, ABC):
-    """Processor mesh based on a triangular mesh.
+    """Nodes based on iterative refinements of an icosahedron.
 
-    It is based on the icosahedral mesh, which is a mesh of triangles that covers the sphere.
-
-    Parameters
+    Attributes
     ----------
     resolution : list[int] | int
         Refinement level of the mesh.
@@ -283,6 +283,13 @@ class IcosahedralNodes(BaseNodeBuilder, ABC):
         super().__init__(name)
 
     def get_coordinates(self) -> torch.Tensor:
+        """Get the coordinates of the nodes.
+
+        Returns
+        -------
+        torch.Tensor of shape (num_nodes, 2)
+            A 2D tensor with the coordinates, in radians.
+        """
         self.nx_graph, coords_rad, self.node_ordering = self.create_nodes()
         return torch.tensor(coords_rad[self.node_ordering], dtype=torch.float32)
 
@@ -298,21 +305,35 @@ class IcosahedralNodes(BaseNodeBuilder, ABC):
 
 
 class TriNodes(IcosahedralNodes):
-    """It depends on the trimesh Python library."""
+    """Nodes based on iterative refinements of an icosahedron.
+
+    It depends on the trimesh Python library.
+    """
 
     def create_nodes(self) -> np.ndarray:
         return create_icosahedral_nodes(resolutions=self.resolutions)
 
 
 class HexNodes(IcosahedralNodes):
-    """It depends on the h3 Python library."""
+    """Nodes based on iterative refinements of an icosahedron.
+
+    It depends on the h3 Python library.
+    """
 
     def create_nodes(self) -> np.ndarray:
         return create_hexagonal_nodes(self.resolutions)
 
 
 class LimitedAreaTriNodes(TriNodes):
-    """Class to build icosahedral nodes with a limited area of interest."""
+    """Nodes based on iterative refinements of an icosahedron using an area of interest.
+
+    It depends on the trimesh Python library.
+
+    Parameters
+    ----------
+    aoi_mask_builder: KNNAreaMaskBuilder
+        The area of interest mask builder.
+    """
 
     def __init__(
         self,
@@ -333,7 +354,15 @@ class LimitedAreaTriNodes(TriNodes):
 
 
 class LimitedAreaHexNodes(HexNodes):
-    """Class to build icosahedral nodes with a limited area of interest."""
+    """Nodes based on iterative refinements of an icosahedron using an area of interest.
+
+    It depends on the h3 Python library.
+
+    Parameters
+    ----------
+    aoi_mask_builder: KNNAreaMaskBuilder
+        The area of interest mask builder.
+    """
 
     def __init__(
         self,
@@ -362,8 +391,6 @@ class HEALPixNodes(BaseNodeBuilder):
     ----------
     resolution : int
         The resolution of the grid.
-    name : str
-        The name of the nodes.
 
     Methods
     -------
@@ -390,8 +417,8 @@ class HEALPixNodes(BaseNodeBuilder):
 
         Returns
         -------
-        torch.Tensor of shape (N, 2)
-            Coordinates of the nodes.
+        torch.Tensor of shape (num_nodes, 2)
+            Coordinates of the nodes, in radians.
         """
         import healpy as hp
 
@@ -402,3 +429,39 @@ class HEALPixNodes(BaseNodeBuilder):
         hpxlon, hpxlat = hp.pix2ang(2**self.resolution, range(npix), nest=True, lonlat=True)
 
         return self.reshape_coords(hpxlat, hpxlon)
+
+
+class LimitedAreaHEALPixNodes(HEALPixNodes):
+    """Nodes from HEALPix grid using an area of interest."""
+
+    def __init__(
+        self,
+        resolution: str,
+        name: str,
+        reference_node_name: str,
+        mask_attr_name: str,
+        margin_radius_km: float = 100.0,
+    ) -> None:
+
+        self.aoi_mask_builder = KNNAreaMaskBuilder(reference_node_name, margin_radius_km, mask_attr_name)
+
+        super().__init__(resolution, name)
+
+    def register_nodes(self, graph: HeteroData) -> None:
+        self.aoi_mask_builder.fit(graph)
+        return super().register_nodes(graph)
+
+    def get_coordinates(self) -> np.ndarray:
+        coords = super().get_coordinates()
+
+        LOGGER.info(
+            'Limiting the "%s" nodes to a radius of %.2f km from the nodes of interest.',
+            self.name,
+            self.aoi_mask_builder.margin_radius_km,
+        )
+        aoi_mask = self.aoi_mask_builder.get_mask(coords)
+
+        LOGGER.info('Masking out %d nodes from "%s".', len(aoi_mask) - aoi_mask.sum(), self.name)
+        coords = coords[aoi_mask]
+
+        return coords
