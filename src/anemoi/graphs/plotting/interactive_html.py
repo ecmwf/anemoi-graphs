@@ -16,7 +16,7 @@ from anemoi.graphs.plotting.prepare import node_list
 annotations_style = {"text": "", "showarrow": False, "xref": "paper", "yref": "paper", "x": 0.005, "y": -0.002}
 plotly_axis_config = {"showgrid": False, "zeroline": False, "showticklabels": False}
 
-logger = logging.getLogger(__name__)
+LOGGER = logging.getLogger(__name__)
 
 
 def plot_interactive_subgraph(
@@ -121,7 +121,7 @@ def plot_isolated_nodes(graph: HeteroData, out_file: Optional[Union[str, Path]] 
     isolated_nodes = compute_isolated_nodes(graph)
 
     if len(isolated_nodes) == 0:
-        logger.info("No orphan nodes found.")
+        LOGGER.warning("No orphan nodes found.")
         return
 
     colorbar = plt.cm.rainbow(np.linspace(0, 1, len(isolated_nodes)))

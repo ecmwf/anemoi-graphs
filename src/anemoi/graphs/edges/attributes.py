@@ -1,4 +1,3 @@
-import logging
 from abc import ABC
 from abc import abstractmethod
 from typing import Optional
@@ -10,8 +9,6 @@ from torch_geometric.data import HeteroData
 from anemoi.graphs.edges.directional import directional_edge_features
 from anemoi.graphs.normalizer import NormalizerMixin
 from anemoi.graphs.utils import haversine_distance
-
-LOGGER = logging.getLogger(__name__)
 
 
 class BaseEdgeAttribute(ABC, NormalizerMixin):

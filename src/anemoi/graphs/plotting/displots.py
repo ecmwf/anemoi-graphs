@@ -9,7 +9,7 @@ from torch_geometric.data import HeteroData
 from anemoi.graphs.plotting.prepare import _get_edge_attribute_dims
 from anemoi.graphs.plotting.prepare import _get_node_attribute_dims
 
-logger = logging.getLogger(__name__)
+LOGGER = logging.getLogger(__name__)
 
 
 def plot_dist_node_attributes(graph: HeteroData, out_file: Optional[Union[str, Path]] = None) -> None:
