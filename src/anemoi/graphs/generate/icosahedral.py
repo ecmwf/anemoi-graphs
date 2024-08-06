@@ -52,8 +52,8 @@ def create_icosahedral_nodes(
     return nx_graph, coords_rad, list(node_ordering)
 
 
-def create_icosahedral_nx_graph_from_coords(coords_rad: np.ndarray, node_ordering: list[int]):
-
+def create_icosahedral_nx_graph_from_coords(coords_rad: np.ndarray, node_ordering: list[int]) -> nx.DiGraph:
+    """Creates the networkx graph from the coordinates and the node ordering."""
     graph = nx.DiGraph()
     for ii, coords in enumerate(coords_rad[node_ordering]):
         node_id = node_ordering[ii]

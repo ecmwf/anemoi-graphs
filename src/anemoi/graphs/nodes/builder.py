@@ -3,8 +3,10 @@ from abc import ABC
 from abc import abstractmethod
 from pathlib import Path
 from typing import Optional
+from typing import Tuple
 from typing import Union
 
+import networkx as nx
 import numpy as np
 import torch
 from anemoi.datasets import open_dataset
@@ -294,7 +296,7 @@ class IcosahedralNodes(BaseNodeBuilder, ABC):
         return torch.tensor(coords_rad[self.node_ordering], dtype=torch.float32)
 
     @abstractmethod
-    def create_nodes(self) -> np.ndarray: ...
+    def create_nodes(self) -> Tuple[nx.DiGraph, np.ndarray, list[int]]: ...
 
     def register_attributes(self, graph: HeteroData, config: DotDict) -> HeteroData:
         graph[self.name]["_resolutions"] = self.resolutions
@@ -337,7 +339,7 @@ class TriNodes(IcosahedralNodes):
     It depends on the trimesh Python library.
     """
 
-    def create_nodes(self) -> np.ndarray:
+    def create_nodes(self) -> Tuple[nx.Graph, np.ndarray, list[int]]:
         return create_icosahedral_nodes(resolutions=self.resolutions)
 
 
@@ -347,7 +349,7 @@ class HexNodes(IcosahedralNodes):
     It depends on the h3 Python library.
     """
 
-    def create_nodes(self) -> np.ndarray:
+    def create_nodes(self) -> Tuple[nx.Graph, np.ndarray, list[int]]:
         return create_hexagonal_nodes(self.resolutions)
 
 
@@ -362,7 +364,7 @@ class LimitedAreaTriNodes(LimitedAreaIcosahedralNodes):
         The area of interest mask builder.
     """
 
-    def create_nodes(self) -> np.ndarray:
+    def create_nodes(self) -> Tuple[nx.Graph, np.ndarray, list[int]]:
         return create_icosahedral_nodes(resolutions=self.resolutions, aoi_mask_builder=self.aoi_mask_builder)
 
 
@@ -377,7 +379,7 @@ class LimitedAreaHexNodes(LimitedAreaIcosahedralNodes):
         The area of interest mask builder.
     """
 
-    def create_nodes(self) -> np.ndarray:
+    def create_nodes(self) -> Tuple[nx.Graph, np.ndarray, list[int]]:
         return create_hexagonal_nodes(self.resolutions, aoi_mask_builder=self.aoi_mask_builder)
 
 
