@@ -22,13 +22,34 @@ models from existing recipes but with their own data.
 This package provides a series of utility functions for used by the rest
 of the *Anemoi* packages.
 
--  :doc:`installing`
+-  :doc:`overview`
 
 .. toctree::
    :maxdepth: 1
    :hidden:
 
-   installing
+   overview
+
+*****************
+ Building graphs
+*****************
+
+-  :doc:`graphs/introduction`
+-  :doc:`graphs/node_coordinates`
+-  :doc:`graphs/node_attributes`
+-  :doc:`graphs/edges`
+-  :doc:`graphs/edge_attributes`
+
+.. toctree::
+   :maxdepth: 1
+   :hidden:
+   :caption: Building graphs
+
+   graphs/introduction
+   graphs/node_coordinates
+   graphs/node_attributes
+   graphs/edges
+   graphs/edge_attributes
 
 *********
  Modules
@@ -38,7 +59,37 @@ of the *Anemoi* packages.
    :maxdepth: 1
    :glob:
 
-   modules/*
+   modules
+
+*******************
+ Command line tool
+*******************
+
+-  :doc:`cli/introduction`
+-  :doc:`cli/create`
+-  :doc:`cli/inspect`
+
+.. toctree::
+   :maxdepth: 1
+   :hidden:
+   :caption: Command line tool
+
+   cli/introduction
+   cli/create
+   cli/inspect
+
+***********
+ Tutorials
+***********
+
+-  :doc:`usage/getting_started`
+
+.. toctree::
+   :maxdepth: 1
+   :hidden:
+   :caption: Usage
+
+   usage/getting_started
 
 *****************
  Anemoi packages

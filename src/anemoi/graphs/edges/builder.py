@@ -138,8 +138,6 @@ class KNNEdges(BaseEdgeBuilder):
 
     Methods
     -------
-    get_adjacency_matrix(source_nodes, target_nodes)
-        Compute the adjacency matrix for the KNN method.
     register_edges(graph)
         Register the edges in the graph.
     register_attributes(graph, config)
@@ -196,10 +194,6 @@ class CutOffEdges(BaseEdgeBuilder):
 
     Methods
     -------
-    get_cutoff_radius(graph, mask_attr)
-        Compute the cut-off radius.
-    get_adjacency_matrix(source_nodes, target_nodes)
-        Get the adjacency matrix for the cut-off method.
     register_edges(graph)
         Register the edges in the graph.
     register_attributes(graph, config)
@@ -217,7 +211,8 @@ class CutOffEdges(BaseEdgeBuilder):
     def get_cutoff_radius(self, graph: HeteroData, mask_attr: Optional[torch.Tensor] = None):
         """Compute the cut-off radius.
 
-        The cut-off radius is computed as the product of the target nodes reference distance and the cut-off factor.
+        The cut-off radius is computed as the product of the target nodes
+        reference distance and the cut-off factor.
 
         Parameters
         ----------
