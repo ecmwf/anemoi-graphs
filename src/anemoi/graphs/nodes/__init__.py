@@ -1,4 +1,6 @@
+from .builder import HEALPixNodes
 from .builder import HexNodes
+from .builder import LimitedAreaHEALPixNodes
 from .builder import LimitedAreaHexNodes
 from .builder import LimitedAreaNPZFileNodes
 from .builder import LimitedAreaTriNodes
@@ -12,6 +14,8 @@ __all__ = [
     "NPZFileNodes",
     "TriNodes",
     "HexNodes",
+    "HEALPixNodes",
+    "LimitedAreaHEALPixNodes",
     "LimitedAreaZarrDatasetNodes",
     "LimitedAreaNPZFileNodes",
     "LimitedAreaTriNodes",
