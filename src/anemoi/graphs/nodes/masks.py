@@ -1,8 +1,12 @@
+import logging
+
 import numpy as np
 from sklearn.neighbors import NearestNeighbors
 from torch_geometric.data import HeteroData
 
 from anemoi.graphs import EARTH_RADIUS
+
+LOGGER = logging.getLogger(__name__)
 
 
 class KNNAreaMaskBuilder:
@@ -36,11 +40,19 @@ class KNNAreaMaskBuilder:
 
     def fit(self, graph: HeteroData):
         """Fit the KNN model to the nodes of interest."""
+        reference_mask_str = self.reference_node_name
         coords_rad = graph[self.reference_node_name].x.numpy()
         if self.mask_attr_name is not None:
             mask = graph[self.reference_node_name][self.mask_attr_name].squeeze()
             coords_rad = coords_rad[mask]
+            reference_mask_str += f" ({self.mask_attr_name})"
 
+        LOGGER.info(
+            'Fitting %s with %d reference nodes from "%s".',
+            self.__class__.__name__,
+            len(coords_rad),
+            reference_mask_str,
+        )
         self.nearest_neighbour.fit(coords_rad)
 
     def get_mask(self, coords_rad: np.ndarray) -> np.ndarray:
