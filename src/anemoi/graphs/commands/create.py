@@ -20,7 +20,7 @@ class Create(Command):
         )
         command_parser.add_argument("--description", action="store_false", help="Show the description of the graph.")
         command_parser.add_argument(
-            "config", help="Configuration yaml file path defining the recipe to create the graph."
+            "config", type=Path, help="Configuration yaml file path defining the recipe to create the graph."
         )
         command_parser.add_argument("save_path", type=Path, help="Path to store the created graph.")
 
@@ -28,8 +28,8 @@ class Create(Command):
         graph_creator = GraphCreator(config=args.config)
         graph_creator.create(save_path=args.save_path, overwrite=args.overwrite)
 
-        if args.description:
-            GraphDescription(args.path).describe()
+        if args.description and args.save_path.exists():
+            GraphDescription(args.save_path).describe()
 
 
 command = Create
