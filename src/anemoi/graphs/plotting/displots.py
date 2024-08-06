@@ -34,7 +34,7 @@ def plot_dist_node_attributes(graph: HeteroData, out_file: Optional[Union[str, P
         for j, (attr_name, attr_values) in enumerate(attr_dims.items()):
             for dim in range(attr_values):
                 if attr_name in nodes_store:
-                    axs[i, j + dim].hist(nodes_store[attr_name][:, dim], bins=50)
+                    axs[i, j + dim].hist(nodes_store[attr_name][:, dim].float(), bins=50)
                     if j + dim == 0:
                         axs[i, j + dim].set_ylabel(nodes_name)
                     if i == 0:
@@ -70,7 +70,7 @@ def plot_dist_edge_attributes(graph: HeteroData, out_file: Optional[Union[str, P
         for j, (attr_name, attr_values) in enumerate(attr_dims.items()):
             for dim in range(attr_values):
                 if attr_name in edge_store:
-                    axs[i, j + dim].hist(edge_store[attr_name][:, dim], bins=50)
+                    axs[i, j + dim].hist(edge_store[attr_name][:, dim].float(), bins=50)
                     if j + dim == 0:
                         axs[i, j + dim].set_ylabel("".join(edge_name).replace("to", " --> "))
                     if i == 0:
