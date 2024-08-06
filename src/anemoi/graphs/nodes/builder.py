@@ -326,6 +326,10 @@ class LimitedAreaIcosahedralNodes(IcosahedralNodes):
 
         self.aoi_mask_builder = KNNAreaMaskBuilder(reference_node_name, margin_radius_km, mask_attr_name)
 
+    def register_nodes(self, graph: HeteroData) -> None:
+        self.aoi_mask_builder.fit(graph)
+        return super().register_nodes(graph)
+
 
 class TriNodes(IcosahedralNodes):
     """Nodes based on iterative refinements of an icosahedron.
@@ -361,10 +365,6 @@ class LimitedAreaTriNodes(LimitedAreaIcosahedralNodes):
     def create_nodes(self) -> np.ndarray:
         return create_icosahedral_nodes(resolutions=self.resolutions, aoi_mask_builder=self.aoi_mask_builder)
 
-    def register_nodes(self, graph: HeteroData) -> None:
-        self.aoi_mask_builder.fit(graph)
-        return super().register_nodes(graph)
-
 
 class LimitedAreaHexNodes(LimitedAreaIcosahedralNodes):
     """Nodes based on iterative refinements of an icosahedron using an area of interest.
@@ -379,10 +379,6 @@ class LimitedAreaHexNodes(LimitedAreaIcosahedralNodes):
 
     def create_nodes(self) -> np.ndarray:
         return create_hexagonal_nodes(self.resolutions, aoi_mask_builder=self.aoi_mask_builder)
-
-    def register_nodes(self, graph: HeteroData) -> None:
-        self.aoi_mask_builder.fit(graph)
-        return super().register_nodes(graph)
 
 
 class HEALPixNodes(BaseNodeBuilder):
