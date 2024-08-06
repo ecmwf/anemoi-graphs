@@ -9,4 +9,4 @@ The syntax of the recipe file is described in :doc:`building graphs <../graphs/i
     :module: anemoi.graphs.__main__
     :func: create_parser
     :prog: anemoi-graphs
-    :path: create
+    :path: inspect
