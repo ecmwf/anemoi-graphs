@@ -304,6 +304,29 @@ class IcosahedralNodes(BaseNodeBuilder, ABC):
         return super().register_attributes(graph, config)
 
 
+class LimitedAreaIcosahedralNodes(IcosahedralNodes):
+    """Nodes based on iterative refinements of an icosahedron using an area of interest.
+
+    Attributes
+    ----------
+    aoi_mask_builder : KNNAreaMaskBuilder
+        The area of interest mask builder.
+    """
+
+    def __init__(
+        self,
+        resolution: int | list[int],
+        name: str,
+        reference_node_name: str,
+        mask_attr_name: str,
+        margin_radius_km: float = 100.0,
+    ) -> None:
+
+        super().__init__(resolution, name)
+
+        self.aoi_mask_builder = KNNAreaMaskBuilder(reference_node_name, margin_radius_km, mask_attr_name)
+
+
 class TriNodes(IcosahedralNodes):
     """Nodes based on iterative refinements of an icosahedron.
 
@@ -324,7 +347,7 @@ class HexNodes(IcosahedralNodes):
         return create_hexagonal_nodes(self.resolutions)
 
 
-class LimitedAreaTriNodes(TriNodes):
+class LimitedAreaTriNodes(LimitedAreaIcosahedralNodes):
     """Nodes based on iterative refinements of an icosahedron using an area of interest.
 
     It depends on the trimesh Python library.
@@ -335,25 +358,15 @@ class LimitedAreaTriNodes(TriNodes):
         The area of interest mask builder.
     """
 
-    def __init__(
-        self,
-        resolution: int | list[int],
-        name: str,
-        reference_node_name: str,
-        mask_attr_name: str,
-        margin_radius_km: float = 100.0,
-    ) -> None:
-
-        super().__init__(resolution, name)
-
-        self.aoi_mask_builder = KNNAreaMaskBuilder(reference_node_name, margin_radius_km, mask_attr_name)
+    def create_nodes(self) -> np.ndarray:
+        return create_icosahedral_nodes(resolutions=self.resolutions, aoi_mask_builder=self.aoi_mask_builder)
 
     def register_nodes(self, graph: HeteroData) -> None:
         self.aoi_mask_builder.fit(graph)
         return super().register_nodes(graph)
 
 
-class LimitedAreaHexNodes(HexNodes):
+class LimitedAreaHexNodes(LimitedAreaIcosahedralNodes):
     """Nodes based on iterative refinements of an icosahedron using an area of interest.
 
     It depends on the h3 Python library.
@@ -364,18 +377,8 @@ class LimitedAreaHexNodes(HexNodes):
         The area of interest mask builder.
     """
 
-    def __init__(
-        self,
-        resolution: int | list[int],
-        name: str,
-        reference_node_name: str,
-        mask_attr_name: str,
-        margin_radius_km: float = 100.0,
-    ) -> None:
-
-        super().__init__(resolution, name)
-
-        self.aoi_mask_builder = KNNAreaMaskBuilder(reference_node_name, margin_radius_km, mask_attr_name)
+    def create_nodes(self) -> np.ndarray:
+        return create_hexagonal_nodes(self.resolutions, aoi_mask_builder=self.aoi_mask_builder)
 
     def register_nodes(self, graph: HeteroData) -> None:
         self.aoi_mask_builder.fit(graph)
