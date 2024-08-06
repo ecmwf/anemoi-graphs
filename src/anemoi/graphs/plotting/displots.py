@@ -21,6 +21,10 @@ def plot_dist_node_attributes(graph: HeteroData, out_file: Optional[Union[str, P
     attr_dims = _get_node_attribute_dims(graph)
     dim_attrs = sum(attr_dims.values())
 
+    if dim_attrs == 0:
+        LOGGER.warning("No node attributes found in the graph.")
+        return None
+
     # Define the layout
     _, axs = plt.subplots(num_nodes, dim_attrs, figsize=(10 * len(graph.node_types), 10))
     if axs.ndim == 1:
@@ -52,6 +56,10 @@ def plot_dist_edge_attributes(graph: HeteroData, out_file: Optional[Union[str, P
     num_edges = len(graph.edge_types)
     attr_dims = _get_edge_attribute_dims(graph)
     dim_attrs = sum(attr_dims.values())
+
+    if dim_attrs == 0:
+        LOGGER.warning("No edge attributes found in the graph.")
+        return None
 
     # Define the layout
     _, axs = plt.subplots(num_edges, dim_attrs, figsize=(10 * len(graph.edge_types), 10))
