@@ -31,11 +31,11 @@ def create_icosahedral_nodes(
     Returns
     -------
     graph : networkx.Graph
-        The specified graph (nodes & edges).
+        The specified graph (only nodes) sorted by latitude and longitude.
     coords_rad : np.ndarray
         The node coordinates (not ordered) in radians.
     node_ordering : list[int]
-        Order of the nodes in the graph to be sorted by latitude and longitude.
+        Order of the node coordinates to be sorted by latitude and longitude.
     """
     sphere = trimesh.creation.icosphere(subdivisions=resolutions[-1], radius=1.0)
 
@@ -47,16 +47,17 @@ def create_icosahedral_nodes(
         aoi_mask = aoi_mask_builder.get_mask(coords_rad)
         node_ordering = node_ordering[aoi_mask[node_ordering]]
 
+    # Creates the graph, with the nodes sorted by latitude and longitude.
     nx_graph = create_icosahedral_nx_graph_from_coords(coords_rad, node_ordering)
 
     return nx_graph, coords_rad, list(node_ordering)
 
 
-def create_icosahedral_nx_graph_from_coords(coords_rad: np.ndarray, node_ordering: list[int]) -> nx.DiGraph:
+def create_icosahedral_nx_graph_from_coords(coords_rad: np.ndarray, node_ordering: np.ndarray) -> nx.DiGraph:
     """Creates the networkx graph from the coordinates and the node ordering."""
     graph = nx.DiGraph()
-    for ii, coords in enumerate(coords_rad[node_ordering]):
-        node_id = node_ordering[ii]
+    for i, coords in enumerate(coords_rad[node_ordering]):
+        node_id = node_ordering[i]
         graph.add_node(node_id, hcoords_rad=coords)
 
     assert list(graph.nodes.keys()) == list(node_ordering), "Nodes are not correctly added to the graph."
