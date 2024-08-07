@@ -45,7 +45,7 @@ def create_icosahedral_nodes(
 
     if aoi_mask_builder is not None:
         aoi_mask = aoi_mask_builder.get_mask(coords_rad)
-        node_ordering = node_ordering[aoi_mask]
+        node_ordering = node_ordering[aoi_mask[node_ordering]]
 
     nx_graph = create_icosahedral_nx_graph_from_coords(coords_rad, node_ordering)
 
