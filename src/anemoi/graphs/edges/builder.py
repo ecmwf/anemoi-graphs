@@ -16,6 +16,8 @@ from anemoi.graphs import EARTH_RADIUS
 from anemoi.graphs.generate import hexagonal
 from anemoi.graphs.generate import icosahedral
 from anemoi.graphs.nodes.builder import HexNodes
+from anemoi.graphs.nodes.builder import LimitedAreaHexNodes
+from anemoi.graphs.nodes.builder import LimitedAreaTriNodes
 from anemoi.graphs.nodes.builder import TriNodes
 from anemoi.graphs.utils import get_grid_reference_distance
 
@@ -268,61 +270,52 @@ class CutOffEdges(BaseEdgeBuilder):
 class MultiScaleEdges(BaseEdgeBuilder):
     """Base class for multi-scale edges in the nodes of a graph."""
 
+    VALID_NODES = [TriNodes, HexNodes, LimitedAreaTriNodes, LimitedAreaHexNodes]
+
     def __init__(self, source_name: str, target_name: str, x_hops: int):
         super().__init__(source_name, target_name)
         assert source_name == target_name, f"{self.__class__.__name__} requires source and target nodes to be the same."
         assert isinstance(x_hops, int), "Number of x_hops must be an integer"
         assert x_hops > 0, "Number of x_hops must be positive"
         self.x_hops = x_hops
+        self.node_type = None
 
-    def adjacency_from_tri_nodes(self, source_nodes: NodeStorage):
-        source_nodes["_nx_graph"] = icosahedral.add_edges_to_nx_graph(
-            source_nodes["_nx_graph"],
-            resolutions=source_nodes["_resolutions"],
+    def add_edges_from_tri_nodes(self, nodes: NodeStorage) -> NodeStorage:
+        nodes["_nx_graph"] = icosahedral.add_edges_to_nx_graph(
+            nodes["_nx_graph"],
+            resolutions=nodes["_resolutions"],
             x_hops=self.x_hops,
-        )  # HeteroData refuses to accept None
-
-        adjmat = nx.to_scipy_sparse_array(
-            source_nodes["_nx_graph"], nodelist=list(range(len(source_nodes["_nx_graph"]))), format="coo"
+            aoi_mask_builder=nodes.get("_aoi_mask_builder", None),
         )
-        return adjmat
 
-    def adjacency_from_hex_nodes(self, source_nodes: NodeStorage):
+        return nodes
 
-        source_nodes["_nx_graph"] = hexagonal.add_edges_to_nx_graph(
-            source_nodes["_nx_graph"],
-            resolutions=source_nodes["_resolutions"],
+    def add_edges_from_hex_nodes(self, nodes: NodeStorage) -> NodeStorage:
+        nodes["_nx_graph"] = hexagonal.add_edges_to_nx_graph(
+            nodes["_nx_graph"],
+            resolutions=nodes["_resolutions"],
             x_hops=self.x_hops,
         )
 
-        adjmat = nx.to_scipy_sparse_array(source_nodes["_nx_graph"], format="coo")
-        return adjmat
+        return nodes
 
     def get_adjacency_matrix(self, source_nodes: NodeStorage, target_nodes: NodeStorage):
-        if self.node_type == TriNodes.__name__:
-            adjmat = self.adjacency_from_tri_nodes(source_nodes)
-        elif self.node_type == HexNodes.__name__:
-            adjmat = self.adjacency_from_hex_nodes(source_nodes)
+        if self.node_type in [TriNodes.__name__, LimitedAreaTriNodes.__name__]:
+            source_nodes = self.add_edges_from_tri_nodes(source_nodes)
+        elif self.node_type in [HexNodes.__name__, LimitedAreaHexNodes.__name__]:
+            source_nodes = self.add_edges_from_hex_nodes(source_nodes)
         else:
             raise ValueError(f"Invalid node type {self.node_type}")
 
-        adjmat = self.post_process_adjmat(source_nodes, adjmat)
+        adjmat = nx.to_scipy_sparse_array(source_nodes["_nx_graph"], format="coo")
 
-        return adjmat
-
-    def post_process_adjmat(self, nodes: NodeStorage, adjmat):
-        graph_sorted = {node_pos: i for i, node_pos in enumerate(nodes["_node_ordering"])}
-        sort_func = np.vectorize(graph_sorted.get)
-        adjmat.row = sort_func(adjmat.row)
-        adjmat.col = sort_func(adjmat.col)
         return adjmat
 
     def update_graph(self, graph: HeteroData, attrs_config: DotDict | None = None) -> HeteroData:
-        assert (
-            graph[self.source_name].node_type == TriNodes.__name__
-            or graph[self.source_name].node_type == HexNodes.__name__
-        ), f"{self.__class__.__name__} requires {TriNodes.__name__} or {HexNodes.__name__}."
-
         self.node_type = graph[self.source_name].node_type
+        valid_node_names = [n.__name__ for n in self.VALID_NODES]
+        assert (
+            self.node_type in valid_node_names
+        ), f"{self.__class__.__name__} requires {','.join(valid_node_names)} nodes."
 
         return super().update_graph(graph, attrs_config)

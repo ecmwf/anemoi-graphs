@@ -9,6 +9,7 @@ from sklearn.metrics.pairwise import haversine_distances
 from sklearn.neighbors import BallTree
 
 from anemoi.graphs.generate.transforms import cartesian_to_latlon_rad
+from anemoi.graphs.generate.utils import get_coordinates_ordering
 from anemoi.graphs.nodes.masks import KNNAreaMaskBuilder
 
 logger = logging.getLogger(__name__)
@@ -41,7 +42,7 @@ def create_icosahedral_nodes(
 
     coords_rad = cartesian_to_latlon_rad(sphere.vertices)
 
-    node_ordering = get_node_ordering(coords_rad)
+    node_ordering = get_coordinates_ordering(coords_rad)
 
     if aoi_mask_builder is not None:
         aoi_mask = aoi_mask_builder.get_mask(coords_rad)
@@ -79,7 +80,7 @@ def add_edges_to_nx_graph(
     resolutions: list[int],
     x_hops: int = 1,
     aoi_mask_builder: Optional[KNNAreaMaskBuilder] = None,
-) -> None:
+) -> nx.DiGraph:
     """Adds the edges to the graph.
 
     This method adds multi-scale connections to the existing graph. The corresponfing nodes or vertices

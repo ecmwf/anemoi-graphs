@@ -350,7 +350,7 @@ class HexNodes(IcosahedralNodes):
     """
 
     def create_nodes(self) -> Tuple[nx.Graph, np.ndarray, list[int]]:
-        return create_hexagonal_nodes(self.resolutions)
+        return create_hexagonal_nodes(resolutions=self.resolutions)
 
 
 class LimitedAreaTriNodes(LimitedAreaIcosahedralNodes):
