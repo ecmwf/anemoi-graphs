@@ -12,7 +12,7 @@ def create_hexagonal_nodes(
     resolutions: list[int],
     aoi_mask_builder: Optional[KNNAreaMaskBuilder] = None,
 ) -> tuple[nx.Graph, np.ndarray, list[int]]:
-    """Creates a global mesh from a refined icosahedro.
+    """Creates a global mesh from a refined icosahedron.
 
     This method relies on the H3 python library, which covers the earth with hexagons (and 5 pentagons). At each
     refinement level, a hexagon cell (nodes) has 7 child cells (aperture 7).
