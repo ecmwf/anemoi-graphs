@@ -12,7 +12,12 @@ Keep it human-readable, your future self will thank you!
 
 ### Added
 - HEALPixNodes - nodebuilder based on Hierarchical Equal Area isoLatitude Pixelation of a sphere
+- added downstream-ci pipeline
+
 ### Changed
+- Fix `anemoi-graphs create`. Config argument is cast to a Path.
+- Fix GraphCreator().clean() to not iterate over a dictionary that may change size during iterations.
+- Fix missing binary dependency
 
 ### Removed
 

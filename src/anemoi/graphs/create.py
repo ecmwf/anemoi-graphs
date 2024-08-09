@@ -19,7 +19,10 @@ class GraphCreator:
         self,
         config: Union[Path, DotDict],
     ):
-        self.config = DotDict.from_file(config) if isinstance(config, Path) else config
+        if isinstance(config, Path) or isinstance(config, str):
+            self.config = DotDict.from_file(config)
+        else:
+            self.config = config
 
     def generate_graph(self) -> HeteroData:
         """Generate the graph.
