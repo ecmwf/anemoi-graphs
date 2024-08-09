@@ -37,9 +37,7 @@ def create_icosahedral_nodes(
     node_ordering : list[int]
         Order of the node coordinates to be sorted by latitude and longitude.
     """
-    sphere = trimesh.creation.icosphere(subdivisions=resolution, radius=1.0)
-
-    coords_rad = cartesian_to_latlon_rad(sphere.vertices)
+    coords_rad = get_latlon_coords_icosphere(resolution)
 
     node_ordering = get_coordinates_ordering(coords_rad)
 
@@ -51,6 +49,71 @@ def create_icosahedral_nodes(
     nx_graph = create_icosahedral_nx_graph_from_coords(coords_rad, node_ordering)
 
     return nx_graph, coords_rad, list(node_ordering)
+
+
+def create_stretched_icosahedral_nodes(
+    base_resolution: int,
+    lam_resolution: int,
+    aoi_mask_builder: Optional[KNNAreaMaskBuilder],
+) -> tuple[nx.DiGraph, np.ndarray, list[int]]:
+    """Creates a global mesh with 2 levels of resolution.
+
+    The base resolution is used to define the nodes outside the AOI, while the
+    lam_resolution is used to define the nodes inside the AOI.
+
+    Parameters
+    ---------
+    base_resolution : int
+        Global resolution level.
+    lam_resolution : int
+        Local resolution level.
+    aoi_mask_builder : KNNAreaMaskBuilder
+        NearestNeighbors with the cloud of points to limit the mesh area.
+
+    Returns
+    -------
+    nx_graph : nx.DiGraph
+        The graph with the added nodes.
+    coords_rad : np.ndarray
+        The node coordinates (not ordered) in radians.
+    node_ordering : list[int]
+        Order of the node coordinates to be sorted by latitude and longitude.
+    """
+    assert aoi_mask_builder is not None, "AOI mask builder must be provided to build refined grid."
+    # Get the low resolution nodes outside the AOI
+    base_coords_rad = get_latlon_coords_icosphere(base_resolution)
+    base_aoi_mask = ~aoi_mask_builder.get_mask(base_coords_rad)
+
+    # Get the high resolution nodes inside the AOI
+    lam_coords_rad = get_latlon_coords_icosphere(lam_resolution)
+    lam_aoi_mask = aoi_mask_builder.get_mask(lam_coords_rad)
+
+    coords_rad = np.concatenate([base_coords_rad[base_aoi_mask], lam_coords_rad[lam_aoi_mask]])
+
+    node_ordering = get_coordinates_ordering(coords_rad)
+
+    # Creates the graph, with the nodes sorted by latitude and longitude.
+    nx_graph = create_icosahedral_nx_graph_from_coords(coords_rad, node_ordering)
+
+    return nx_graph, coords_rad, list(node_ordering)
+
+
+def get_latlon_coords_icosphere(resolution: int) -> np.ndarray:
+    """Get the latitude and longitude coordinates (in radians) of the icosphere.
+
+    Parameters
+    ----------
+    resolution : int
+        The resolution level of the icosphere.
+
+    Returns
+    -------
+    np.ndarray
+        The latitude and longitude coordinates, in radians, of the icosphere.
+    """
+    sphere = trimesh.creation.icosphere(subdivisions=resolution, radius=1.0)
+    coords_rad = cartesian_to_latlon_rad(sphere.vertices)
+    return coords_rad
 
 
 def create_icosahedral_nx_graph_from_coords(coords_rad: np.ndarray, node_ordering: np.ndarray) -> nx.DiGraph:
@@ -105,10 +168,8 @@ def add_edges_to_nx_graph(
 
     # Build the multi-scale connections
     for resolution in resolutions[:-1]:
-        # Define the isophere at specified 'resolution' level
+        # Define the isophere vertice coordinates at specified 'resolution' level
         r_sphere = trimesh.creation.icosphere(subdivisions=resolution, radius=1.0)
-
-        # Get the vertices of the isophere
         r_vertices_rad = cartesian_to_latlon_rad(r_sphere.vertices)
 
         # Limit area of mesh points.

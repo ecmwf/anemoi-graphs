@@ -12,6 +12,7 @@ from torch_geometric.data import HeteroData
 
 from anemoi.graphs.generate.hexagonal import create_hexagonal_nodes
 from anemoi.graphs.generate.icosahedral import create_icosahedral_nodes
+from anemoi.graphs.generate.icosahedral import create_stretched_icosahedral_nodes
 from anemoi.graphs.generate.masks import KNNAreaMaskBuilder
 from anemoi.graphs.nodes.builders.base import BaseNodeBuilder
 
@@ -136,3 +137,48 @@ class LimitedAreaHexNodes(LimitedAreaIcosahedralNodes):
 
     def create_nodes(self) -> Tuple[nx.Graph, np.ndarray, list[int]]:
         return create_hexagonal_nodes(resolution=max(self.resolutions), aoi_mask_builder=self.aoi_mask_builder)
+
+
+class StretchedIcosahedronNodes(IcosahedralNodes):
+    """Nodes based on iterative refinements of an icosahedron with 2
+    different resolutions.
+
+    Attributes
+    ----------
+    aoi_mask_builder : KNNAreaMaskBuilder
+        The area of interest mask builder.
+    """
+
+    def __init__(
+        self,
+        global_resolution: int,
+        lam_resolution: int,
+        name: str,
+        reference_node_name: str,
+        mask_attr_name: str,
+        margin_radius_km: float = 100.0,
+    ) -> None:
+
+        super().__init__(lam_resolution, name)
+        self.global_resolution = global_resolution
+
+        self.aoi_mask_builder = KNNAreaMaskBuilder(reference_node_name, margin_radius_km, mask_attr_name)
+
+    def register_nodes(self, graph: HeteroData) -> None:
+        self.aoi_mask_builder.fit(graph)
+        return super().register_nodes(graph)
+
+
+class StretchedTriNodes(StretchedIcosahedronNodes):
+    """Nodes based on iterative refinements of an icosahedron with 2
+    different resolutions.
+
+    It depends on the trimesh Python library.
+    """
+
+    def create_nodes(self) -> Tuple[nx.Graph, np.ndarray, list[int]]:
+        return create_stretched_icosahedral_nodes(
+            base_resolution=self.global_resolution,
+            lam_resolution=max(self.resolutions),
+            aoi_mask_builder=self.aoi_mask_builder,
+        )
