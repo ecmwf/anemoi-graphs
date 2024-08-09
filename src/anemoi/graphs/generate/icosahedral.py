@@ -7,9 +7,9 @@ import numpy as np
 import trimesh
 from sklearn.neighbors import BallTree
 
+from anemoi.graphs.generate.masks import KNNAreaMaskBuilder
 from anemoi.graphs.generate.transforms import cartesian_to_latlon_rad
 from anemoi.graphs.generate.utils import get_coordinates_ordering
-from anemoi.graphs.nodes.masks import KNNAreaMaskBuilder
 
 logger = logging.getLogger(__name__)
 

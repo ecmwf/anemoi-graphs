@@ -4,8 +4,8 @@ import numpy as np
 import torch
 from torch_geometric.data import HeteroData
 
+from anemoi.graphs.generate.masks import KNNAreaMaskBuilder
 from anemoi.graphs.nodes.builders.base import BaseNodeBuilder
-from anemoi.graphs.nodes.masks import KNNAreaMaskBuilder
 
 LOGGER = logging.getLogger(__name__)
 

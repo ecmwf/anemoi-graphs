@@ -4,8 +4,8 @@ import h3
 import networkx as nx
 import numpy as np
 
+from anemoi.graphs.generate.masks import KNNAreaMaskBuilder
 from anemoi.graphs.generate.utils import get_coordinates_ordering
-from anemoi.graphs.nodes.masks import KNNAreaMaskBuilder
 
 
 def create_hexagonal_nodes(
