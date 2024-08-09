@@ -15,7 +15,7 @@ logger = logging.getLogger(__name__)
 
 
 def create_icosahedral_nodes(
-    resolutions: list[int], aoi_mask_builder: Optional[KNNAreaMaskBuilder] = None
+    resolution: int, aoi_mask_builder: Optional[KNNAreaMaskBuilder] = None
 ) -> tuple[nx.DiGraph, np.ndarray, list[int]]:
     """Creates a global mesh following AIFS strategy.
 
@@ -23,8 +23,8 @@ def create_icosahedral_nodes(
 
     Parameters
     ----------
-    resolutions : list[int]
-        Levels of mesh resolution to consider.
+    resolution : int
+        Level of mesh resolution to consider.
     aoi_mask_builder : KNNAreaMaskBuilder
         KNNAreaMaskBuilder with the cloud of points to limit the mesh area, by default None.
 
@@ -37,7 +37,7 @@ def create_icosahedral_nodes(
     node_ordering : list[int]
         Order of the node coordinates to be sorted by latitude and longitude.
     """
-    sphere = trimesh.creation.icosphere(subdivisions=resolutions[-1], radius=1.0)
+    sphere = trimesh.creation.icosphere(subdivisions=resolution, radius=1.0)
 
     coords_rad = cartesian_to_latlon_rad(sphere.vertices)
 

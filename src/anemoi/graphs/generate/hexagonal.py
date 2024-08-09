@@ -9,7 +9,7 @@ from anemoi.graphs.generate.utils import get_coordinates_ordering
 
 
 def create_hexagonal_nodes(
-    resolutions: list[int],
+    resolution: int,
     aoi_mask_builder: Optional[KNNAreaMaskBuilder] = None,
 ) -> tuple[nx.Graph, np.ndarray, list[int]]:
     """Creates a global mesh from a refined icosahedron.
@@ -19,8 +19,8 @@ def create_hexagonal_nodes(
 
     Parameters
     ----------
-    resolutions : list[int]
-        Levels of mesh resolution to consider.
+    resolution : int
+        Level of mesh resolution to consider.
     aoi_mask_builder : KNNAreaMaskBuilder, optional
         KNNAreaMaskBuilder with the cloud of points to limit the mesh area, by default None.
 
@@ -33,7 +33,7 @@ def create_hexagonal_nodes(
     node_ordering : list[int]
         Order of the node coordinates to be sorted by latitude and longitude.
     """
-    nodes = get_nodes_at_resolution(max(resolutions))
+    nodes = get_nodes_at_resolution(resolution)
 
     coords_rad = np.deg2rad(np.array([h3.h3_to_geo(node) for node in nodes]))
 

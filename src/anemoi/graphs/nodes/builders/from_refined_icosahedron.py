@@ -95,7 +95,7 @@ class TriNodes(IcosahedralNodes):
     """
 
     def create_nodes(self) -> Tuple[nx.Graph, np.ndarray, list[int]]:
-        return create_icosahedral_nodes(resolutions=self.resolutions)
+        return create_icosahedral_nodes(resolution=max(self.resolutions))
 
 
 class HexNodes(IcosahedralNodes):
@@ -105,7 +105,7 @@ class HexNodes(IcosahedralNodes):
     """
 
     def create_nodes(self) -> Tuple[nx.Graph, np.ndarray, list[int]]:
-        return create_hexagonal_nodes(resolutions=self.resolutions)
+        return create_hexagonal_nodes(resolution=max(self.resolutions))
 
 
 class LimitedAreaTriNodes(LimitedAreaIcosahedralNodes):
@@ -120,7 +120,7 @@ class LimitedAreaTriNodes(LimitedAreaIcosahedralNodes):
     """
 
     def create_nodes(self) -> Tuple[nx.Graph, np.ndarray, list[int]]:
-        return create_icosahedral_nodes(resolutions=self.resolutions, aoi_mask_builder=self.aoi_mask_builder)
+        return create_icosahedral_nodes(resolution=max(self.resolutions), aoi_mask_builder=self.aoi_mask_builder)
 
 
 class LimitedAreaHexNodes(LimitedAreaIcosahedralNodes):
@@ -135,4 +135,4 @@ class LimitedAreaHexNodes(LimitedAreaIcosahedralNodes):
     """
 
     def create_nodes(self) -> Tuple[nx.Graph, np.ndarray, list[int]]:
-        return create_hexagonal_nodes(self.resolutions, aoi_mask_builder=self.aoi_mask_builder)
+        return create_hexagonal_nodes(resolution=max(self.resolutions), aoi_mask_builder=self.aoi_mask_builder)
