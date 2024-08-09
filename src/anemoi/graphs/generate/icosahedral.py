@@ -5,7 +5,6 @@ from typing import Optional
 import networkx as nx
 import numpy as np
 import trimesh
-from sklearn.metrics.pairwise import haversine_distances
 from sklearn.neighbors import BallTree
 
 from anemoi.graphs.generate.transforms import cartesian_to_latlon_rad
@@ -100,7 +99,7 @@ def add_edges_to_nx_graph(
     node_neighbours = get_neighbours_within_hops(sphere, x_hops, valid_nodes=list(graph.nodes))
 
     for idx_node, idx_neighbours in node_neighbours.items():
-        add_neigbours_edges(graph, vertices_rad, idx_node, idx_neighbours)
+        add_neigbours_edges(graph, idx_node, idx_neighbours)
 
     tree = BallTree(vertices_rad, metric="haversine")
 
@@ -123,9 +122,7 @@ def add_edges_to_nx_graph(
 
         _, vertex_mapping_index = tree.query(r_vertices_rad, k=1)
         for idx_node, idx_neighbours in node_neighbours.items():
-            add_neigbours_edges(
-                graph, r_vertices_rad, idx_node, idx_neighbours, vertex_mapping_index=vertex_mapping_index
-            )
+            add_neigbours_edges(graph, idx_node, idx_neighbours, vertex_mapping_index=vertex_mapping_index)
 
     return graph
 
@@ -168,7 +165,6 @@ def get_neighbours_within_hops(
 
 def add_neigbours_edges(
     graph: nx.Graph,
-    vertices: np.ndarray,
     node_idx: int,
     neighbour_indices: Iterable[int],
     self_loops: bool = False,
@@ -180,8 +176,6 @@ def add_neigbours_edges(
     ----------
     graph : nx.Graph
         The graph.
-    vertices : np.ndarray
-        A 2D array of shape (num_vertices, 2) with the planar coordinates of the mesh, in radians.
     node_idx : int
         The node considered.
     neighbours : list[int]
@@ -195,10 +189,6 @@ def add_neigbours_edges(
         if not self_loops and node_idx == neighbour_idx:  # no self-loops
             continue
 
-        location_node = vertices[node_idx]
-        location_neighbour = vertices[neighbour_idx]
-        edge_length = haversine_distances([location_neighbour, location_node])[0][1]
-
         if vertex_mapping_index is not None:
             # Use the same method to add edge in all spheres
             node_neighbour = vertex_mapping_index[neighbour_idx][0]
@@ -208,4 +198,4 @@ def add_neigbours_edges(
 
         # add edge to the graph
         if node in graph and node_neighbour in graph:
-            graph.add_edge(node_neighbour, node, weight=edge_length)
+            graph.add_edge(node_neighbour, node)
