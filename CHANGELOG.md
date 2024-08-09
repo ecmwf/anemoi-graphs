@@ -16,7 +16,7 @@ Keep it human-readable, your future self will thank you!
 - New node builder classes, LimitedAreaXXXXXNodes, to create nodes within an Area of Interest (AOI).
 - Expanded MultiScaleEdges to support multi-scale connections in limited area graphs.
 - HEALPixNodes - nodebuilder based on Hierarchical Equal Area isoLatitude Pixelation of a sphere
-- added downstream-ci pipeline
+- added downstream-ci pipeline and cd-pypi reusable workflow
 
 ### Changed
 - Fix `anemoi-graphs create`. Config argument is cast to a Path.
