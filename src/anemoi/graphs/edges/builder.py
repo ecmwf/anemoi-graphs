@@ -15,10 +15,10 @@ from torch_geometric.data.storage import NodeStorage
 from anemoi.graphs import EARTH_RADIUS
 from anemoi.graphs.generate import hexagonal
 from anemoi.graphs.generate import icosahedral
-from anemoi.graphs.nodes.builder import HexNodes
-from anemoi.graphs.nodes.builder import LimitedAreaHexNodes
-from anemoi.graphs.nodes.builder import LimitedAreaTriNodes
-from anemoi.graphs.nodes.builder import TriNodes
+from anemoi.graphs.nodes.builders.from_refined_icosahedron import HexNodes
+from anemoi.graphs.nodes.builders.from_refined_icosahedron import LimitedAreaHexNodes
+from anemoi.graphs.nodes.builders.from_refined_icosahedron import LimitedAreaTriNodes
+from anemoi.graphs.nodes.builders.from_refined_icosahedron import TriNodes
 from anemoi.graphs.utils import get_grid_reference_distance
 
 LOGGER = logging.getLogger(__name__)
