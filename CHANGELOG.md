@@ -11,6 +11,10 @@ Keep it human-readable, your future self will thank you!
 ## [Unreleased]
 
 ### Added
+- New node builder class, CutOutZarrDatasetNodes, to create nodes from 2 datasets.
+- New class, KNNAreaMaskBuilder, to specify Area of Interest (AOI) based on a set of nodes.
+- New node builder classes, LimitedAreaXXXXXNodes, to create nodes within an Area of Interest (AOI).
+- Expanded MultiScaleEdges to support multi-scale connections in limited area graphs.
 - HEALPixNodes - nodebuilder based on Hierarchical Equal Area isoLatitude Pixelation of a sphere
 - added downstream-ci pipeline
 
