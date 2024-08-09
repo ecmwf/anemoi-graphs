@@ -1,5 +1,5 @@
+from .builders.from_file import CutOutZarrDatasetNodes
 from .builders.from_file import LimitedAreaNPZFileNodes
-from .builders.from_file import LimitedAreaZarrDatasetNodes
 from .builders.from_file import NPZFileNodes
 from .builders.from_file import ZarrDatasetNodes
 from .builders.from_healpix import HEALPixNodes
@@ -16,7 +16,7 @@ __all__ = [
     "HexNodes",
     "HEALPixNodes",
     "LimitedAreaHEALPixNodes",
-    "LimitedAreaZarrDatasetNodes",
+    "CutOutZarrDatasetNodes",
     "LimitedAreaNPZFileNodes",
     "LimitedAreaTriNodes",
     "LimitedAreaHexNodes",

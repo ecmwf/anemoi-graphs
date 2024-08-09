@@ -49,7 +49,7 @@ class ZarrDatasetNodes(BaseNodeBuilder):
         return self.reshape_coords(self.dataset.latitudes, self.dataset.longitudes)
 
 
-class LimitedAreaZarrDatasetNodes(ZarrDatasetNodes):
+class CutOutZarrDatasetNodes(ZarrDatasetNodes):
     """Nodes from Zarr dataset."""
 
     def __init__(
