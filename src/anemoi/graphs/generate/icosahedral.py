@@ -66,15 +66,6 @@ def create_icosahedral_nx_graph_from_coords(coords_rad: np.ndarray, node_orderin
     return graph
 
 
-def get_node_ordering(coords_rad: np.ndarray) -> np.ndarray:
-    """Get the node ordering to sort the nodes by latitude and longitude."""
-    # Get indices to sort points by lon & lat in radians.
-    index_latitude = np.argsort(coords_rad[:, 1])
-    index_longitude = np.argsort(coords_rad[index_latitude][:, 0])[::-1]
-    node_ordering = np.arange(coords_rad.shape[0])[index_latitude][index_longitude]
-    return node_ordering
-
-
 def add_edges_to_nx_graph(
     graph: nx.DiGraph,
     resolutions: list[int],
