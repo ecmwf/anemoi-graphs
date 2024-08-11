@@ -15,9 +15,11 @@ from torch_geometric.data.storage import NodeStorage
 from anemoi.graphs import EARTH_RADIUS
 from anemoi.graphs.generate import hexagonal
 from anemoi.graphs.generate import icosahedral
+from anemoi.graphs.generate.masks import KNNAreaMaskBuilder
 from anemoi.graphs.nodes.builders.from_refined_icosahedron import HexNodes
 from anemoi.graphs.nodes.builders.from_refined_icosahedron import LimitedAreaHexNodes
 from anemoi.graphs.nodes.builders.from_refined_icosahedron import LimitedAreaTriNodes
+from anemoi.graphs.nodes.builders.from_refined_icosahedron import StretchedTriNodes
 from anemoi.graphs.nodes.builders.from_refined_icosahedron import TriNodes
 from anemoi.graphs.utils import get_grid_reference_distance
 
@@ -270,7 +272,7 @@ class CutOffEdges(BaseEdgeBuilder):
 class MultiScaleEdges(BaseEdgeBuilder):
     """Base class for multi-scale edges in the nodes of a graph."""
 
-    VALID_NODES = [TriNodes, HexNodes, LimitedAreaTriNodes, LimitedAreaHexNodes]
+    VALID_NODES = [TriNodes, HexNodes, LimitedAreaTriNodes, LimitedAreaHexNodes, StretchedTriNodes]
 
     def __init__(self, source_name: str, target_name: str, x_hops: int):
         super().__init__(source_name, target_name)
@@ -290,6 +292,18 @@ class MultiScaleEdges(BaseEdgeBuilder):
 
         return nodes
 
+    def add_edges_from_stretched_tri_nodes(self, nodes: NodeStorage) -> NodeStorage:
+        all_points_mask_builder = KNNAreaMaskBuilder("all_nodes", 1.0)
+        all_points_mask_builder.fit_coords(nodes.x.numpy())
+
+        nodes["_nx_graph"] = icosahedral.add_edges_to_nx_graph(
+            nodes["_nx_graph"],
+            resolutions=nodes["_resolutions"],
+            x_hops=self.x_hops,
+            aoi_mask_builder=all_points_mask_builder,
+        )
+        return nodes
+
     def add_edges_from_hex_nodes(self, nodes: NodeStorage) -> NodeStorage:
         nodes["_nx_graph"] = hexagonal.add_edges_to_nx_graph(
             nodes["_nx_graph"],
@@ -304,6 +318,8 @@ class MultiScaleEdges(BaseEdgeBuilder):
             source_nodes = self.add_edges_from_tri_nodes(source_nodes)
         elif self.node_type in [HexNodes.__name__, LimitedAreaHexNodes.__name__]:
             source_nodes = self.add_edges_from_hex_nodes(source_nodes)
+        elif self.node_type == StretchedTriNodes.__name__:
+            source_nodes = self.add_edges_from_stretched_tri_nodes(source_nodes)
         else:
             raise ValueError(f"Invalid node type {self.node_type}")
 

@@ -157,24 +157,18 @@ def add_edges_to_nx_graph(
     """
     assert x_hops > 0, "x_hops == 0, graph would have no edges ..."
 
-    sphere = trimesh.creation.icosphere(subdivisions=resolutions[-1], radius=1.0)
-    vertices_rad = cartesian_to_latlon_rad(sphere.vertices)
-    node_neighbours = get_neighbours_within_hops(sphere, x_hops, valid_nodes=list(graph.nodes))
-
-    for idx_node, idx_neighbours in node_neighbours.items():
-        add_neigbours_edges(graph, idx_node, idx_neighbours)
-
-    tree = BallTree(vertices_rad, metric="haversine")
+    graph_vertices = np.array([graph.nodes[i]["hcoords_rad"] for i in sorted(graph.nodes)])
+    tree = BallTree(graph_vertices, metric="haversine")
 
     # Build the multi-scale connections
-    for resolution in resolutions[:-1]:
-        # Define the isophere vertice coordinates at specified 'resolution' level
+    for resolution in resolutions:
+        # Define the coordinates of the isophere vertices at specified 'resolution' level
         r_sphere = trimesh.creation.icosphere(subdivisions=resolution, radius=1.0)
         r_vertices_rad = cartesian_to_latlon_rad(r_sphere.vertices)
 
         # Limit area of mesh points.
         if aoi_mask_builder is not None:
-            aoi_mask = aoi_mask_builder.get_mask(vertices_rad)
+            aoi_mask = aoi_mask_builder.get_mask(r_vertices_rad)
             valid_nodes = np.where(aoi_mask)[0]
         else:
             valid_nodes = None
@@ -183,7 +177,7 @@ def add_edges_to_nx_graph(
 
         _, vertex_mapping_index = tree.query(r_vertices_rad, k=1)
         for idx_node, idx_neighbours in node_neighbours.items():
-            add_neigbours_edges(graph, idx_node, idx_neighbours, vertex_mapping_index=vertex_mapping_index)
+            graph = add_neigbours_edges(graph, idx_node, idx_neighbours, vertex_mapping_index=vertex_mapping_index)
 
     return graph
 
@@ -246,17 +240,21 @@ def add_neigbours_edges(
     vertex_mapping_index : np.ndarray, optional
         Index to map the vertices from the refined sphere to the original one, by default None.
     """
+    graph_nodes_idx = list(sorted(graph.nodes))
     for neighbour_idx in neighbour_indices:
         if not self_loops and node_idx == neighbour_idx:  # no self-loops
             continue
 
         if vertex_mapping_index is not None:
             # Use the same method to add edge in all spheres
-            node_neighbour = vertex_mapping_index[neighbour_idx][0]
-            node = vertex_mapping_index[node_idx][0]
+            node_neighbour = graph_nodes_idx[vertex_mapping_index[neighbour_idx][0]]
+            node = graph_nodes_idx[vertex_mapping_index[node_idx][0]]
         else:
-            node, node_neighbour = node_idx, neighbour_idx
+            node_neighbour = graph_nodes_idx[neighbour_idx]
+            node = graph_nodes_idx[node_idx]
 
         # add edge to the graph
         if node in graph and node_neighbour in graph:
             graph.add_edge(node_neighbour, node)
+
+    return graph

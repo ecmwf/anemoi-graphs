@@ -38,22 +38,32 @@ class KNNAreaMaskBuilder:
         self.reference_node_name = reference_node_name
         self.mask_attr_name = mask_attr_name
 
-    def fit(self, graph: HeteroData):
-        """Fit the KNN model to the nodes of interest."""
-        reference_mask_str = self.reference_node_name
+    def get_reference_coords(self, graph: HeteroData) -> np.ndarray:
         coords_rad = graph[self.reference_node_name].x.numpy()
         if self.mask_attr_name is not None:
             mask = graph[self.reference_node_name][self.mask_attr_name].squeeze()
             coords_rad = coords_rad[mask]
+
+        return coords_rad
+
+    def fit_coords(self, coords_rad: np.ndarray):
+        """Fit the KNN model to the coordinates in radians."""
+        self.nearest_neighbour.fit(coords_rad)
+
+    def fit(self, graph: HeteroData):
+        """Fit the KNN model to the nodes of interest."""
+        reference_mask_str = self.reference_node_name
+        if self.mask_attr_name is not None:
             reference_mask_str += f" ({self.mask_attr_name})"
 
+        coords_rad = self.get_reference_coords(graph)
+        self.fit_coords(coords_rad)
         LOGGER.info(
             'Fitting %s with %d reference nodes from "%s".',
             self.__class__.__name__,
             len(coords_rad),
             reference_mask_str,
         )
-        self.nearest_neighbour.fit(coords_rad)
 
     def get_mask(self, coords_rad: np.ndarray) -> np.ndarray:
         """Compute a mask based on the distance to the reference nodes."""
