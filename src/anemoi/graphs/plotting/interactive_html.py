@@ -121,7 +121,7 @@ def plot_isolated_nodes(graph: HeteroData, out_file: Optional[Union[str, Path]] 
     isolated_nodes = compute_isolated_nodes(graph)
 
     if len(isolated_nodes) == 0:
-        LOGGER.warning("No orphan nodes found.")
+        LOGGER.warning("No isolated nodes found.")
         return
 
     colorbar = plt.cm.rainbow(np.linspace(0, 1, len(isolated_nodes)))
@@ -175,6 +175,7 @@ def plot_interactive_nodes(graph: HeteroData, nodes_name: str, out_file: Optiona
     node_latitudes = np.rad2deg(graph[nodes_name].x[:, 0].numpy())
     node_longitudes = np.rad2deg(graph[nodes_name].x[:, 1].numpy())
     node_attrs = graph[nodes_name].node_attrs()
+    # Remove x to avoid plotting the coordinates as an attribute
     node_attrs.remove("x")
 
     node_traces = {}
