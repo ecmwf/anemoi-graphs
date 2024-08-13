@@ -27,7 +27,7 @@ class Inspect(Command):
             GraphDescription(kwargs["path"]).describe()
 
         inspector = GraphInspectorTool(**kwargs)
-        inspector.run_all()
+        inspector.inspect()
 
 
 command = Inspect

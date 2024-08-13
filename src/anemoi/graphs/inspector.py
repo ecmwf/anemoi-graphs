@@ -180,7 +180,7 @@ class GraphInspectorTool:
         assert self.output_path.is_dir(), f"Path {self.output_path} is not a directory."
         assert os.access(self.output_path, os.W_OK), f"Path {self.output_path} is not writable."
 
-    def run_all(self):
+    def inspect(self):
         """Run all the inspector methods."""
         LOGGER.info("Saving interactive plots of isolated nodes ...")
         plot_isolated_nodes(self.graph, self.output_path / "isolated_nodes.html")
