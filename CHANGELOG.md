@@ -15,8 +15,12 @@ Keep it human-readable, your future self will thank you!
 - Inspection tools: interactive plots, and distribution plots of edge & node attributes.
 - Graph description print in the console.
 - CLI entry point: 'anemoi-graphs inspect ...'.
+- added downstream-ci pipeline and cd-pypi reusable workflow
 
 ### Changed
+- Fix `anemoi-graphs create`. Config argument is cast to a Path.
+- Fix GraphCreator().clean() to not iterate over a dictionary that may change size during iterations.
+- Fix missing binary dependency
 
 ### Removed
 
