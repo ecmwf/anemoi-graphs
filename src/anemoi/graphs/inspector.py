@@ -7,7 +7,6 @@ from typing import Union
 
 import torch
 from anemoi.utils.humanize import bytes
-from anemoi.utils.humanize import number
 from anemoi.utils.text import table
 
 from anemoi.graphs.plotting.displots import plot_dist_edge_attributes
@@ -67,13 +66,13 @@ class GraphDescription:
             node_summary.append(
                 [
                     name,
-                    number(nodes.num_nodes),
+                    nodes.num_nodes,
                     ", ".join(attributes),
                     sum(nodes[attr].shape[1] for attr in attributes if isinstance(nodes[attr], torch.Tensor)),
-                    number(nodes.x[:, 0].min().item() / 2 / math.pi * 360),
-                    number(nodes.x[:, 0].max().item() / 2 / math.pi * 360),
-                    number(nodes.x[:, 1].min().item() / 2 / math.pi * 360),
-                    number(nodes.x[:, 1].max().item() / 2 / math.pi * 360),
+                    nodes.x[:, 0].min().item() / 2 / math.pi * 360,
+                    nodes.x[:, 0].max().item() / 2 / math.pi * 360,
+                    nodes.x[:, 1].min().item() / 2 / math.pi * 360,
+                    nodes.x[:, 1].max().item() / 2 / math.pi * 360,
                 ]
             )
         return node_summary
@@ -102,9 +101,9 @@ class GraphDescription:
                 [
                     src_name,
                     dst_name,
-                    number(edges.num_edges),
-                    number(self.graph[src_name].num_nodes - len(torch.unique(edges.edge_index[0]))),
-                    number(self.graph[dst_name].num_nodes - len(torch.unique(edges.edge_index[1]))),
+                    edges.num_edges,
+                    self.graph[src_name].num_nodes - len(torch.unique(edges.edge_index[0])),
+                    self.graph[dst_name].num_nodes - len(torch.unique(edges.edge_index[1])),
                     sum(edges[attr].shape[1] for attr in attributes),
                     ", ".join(attributes),
                 ]
@@ -115,7 +114,7 @@ class GraphDescription:
         """Describe the graph."""
         print()
         print(f"📦 Path       : {self.path}")
-        print(f"💽 Size       : {bytes(self.total_size)} ({number(self.total_size)})")
+        print(f"💽 Size       : {bytes(self.total_size)} ({self.total_size})")
         print()
         print(
             table(
@@ -183,6 +182,7 @@ class GraphInspectorTool:
 
     def run_all(self):
         """Run all the inspector methods."""
+        LOGGER.info("Saving interactive plots of isolated nodes ...")
         plot_isolated_nodes(self.graph, self.output_path / "isolated_nodes.html")
 
         LOGGER.info("Saving interactive plots of subgraphs ...")
