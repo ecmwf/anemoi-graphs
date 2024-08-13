@@ -1,6 +1,7 @@
 import logging
 import math
 import os
+from itertools import chain
 from pathlib import Path
 from typing import Optional
 from typing import Union
@@ -30,13 +31,8 @@ class GraphDescription:
         """Total size of the tensors in the graph (in bytes)."""
         total_size = 0
 
-        for node_store in self.graph.node_stores:
-            for value in node_store.values():
-                if isinstance(value, torch.Tensor):
-                    total_size += value.numel() * value.element_size()
-
-        for edge_store in self.graph.edge_stores:
-            for value in edge_store.values():
+        for store in chain(self.graph.node_stores, self.graph.edge_stores):
+            for value in store.values():
                 if isinstance(value, torch.Tensor):
                     total_size += value.numel() * value.element_size()
 
