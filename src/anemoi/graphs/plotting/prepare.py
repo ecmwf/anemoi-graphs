@@ -125,7 +125,7 @@ def compute_isolated_nodes(graph: HeteroData) -> dict[str, tuple[list, list]]:
     return isolated_nodes
 
 
-def _get_node_attribute_dims(graph: HeteroData) -> dict[str, int]:
+def get_node_attribute_dims(graph: HeteroData) -> dict[str, int]:
     """Get dimensions of the node attributes.
 
     Parameters
@@ -152,7 +152,7 @@ def _get_node_attribute_dims(graph: HeteroData) -> dict[str, int]:
     return attr_dims
 
 
-def _get_edge_attribute_dims(graph: HeteroData) -> dict[str, int]:
+def get_edge_attribute_dims(graph: HeteroData) -> dict[str, int]:
     """Get dimensions of the node attributes.
 
     Parameters

@@ -10,8 +10,8 @@ import torch
 from anemoi.utils.humanize import bytes
 from anemoi.utils.text import table
 
-from anemoi.graphs.plotting.displots import plot_dist_edge_attributes
-from anemoi.graphs.plotting.displots import plot_dist_node_attributes
+from anemoi.graphs.plotting.displots import plot_distribution_edge_attributes
+from anemoi.graphs.plotting.displots import plot_distribution_node_attributes
 from anemoi.graphs.plotting.interactive_html import plot_interactive_nodes
 from anemoi.graphs.plotting.interactive_html import plot_interactive_subgraph
 from anemoi.graphs.plotting.interactive_html import plot_isolated_nodes
@@ -187,8 +187,8 @@ class GraphInspectorTool:
             plot_interactive_subgraph(self.graph, edges_subgraph, out_file=ofile)
 
         if self.show_attribute_distributions:
-            plot_dist_edge_attributes(self.graph, self.output_path / "distribution_edge_attributes.png")
-            plot_dist_node_attributes(self.graph, self.output_path / "distribution_node_attributes.png")
+            plot_distribution_edge_attributes(self.graph, self.output_path / "distribution_edge_attributes.png")
+            plot_distribution_node_attributes(self.graph, self.output_path / "distribution_node_attributes.png")
 
         if self.show_nodes:
             LOGGER.info("Saving interactive plots of nodes ...")
