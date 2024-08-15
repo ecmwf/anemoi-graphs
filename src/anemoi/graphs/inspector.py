@@ -19,7 +19,7 @@ from anemoi.graphs.plotting.interactive_html import plot_isolated_nodes
 LOGGER = logging.getLogger(__name__)
 
 
-class GraphDescription:
+class GraphDescriptor:
     """Class for descripting the graph."""
 
     def __init__(self, path: Union[str, Path], **kwargs):
@@ -151,7 +151,7 @@ class GraphDescription:
         print()
 
 
-class GraphInspectorTool:
+class GraphInspector:
     """Inspect the graph."""
 
     def __init__(

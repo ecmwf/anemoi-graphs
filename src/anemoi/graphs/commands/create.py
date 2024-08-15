@@ -1,7 +1,7 @@
 from pathlib import Path
 
 from anemoi.graphs.create import GraphCreator
-from anemoi.graphs.inspector import GraphDescription
+from anemoi.graphs.inspector import GraphDescriptor
 
 from . import Command
 
@@ -29,7 +29,7 @@ class Create(Command):
         graph_creator.create(save_path=args.save_path, overwrite=args.overwrite)
 
         if args.description and args.save_path.exists():
-            GraphDescription(args.save_path).describe()
+            GraphDescriptor(args.save_path).describe()
 
 
 command = Create

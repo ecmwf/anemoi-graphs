@@ -1,5 +1,5 @@
-from anemoi.graphs.inspector import GraphDescription
-from anemoi.graphs.inspector import GraphInspectorTool
+from anemoi.graphs.inspector import GraphDescriptor
+from anemoi.graphs.inspector import GraphInspector
 
 from . import Command
 
@@ -24,9 +24,9 @@ class Inspect(Command):
         kwargs = vars(args)
 
         if kwargs.get("description", False):
-            GraphDescription(kwargs["path"]).describe()
+            GraphDescriptor(kwargs["path"]).describe()
 
-        inspector = GraphInspectorTool(**kwargs)
+        inspector = GraphInspector(**kwargs)
         inspector.inspect()
 
 
