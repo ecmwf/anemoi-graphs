@@ -187,6 +187,7 @@ class GraphInspector:
             plot_interactive_subgraph(self.graph, edges_subgraph, out_file=ofile)
 
         if self.show_attribute_distributions:
+            LOGGER.info("Saving distribution plots of node ande edge attributes ...")
             plot_distribution_edge_attributes(self.graph, self.output_path / "distribution_edge_attributes.png")
             plot_distribution_node_attributes(self.graph, self.output_path / "distribution_node_attributes.png")
 
