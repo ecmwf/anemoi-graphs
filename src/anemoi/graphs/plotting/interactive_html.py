@@ -181,6 +181,8 @@ def plot_interactive_nodes(graph: HeteroData, nodes_name: str, out_file: Optiona
     node_traces = {}
     for node_attr in node_attrs:
         node_attr_values = graph[nodes_name][node_attr].float().numpy()
+
+        # Skip multi-dimensional attributes. Supported only: (N, 1) or (N,) tensors
         if node_attr_values.ndim > 1 and node_attr_values.shape[1] > 1:
             continue
 
