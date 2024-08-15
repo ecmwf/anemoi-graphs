@@ -112,6 +112,8 @@ class GraphDescriptor:
         print(f"📦 Path       : {self.path}")
         print(f"💽 Size       : {bytes(self.total_size)} ({self.total_size})")
         print()
+        print("🪩 Nodes summary")
+        print()
         print(
             table(
                 self.get_node_summary(),
@@ -130,6 +132,8 @@ class GraphDescriptor:
             )
         )
         print()
+        print()
+        print("🌐  Edges summary")
         print()
         print(
             table(
