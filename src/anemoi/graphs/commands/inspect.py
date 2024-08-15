@@ -20,6 +20,12 @@ class Inspect(Command):
             help="Hide distribution plots of edge/node attributes.",
         )
         command_parser.add_argument(
+            "--show_nodes",
+            action=argparse.BooleanOptionalAction,
+            default=False,
+            help="Show the nodes of the graph.",
+        )
+        command_parser.add_argument(
             "--description",
             action=argparse.BooleanOptionalAction,
             default=True,
