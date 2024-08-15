@@ -65,9 +65,9 @@ def edge_list(graph: HeteroData, source_nodes_name: str, target_nodes_name: str)
 
 
 def compute_node_adjacencies(
-    graph: HeteroData, source_nodes_name: str, target_nodes_name: str, num_nodes: int
+    graph: HeteroData, source_nodes_name: str, target_nodes_name: str
 ) -> tuple[list[int], list[str]]:
-    """Compute the number of adjacencies of each node in a bipartite graph.
+    """Compute the number of adjacencies of each target node in a bipartite graph.
 
     Parameters
     ----------
@@ -77,21 +77,30 @@ def compute_node_adjacencies(
         Name of the dimension of the coordinates for the head nodes.
     target_nodes_name : str
         Name of the dimension of the coordinates for the tail nodes.
-    num_nodes : int
-        Number of nodes in the destination (including the not connected).
 
     Returns
     -------
-    num_adjacencies : list[int]
+    num_adjacencies : np.ndarray
         Number of adjacencies of each node.
-    node_text : list[str]
-        Text to show when hovering over the nodes.
     """
-    node_adjacencies = np.zeros(num_nodes, dtype=int)
+    node_adjacencies = np.zeros(graph[target_nodes_name].num_nodes, dtype=int)
     vals, counts = np.unique(graph[(source_nodes_name, "to", target_nodes_name)].edge_index[1], return_counts=True)
     node_adjacencies[vals] = counts
-    node_text = [f"# of connections: {x}" for x in node_adjacencies]
-    return list(node_adjacencies), node_text
+    return node_adjacencies
+
+
+def get_node_adjancency_attributes(graph: HeteroData) -> dict[str, tuple[str, np.ndarray]]:
+    """Get the node adjacencies for each subgraph."""
+    node_adj_attr = {}
+    for (source_nodes_name, _, target_nodes_name), _ in graph.edge_items():
+        attr_name = f"# connections from {source_nodes_name}"
+        node_adj_vector = compute_node_adjacencies(graph, source_nodes_name, target_nodes_name)
+        if target_nodes_name not in node_adj_attr:
+            node_adj_attr[target_nodes_name] = {attr_name: node_adj_vector}
+        else:
+            node_adj_attr[target_nodes_name][attr_name] = node_adj_vector
+
+    return node_adj_attr
 
 
 def compute_isolated_nodes(graph: HeteroData) -> dict[str, tuple[list, list]]:

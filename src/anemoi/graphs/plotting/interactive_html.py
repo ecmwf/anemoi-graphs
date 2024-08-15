@@ -43,8 +43,10 @@ def plot_interactive_subgraph(
     assert target_name in graph.node_types, f"edges_to_plot ({target_name}) should be in the graph"
     lats_source_nodes, lons_source_nodes = node_list(graph, source_name)
     lats_target_nodes, lons_target_nodes = node_list(graph, target_name)
-    dst_num_nodes = graph[target_name].num_nodes
-    node_adjacencies, node_text = compute_node_adjacencies(graph, source_name, target_name, dst_num_nodes)
+
+    # Compute node adjacencies
+    node_adjacencies = compute_node_adjacencies(graph, source_name, target_name)
+    node_text = [f"# of connections: {x}" for x in node_adjacencies]
 
     edge_trace = go.Scattergeo(
         lat=edge_x,
@@ -80,7 +82,7 @@ def plot_interactive_subgraph(
             "showscale": True,
             "colorscale": "YlGnBu",
             "reversescale": True,
-            "color": node_adjacencies,
+            "color": list(node_adjacencies),
             "size": 10,
             "colorbar": {"thickness": 15, "title": "Node Connections", "xanchor": "left", "titleside": "right"},
             "line_width": 2,
