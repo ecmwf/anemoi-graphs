@@ -1,6 +1,6 @@
 import argparse
 
-from anemoi.graphs.inspector import GraphDescriptor
+from anemoi.graphs.descriptor import GraphDescriptor
 from anemoi.graphs.inspector import GraphInspector
 
 from . import Command

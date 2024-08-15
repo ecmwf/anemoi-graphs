@@ -3,7 +3,7 @@ import logging
 from pathlib import Path
 
 from anemoi.graphs.create import GraphCreator
-from anemoi.graphs.inspector import GraphDescriptor
+from anemoi.graphs.descriptor import GraphDescriptor
 
 from . import Command
 
