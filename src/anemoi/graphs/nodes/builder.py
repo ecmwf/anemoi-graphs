@@ -44,7 +44,7 @@ class BaseNodeBuilder(ABC):
         graph[self.name].node_type = type(self).__name__
         return graph
 
-    def register_attributes(self, graph: HeteroData, config: DotDict | None = None) -> HeteroData:
+    def register_attributes(self, graph: HeteroData, config: DotDict = None) -> HeteroData:
         """Register attributes in the nodes of the graph specified.
 
         Parameters
