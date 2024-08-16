@@ -174,8 +174,7 @@ def plot_interactive_nodes(graph: HeteroData, nodes_name: str, out_file: Optiona
     out_file : str, optional
         Name of the file to save the plot. Default is None.
     """
-    node_latitudes = np.rad2deg(graph[nodes_name].x[:, 0].numpy())
-    node_longitudes = np.rad2deg(graph[nodes_name].x[:, 1].numpy())
+    node_latitudes, node_longitudes = node_list(graph, nodes_name)
     node_attrs = graph[nodes_name].node_attrs()
     # Remove x to avoid plotting the coordinates as an attribute
     node_attrs.remove("x")
