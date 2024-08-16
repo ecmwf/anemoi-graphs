@@ -148,7 +148,7 @@ class GraphDescriptor:
         print(f"📦 Path       : {self.path}")
         print(f"💽 Size       : {bytes(self.total_size)} ({self.total_size})")
         print()
-        print("🪩 Nodes summary")
+        print("🪩  Nodes summary")
         print()
         print(
             table(
@@ -211,7 +211,3 @@ class GraphDescriptor:
             print()
         print("🔋 Graph ready.")
         print()
-
-
-if __name__ == "__main__":
-    GraphDescriptor("graph.pt").describe()

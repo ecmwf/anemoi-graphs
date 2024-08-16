@@ -8,6 +8,7 @@ import torch
 
 from anemoi.graphs.plotting.displots import plot_distribution_edge_attributes
 from anemoi.graphs.plotting.displots import plot_distribution_node_attributes
+from anemoi.graphs.plotting.displots import plot_distribution_node_derived_attributes
 from anemoi.graphs.plotting.interactive_html import plot_interactive_nodes
 from anemoi.graphs.plotting.interactive_html import plot_interactive_subgraph
 from anemoi.graphs.plotting.interactive_html import plot_isolated_nodes
@@ -52,6 +53,7 @@ class GraphInspector:
 
         if self.show_attribute_distributions:
             LOGGER.info("Saving distribution plots of node ande edge attributes ...")
+            plot_distribution_node_derived_attributes(self.graph, self.output_path / "distribution_node_adjancency.png")
             plot_distribution_edge_attributes(self.graph, self.output_path / "distribution_edge_attributes.png")
             plot_distribution_node_attributes(self.graph, self.output_path / "distribution_node_attributes.png")
 

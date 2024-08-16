@@ -5,10 +5,12 @@ from typing import Optional
 from typing import Union
 
 import matplotlib.pyplot as plt
+import torch
 from torch_geometric.data import HeteroData
 from torch_geometric.data.storage import EdgeStorage
 from torch_geometric.data.storage import NodeStorage
 
+from anemoi.graphs.plotting.prepare import compute_node_adjacencies
 from anemoi.graphs.plotting.prepare import get_edge_attribute_dims
 from anemoi.graphs.plotting.prepare import get_node_attribute_dims
 
@@ -33,6 +35,33 @@ def plot_distribution_edge_attributes(graph: HeteroData, out_file: Optional[Unio
     num_edges = len(graph.edge_types)
     attr_dims = get_edge_attribute_dims(graph)
     plot_distribution_attributes(graph.edge_items(), num_edges, attr_dims, "Edge", out_file)
+
+
+def plot_distribution_node_derived_attributes(graph, outfile: Optional[Union[str, Path]] = None):
+    """Figure with the distribution of the node derived attributes.
+
+    Each row represents a node type and each column an attribute dimension.
+    """
+    node_adjs = {}
+    node_attr_dims = {}
+    for source_name, _, target_name in graph.edge_types:
+        node_adj_tensor = compute_node_adjacencies(graph, source_name, target_name)
+        node_adj_tensor = torch.from_numpy(node_adj_tensor.reshape((node_adj_tensor.shape[0], -1)))
+        node_adj_key = f"# edges from {source_name}"
+
+        # Store node adjacencies
+        if target_name in node_adjs:
+            node_adjs[target_name] = node_adjs[target_name] | {node_adj_key: node_adj_tensor}
+        else:
+            node_adjs[target_name] = {node_adj_key: node_adj_tensor}
+
+        # Store attribute dimension
+        if node_adj_key not in node_attr_dims:
+            node_attr_dims[node_adj_key] = node_adj_tensor.shape[1]
+
+    node_adj_list = [(k, v) for k, v in node_adjs.items()]
+
+    plot_distribution_attributes(node_adj_list, len(node_adjs), node_attr_dims, "Node", outfile)
 
 
 def plot_distribution_attributes(
@@ -62,11 +91,10 @@ def plot_distribution_attributes(
             for dim in range(attr_values):
                 if attr_name in item_store:
                     axs[i, j + dim].hist(item_store[attr_name][:, dim].float(), bins=50)
-                    if j + dim == 0:
-                        axs[i, j + dim].set_ylabel("".join(item_name).replace("to", " --> "))
-                    if i == 0:
-                        axs[i, j + dim].set_title(attr_name if attr_values == 1 else f"{attr_name}_{dim}")
-                    elif i == num_items - 1:
+
+                    axs[i, j + dim].set_ylabel("".join(item_name).replace("to", " --> "))
+                    axs[i, j + dim].set_title(attr_name if attr_values == 1 else f"{attr_name}_{dim}")
+                    if i == num_items - 1:
                         axs[i, j + dim].set_xlabel(attr_name if attr_values == 1 else f"{attr_name}_{dim}")
                 else:
                     axs[i, j + dim].set_axis_off()
