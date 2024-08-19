@@ -1,6 +1,7 @@
+from __future__ import annotations
+
 import logging
 from collections.abc import Iterable
-from typing import Optional
 
 import networkx as nx
 import numpy as np
@@ -15,7 +16,7 @@ logger = logging.getLogger(__name__)
 
 
 def create_icosahedral_nodes(
-    resolution: int, aoi_mask_builder: Optional[KNNAreaMaskBuilder] = None
+    resolution: int, aoi_mask_builder: KNNAreaMaskBuilder | None = None
 ) -> tuple[nx.DiGraph, np.ndarray, list[int]]:
     """Creates a global mesh following AIFS strategy.
 
@@ -69,7 +70,7 @@ def add_edges_to_nx_graph(
     graph: nx.DiGraph,
     resolutions: list[int],
     x_hops: int = 1,
-    aoi_mask_builder: Optional[KNNAreaMaskBuilder] = None,
+    aoi_mask_builder: KNNAreaMaskBuilder | None = None,
 ) -> nx.DiGraph:
     """Adds the edges to the graph.
 
@@ -128,7 +129,7 @@ def add_edges_to_nx_graph(
 
 
 def get_neighbours_within_hops(
-    tri_mesh: trimesh.Trimesh, x_hops: int, valid_nodes: Optional[list[int]] = None
+    tri_mesh: trimesh.Trimesh, x_hops: int, valid_nodes: list[int] | None = None
 ) -> dict[int, set[int]]:
     """Get the neigbour connections in the graph.
 
@@ -168,7 +169,7 @@ def add_neigbours_edges(
     node_idx: int,
     neighbour_indices: Iterable[int],
     self_loops: bool = False,
-    vertex_mapping_index: Optional[np.ndarray] = None,
+    vertex_mapping_index: np.ndarray | None = None,
 ) -> None:
     """Adds the edges of one node to its neighbours.
 

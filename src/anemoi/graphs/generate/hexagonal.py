@@ -1,4 +1,4 @@
-from typing import Optional
+from __future__ import annotations
 
 import h3
 import networkx as nx
@@ -10,7 +10,7 @@ from anemoi.graphs.generate.utils import get_coordinates_ordering
 
 def create_hexagonal_nodes(
     resolution: int,
-    aoi_mask_builder: Optional[KNNAreaMaskBuilder] = None,
+    aoi_mask_builder: KNNAreaMaskBuilder | None = None,
 ) -> tuple[nx.Graph, np.ndarray, list[int]]:
     """Creates a global mesh from a refined icosahedron.
 
@@ -83,8 +83,6 @@ def get_nodes_at_resolution(
     ----------
     resolution : int
         The H3 refinement level. It can be an integer from 0 to 15.
-    aoi_mask_builder : KNNAreaMaskBuilder, optional
-        KNNAreaMaskBuilder computes nask to limit the mesh area, by default None.
 
     Returns
     -------
@@ -154,7 +152,7 @@ def add_neighbour_edges(
 def add_edges_to_children(
     graph: nx.Graph,
     refinement_levels: tuple[int],
-    depth_children: Optional[int] = None,
+    depth_children: int | None = None,
 ) -> nx.Graph:
     """Adds edges to the children of the nodes at the specified resolution levels.
 
