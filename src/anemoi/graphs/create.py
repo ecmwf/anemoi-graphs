@@ -1,8 +1,8 @@
+from __future__ import annotations
+
 import logging
 from itertools import chain
 from pathlib import Path
-from typing import Optional
-from typing import Union
 
 import torch
 from anemoi.utils.config import DotDict
@@ -17,7 +17,7 @@ class GraphCreator:
 
     def __init__(
         self,
-        config: Union[Path, DotDict],
+        config: str | Path | DotDict,
     ):
         if isinstance(config, Path) or isinstance(config, str):
             self.config = DotDict.from_file(config)
@@ -61,10 +61,12 @@ class GraphCreator:
         HeteroData
             cleaned graph
         """
+        LOGGER.info("Cleaning graph.")
         for type_name in chain(graph.node_types, graph.edge_types):
-            for attr_name in list(graph[type_name].keys()):
-                if attr_name.startswith("_"):
-                    del graph[type_name][attr_name]
+            attr_names_to_remove = [attr_name for attr_name in graph[type_name] if attr_name.startswith("_")]
+            for attr_name in attr_names_to_remove:
+                del graph[type_name][attr_name]
+                LOGGER.info(f"{attr_name} deleted from graph.")
 
         return graph
 
@@ -89,7 +91,7 @@ class GraphCreator:
         else:
             LOGGER.info("Graph already exists. Use overwrite=True to overwrite.")
 
-    def create(self, save_path: Optional[Path] = None, overwrite: bool = False) -> HeteroData:
+    def create(self, save_path: Path | None = None, overwrite: bool = False) -> HeteroData:
         """Create the graph and save it to the output path.
 
         Parameters

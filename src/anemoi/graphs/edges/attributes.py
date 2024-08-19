@@ -1,6 +1,7 @@
+from __future__ import annotations
+
 from abc import ABC
 from abc import abstractmethod
-from typing import Optional
 
 import numpy as np
 import torch
@@ -14,7 +15,7 @@ from anemoi.graphs.utils import haversine_distance
 class BaseEdgeAttribute(ABC, NormalizerMixin):
     """Base class for edge attributes."""
 
-    def __init__(self, norm: Optional[str] = None) -> None:
+    def __init__(self, norm: str | None = None) -> None:
         self.norm = norm
 
     @abstractmethod
@@ -68,7 +69,7 @@ class EdgeDirection(BaseEdgeAttribute):
         Compute directional attributes.
     """
 
-    def __init__(self, norm: Optional[str] = None, luse_rotated_features: bool = True) -> None:
+    def __init__(self, norm: str | None = None, luse_rotated_features: bool = True) -> None:
         super().__init__(norm)
         self.luse_rotated_features = luse_rotated_features
 
@@ -114,7 +115,7 @@ class EdgeLength(BaseEdgeAttribute):
         Compute edge lengths attributes.
     """
 
-    def __init__(self, norm: Optional[str] = None, invert: bool = False) -> None:
+    def __init__(self, norm: str | None = None, invert: bool = False) -> None:
         super().__init__(norm)
         self.invert = invert
 
