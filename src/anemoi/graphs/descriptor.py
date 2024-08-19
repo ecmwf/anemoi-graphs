@@ -107,10 +107,11 @@ class GraphDescriptor:
                         "Node",
                         node_name,
                         node_attr_name,
-                        node_store[node_attr_name].min().item(),
-                        node_store[node_attr_name].mean().item(),
-                        node_store[node_attr_name].max().item(),
-                        node_store[node_attr_name].std().item(),
+                        node_store[node_attr_name].dtype,
+                        node_store[node_attr_name].float().min().item(),
+                        node_store[node_attr_name].float().mean().item(),
+                        node_store[node_attr_name].float().max().item(),
+                        node_store[node_attr_name].float().std().item(),
                     ]
                 )
         return node_attributes
@@ -126,10 +127,11 @@ class GraphDescriptor:
                         "Edge",
                         f"{source_name}-->{target_name}",
                         edge_attr_name,
-                        edge_store[edge_attr_name].min().item(),
-                        edge_store[edge_attr_name].mean().item(),
-                        edge_store[edge_attr_name].max().item(),
-                        edge_store[edge_attr_name].std().item(),
+                        edge_store[edge_attr_name].dtype,
+                        edge_store[edge_attr_name].float().min().item(),
+                        edge_store[edge_attr_name].float().mean().item(),
+                        edge_store[edge_attr_name].float().max().item(),
+                        edge_store[edge_attr_name].float().std().item(),
                     ]
                 )
 
@@ -199,12 +201,13 @@ class GraphDescriptor:
                         "Type",
                         "Source",
                         "Name",
+                        "Dtype",
                         "Min.",
                         "Mean",
                         "Max.",
                         "Std. dev.",
                     ],
-                    align=["<", "<", ">", ">", ">", ">", ">"],
+                    align=["<", "<", ">", ">", ">", ">", ">", ">"],
                     margin=3,
                 )
             )
