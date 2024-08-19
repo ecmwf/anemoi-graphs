@@ -32,6 +32,8 @@ class KNNAreaMaskBuilder:
     """
 
     def __init__(self, reference_node_name: str, margin_radius_km: float = 100, mask_attr_name: str = None):
+        assert isinstance(margin_radius_km, (int, float)), "The margin radius must be a number."
+        assert margin_radius_km > 0, "The margin radius must be positive."
 
         self.nearest_neighbour = NearestNeighbors(metric="haversine", n_jobs=4)
         self.margin_radius_km = margin_radius_km
@@ -40,9 +42,16 @@ class KNNAreaMaskBuilder:
 
     def fit(self, graph: HeteroData):
         """Fit the KNN model to the nodes of interest."""
+        assert (
+            self.reference_node_name in graph.node_types
+        ), f'Reference node "{self.reference_node_name}" not found in the graph.'
         reference_mask_str = self.reference_node_name
+
         coords_rad = graph[self.reference_node_name].x.numpy()
         if self.mask_attr_name is not None:
+            assert (
+                self.mask_attr_name in graph[self.reference_node_name].node_attrs()
+            ), f'Mask attribute "{self.mask_attr_name}" not found in the reference nodes.'
             mask = graph[self.reference_node_name][self.mask_attr_name].squeeze()
             coords_rad = coords_rad[mask]
             reference_mask_str += f" ({self.mask_attr_name})"
