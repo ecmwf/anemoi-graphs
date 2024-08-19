@@ -11,10 +11,12 @@ lons = [0, 0.25, 0.5, 0.75]
 class MockZarrDataset:
     """Mock Zarr dataset with latitudes and longitudes attributes."""
 
-    def __init__(self, latitudes, longitudes):
+    def __init__(self, latitudes, longitudes, grids=None):
         self.latitudes = latitudes
         self.longitudes = longitudes
         self.num_nodes = len(latitudes)
+        if grids is not None:
+            self.grids = grids
 
 
 @pytest.fixture
@@ -22,6 +24,14 @@ def mock_zarr_dataset() -> MockZarrDataset:
     """Mock zarr dataset with nodes."""
     coords = 2 * torch.pi * np.array([[lat, lon] for lat in lats for lon in lons])
     return MockZarrDataset(latitudes=coords[:, 0], longitudes=coords[:, 1])
+
+
+@pytest.fixture
+def mock_zarr_dataset_cutout() -> MockZarrDataset:
+    """Mock zarr dataset with nodes."""
+    coords = 2 * torch.pi * np.array([[lat, lon] for lat in lats for lon in lons])
+    grids = int(0.3 * len(coords)), int(0.7 * len(coords))
+    return MockZarrDataset(latitudes=coords[:, 0], longitudes=coords[:, 1], grids=grids)
 
 
 @pytest.fixture
