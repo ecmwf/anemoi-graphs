@@ -87,6 +87,23 @@ of the *Anemoi* packages.
    cli/create
    cli/inspect
 
+**************************
+ Developing Anemoi Graphs
+**************************
+
+-  :doc:`dev/contributing`
+-  :doc:`dev/code_structure`
+-  :doc:`dev/testing`
+
+.. toctree::
+   :maxdepth: 1
+   :hidden:
+   :caption: Developing Anemoi Graphs
+
+   dev/contributing
+   dev/code_structure
+   dev/testing
+
 ***********
  Tutorials
 ***********
