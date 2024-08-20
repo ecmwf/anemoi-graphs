@@ -6,6 +6,6 @@
 
 .. automodule:: anemoi.graphs.edges.attributes
    :members:
-   :exclude-members: BaseWeights
+   :exclude-members: BaseEdgeAttribute
    :no-undoc-members:
    :show-inheritance:
