@@ -262,7 +262,27 @@ class CutOffEdges(BaseEdgeBuilder):
 
 
 class MultiScaleEdges(BaseEdgeBuilder):
-    """Base class for multi-scale edges in the nodes of a graph."""
+    """Base class for multi-scale edges in the nodes of a graph.
+
+    Attributes
+    ----------
+    source_name : str
+        The name of the source nodes.
+    target_name : str
+        The name of the target nodes.
+    x_hops : int
+        Number of hops (in the refined icosahedron) between two nodes to connect
+        them with an edge.
+
+    Methods
+    -------
+    register_edges(graph)
+        Register the edges in the graph.
+    register_attributes(graph, config)
+        Register attributes in the edges of the graph.
+    update_graph(graph, attrs_config)
+        Update the graph with the edges.
+    """
 
     def __init__(self, source_name: str, target_name: str, x_hops: int):
         super().__init__(source_name, target_name)
