@@ -7,26 +7,26 @@ edges:
   - source_name: data
     target_name: hidden
     edge_builder:
-      _target_: aifs.graphs.edges.CutOffEdges
+      _target_: anemoi.graphs.edges.CutOffEdges
       cutoff_factor: 0.7
     attributes:
       edge_length:
-        _target_: aifs.graphs.edges.attributes.EdgeLength
+        _target_: anemoi.graphs.edges.attributes.EdgeLength
   # B) Decoder connections
   - source_name: hidden
     target_name: hidden
     edge_builder:
-      _target_: aifs.graphs.edges.KNNEdges
+      _target_: anemoi.graphs.edges.KNNEdges
       nearest_neighbours: 3
     attributes:
       edge_length:
-        _target_: aifs.graphs.edges.attributes.EdgeLength
+        _target_: anemoi.graphs.edges.attributes.EdgeLength
  # C) Processor connections
   - source_name: hidden
     target_name: data
     edge_builder:
-      _target_: aifs.graphs.edges.KNNEdges
+      _target_: anemoi.graphs.edges.KNNEdges
       nearest_neighbours: 3
     attributes:
       edge_length:
-        _target_: aifs.graphs.edges.attributes.EdgeLength
+        _target_: anemoi.graphs.edges.attributes.EdgeLength
