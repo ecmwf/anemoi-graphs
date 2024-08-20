@@ -1,3 +1,6 @@
+.. _cli-create:
+
+======
 create
 ======
 

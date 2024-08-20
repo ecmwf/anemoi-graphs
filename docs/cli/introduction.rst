@@ -1,5 +1,8 @@
+.. _cli-introduction:
+
+=============
 Introduction
-============
+=============
 
 When you install the `anemoi-graphs` package, this will also install command line tool
 called ``anemoi-graphs`` which can be used to design and inspect weather graphs.
