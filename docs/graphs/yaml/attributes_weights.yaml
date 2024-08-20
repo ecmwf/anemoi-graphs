@@ -1,10 +1,10 @@
 nodes:
   data:
     node_builder:
-      _target_: aifs.graphs.nodes.nodes.ZarrDatasetNodeBuilder
+      _target_: anemoi.graphs.nodes.nodes.ZarrDatasetNodeBuilder
       dataset: /path/to/dataset.zarr
     attributes:
       weights:
-        _target_: aifs.graphs.nodes.weights.Area
+        _target_: anemoi.graphs.nodes.weights.Area
         norm: unit-max
   hidden: ...
