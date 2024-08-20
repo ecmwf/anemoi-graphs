@@ -77,6 +77,7 @@ of the *Anemoi* packages.
 -  :doc:`cli/introduction`
 -  :doc:`cli/create`
 -  :doc:`cli/inspect`
+-  :doc:`cli/inspect`
 
 .. toctree::
    :maxdepth: 1
@@ -85,6 +86,7 @@ of the *Anemoi* packages.
 
    cli/introduction
    cli/create
+   cli/describe
    cli/inspect
 
 **************************

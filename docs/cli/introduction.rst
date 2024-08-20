@@ -19,6 +19,7 @@ The commands are:
     :maxdepth: 1
 
     create
+    describe
     inspect
 
 .. argparse::
