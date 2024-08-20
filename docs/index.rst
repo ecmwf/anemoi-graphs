@@ -59,7 +59,7 @@ of the *Anemoi* packages.
    :maxdepth: 1
    :glob:
 
-   modules
+   modules/*
 
 *******************
  Command line tool

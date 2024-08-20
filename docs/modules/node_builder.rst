@@ -1,0 +1,9 @@
+##############
+ Node builder
+##############
+
+.. automodule:: anemoi.graphs.nodes.builder
+   :members:
+   :exclude-members: BaseNodeBuilder
+   :no-undoc-members:
+   :show-inheritance:
