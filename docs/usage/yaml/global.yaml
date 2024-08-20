@@ -13,8 +13,8 @@ edges:
   - source_name: hidden
     target_name: hidden
     edge_builder:
-      _target_: anemoi.graphs.edges.KNNEdges
-      nearest_neighbours: 3
+      _target_: anemoi.graphs.edges.MultiScaleEdges
+      x_hops: 1
  # C) Processor connections
   - source_name: hidden
     target_name: data

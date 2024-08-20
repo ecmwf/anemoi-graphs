@@ -39,6 +39,7 @@ of the *Anemoi* packages.
 -  :doc:`graphs/node_attributes`
 -  :doc:`graphs/edges`
 -  :doc:`graphs/edge_attributes`
+-  :doc:`graphs/masks`
 
 .. toctree::
    :maxdepth: 1
@@ -50,6 +51,7 @@ of the *Anemoi* packages.
    graphs/node_attributes
    graphs/edges
    graphs/edge_attributes
+   graphs/masks
 
 *********
  Modules
@@ -111,6 +113,7 @@ of the *Anemoi* packages.
 ***********
 
 -  :doc:`usage/getting_started`
+-  :doc:`usage/limited_area`
 
 .. toctree::
    :maxdepth: 1
@@ -118,6 +121,7 @@ of the *Anemoi* packages.
    :caption: Usage
 
    usage/getting_started
+   usage/limited_area
 
 *****************
  Anemoi packages
