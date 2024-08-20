@@ -12,9 +12,21 @@ Keep it human-readable, your future self will thank you!
 
 ### Added
 - HEALPixNodes - nodebuilder based on Hierarchical Equal Area isoLatitude Pixelation of a sphere
+- added downstream-ci pipeline and cd-pypi reusable workflow
+- Changelog release updater
+
 - Create package documentation.
 
 ### Changed
+- fix: added support for Python3.9.
+- fix: bug in graph cleaning method
+- fix: `anemoi-graphs create` CLI argument is casted to a Path.
+- ci: fix missing binary dependency in ci-config.yaml
+- fix: Updated `get_raw_values` method in `AreaWeights` to ensure compatibility with `scipy.spatial.SphericalVoronoi` by converting `latitudes` and `longitudes` to NumPy arrays before passing them to the `latlon_rad_to_cartesian` function. This resolves an issue where the function would fail if passed Torch Tensors directly.
+- ci: Reusable workflows for push, PR, and releases
+- ci: ignore docs for downstream ci
+- ci: changed Changelog action to create PR
+- ci: fixes and permissions on changelog updater
 
 ### Removed
 

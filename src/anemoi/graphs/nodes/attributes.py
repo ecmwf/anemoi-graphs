@@ -1,7 +1,8 @@
+from __future__ import annotations
+
 import logging
 from abc import ABC
 from abc import abstractmethod
-from typing import Optional
 
 import numpy as np
 import torch
@@ -18,7 +19,7 @@ LOGGER = logging.getLogger(__name__)
 class BaseWeights(ABC, NormalizerMixin):
     """Base class for the weights of the nodes."""
 
-    def __init__(self, norm: Optional[str] = None) -> None:
+    def __init__(self, norm: str | None = None) -> None:
         self.norm = norm
 
     @abstractmethod
@@ -96,9 +97,7 @@ class AreaWeights(BaseWeights):
         Compute the area attributes for each node.
     """
 
-    def __init__(
-        self, norm: Optional[str] = None, radius: float = 1.0, centre: np.ndarray = np.array([0, 0, 0])
-    ) -> None:
+    def __init__(self, norm: str | None = None, radius: float = 1.0, centre: np.ndarray = np.array([0, 0, 0])) -> None:
         super().__init__(norm)
         self.radius = radius
         self.centre = centre
@@ -119,7 +118,7 @@ class AreaWeights(BaseWeights):
             Weights.
         """
         latitudes, longitudes = nodes.x[:, 0], nodes.x[:, 1]
-        points = latlon_rad_to_cartesian((latitudes, longitudes))
+        points = latlon_rad_to_cartesian((np.asarray(latitudes), np.asarray(longitudes)))
         sv = SphericalVoronoi(points, self.radius, self.centre)
         area_weights = sv.calculate_areas()
         LOGGER.debug(
