@@ -1,4 +1,4 @@
-.. _node_builder:
+.. _modules-node_builder:
 
 ##############
  Node builder

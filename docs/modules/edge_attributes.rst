@@ -1,4 +1,4 @@
-.. _edge_attributes:
+.. _modules-edge_attributes:
 
 #################
  Edge attributes

@@ -1,4 +1,4 @@
-.. _edge_builder:
+.. _modules-edge_builder:
 
 ##############
  Edge builder

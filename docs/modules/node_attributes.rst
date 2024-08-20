@@ -1,4 +1,4 @@
-.. _node_attributes:
+.. _modules-node_attributes:
 
 #################
  Node attributes
