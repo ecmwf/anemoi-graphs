@@ -1,3 +1,5 @@
+.. _node_attributes:
+
 #################
  Node attributes
 #################

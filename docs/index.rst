@@ -55,11 +55,20 @@ of the *Anemoi* packages.
  Modules
 *********
 
+-  :doc:`modules/node_builder`
+-  :doc:`modules/edge_builder`
+-  :doc:`modules/node_attributes`
+-  :doc:`modules/edge_attributes`
+
 .. toctree::
    :maxdepth: 1
-   :glob:
+   :hidden:
+   :caption: Modules
 
-   modules/*
+   modules/node_builder
+   modules/edge_builder
+   modules/node_attributes
+   modules/edge_attributes
 
 *******************
  Command line tool

@@ -1,3 +1,5 @@
+.. _node_builder:
+
 ##############
  Node builder
 ##############

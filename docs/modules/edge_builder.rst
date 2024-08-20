@@ -1,3 +1,5 @@
+.. _edge_builder:
+
 ##############
  Edge builder
 ##############
