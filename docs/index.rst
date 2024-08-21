@@ -61,6 +61,8 @@ of the *Anemoi* packages.
 -  :doc:`modules/edge_builder`
 -  :doc:`modules/node_attributes`
 -  :doc:`modules/edge_attributes`
+-  :doc:`modules/graph_creator`
+-  :doc:`modules/graph_inspector`
 
 .. toctree::
    :maxdepth: 1
@@ -71,6 +73,8 @@ of the *Anemoi* packages.
    modules/edge_builder
    modules/node_attributes
    modules/edge_attributes
+   modules/graph_creator
+   modules/graph_inspector
 
 *******************
  Command line tool

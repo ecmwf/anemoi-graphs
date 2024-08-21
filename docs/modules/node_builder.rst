@@ -6,6 +6,6 @@
 
 .. automodule:: anemoi.graphs.nodes.builder
    :members:
-   :exclude-members: BaseNodeBuilder
+   :exclude-members: BaseNodeBuilder,IcosahedralNodes
    :no-undoc-members:
    :show-inheritance:
