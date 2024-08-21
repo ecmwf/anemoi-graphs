@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import logging
 
 import numpy as np
@@ -31,7 +33,7 @@ class KNNAreaMaskBuilder:
         Get the mask for the nodes based on the distance to the reference nodes.
     """
 
-    def __init__(self, reference_node_name: str, margin_radius_km: float = 100, mask_attr_name: str = None):
+    def __init__(self, reference_node_name: str, margin_radius_km: float = 100, mask_attr_name: str | None = None):
         assert isinstance(margin_radius_km, (int, float)), "The margin radius must be a number."
         assert margin_radius_km > 0, "The margin radius must be positive."
 

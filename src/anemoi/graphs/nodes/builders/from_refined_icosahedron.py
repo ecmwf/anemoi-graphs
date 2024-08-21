@@ -73,9 +73,9 @@ class LimitedAreaIcosahedralNodes(IcosahedralNodes):
     def __init__(
         self,
         resolution: int | list[int],
-        name: str,
         reference_node_name: str,
-        mask_attr_name: str,
+        name: str,
+        mask_attr_name: str | None = None,
         margin_radius_km: float = 100.0,
     ) -> None:
 
