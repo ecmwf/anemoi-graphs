@@ -39,7 +39,6 @@ of the *Anemoi* packages.
 -  :doc:`graphs/node_attributes`
 -  :doc:`graphs/edges`
 -  :doc:`graphs/edge_attributes`
--  :doc:`graphs/masks`
 
 .. toctree::
    :maxdepth: 1
@@ -51,7 +50,6 @@ of the *Anemoi* packages.
    graphs/node_attributes
    graphs/edges
    graphs/edge_attributes
-   graphs/masks
 
 *********
  Modules
@@ -63,6 +61,7 @@ of the *Anemoi* packages.
 -  :doc:`modules/edge_attributes`
 -  :doc:`modules/graph_creator`
 -  :doc:`modules/graph_inspector`
+-  :doc:`modules/masks`
 
 .. toctree::
    :maxdepth: 1
@@ -75,6 +74,7 @@ of the *Anemoi* packages.
    modules/edge_attributes
    modules/graph_creator
    modules/graph_inspector
+   modules/masks
 
 *******************
  Command line tool
@@ -82,7 +82,7 @@ of the *Anemoi* packages.
 
 -  :doc:`cli/introduction`
 -  :doc:`cli/create`
--  :doc:`cli/inspect`
+-  :doc:`cli/describe`
 -  :doc:`cli/inspect`
 
 .. toctree::
