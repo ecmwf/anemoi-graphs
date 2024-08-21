@@ -91,7 +91,7 @@ class GraphDescriptor:
                     self.graph[src_name].num_nodes - len(torch.unique(edges.edge_index[0])),
                     self.graph[dst_name].num_nodes - len(torch.unique(edges.edge_index[1])),
                     sum(edges[attr].shape[1] for attr in attributes),
-                    ", ".join(attributes),
+                    ", ".join([f"{attr}({edges[attr].shape[1]}D)" for attr in attributes]),
                 ]
             )
         return edge_summary
