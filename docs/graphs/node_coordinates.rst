@@ -1,4 +1,4 @@
-.. _node-coordinates:
+.. _graphs-node_coordinates:
 
 #####################
  Nodes - Coordinates

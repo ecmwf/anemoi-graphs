@@ -1,4 +1,4 @@
-.. _node-attributes:
+.. _graphs-node_attributes:
 
 ####################
  Nodes - Attributes
