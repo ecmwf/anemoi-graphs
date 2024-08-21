@@ -179,6 +179,10 @@ def plot_interactive_nodes(graph: HeteroData, nodes_name: str, out_file: Optiona
     # Remove x to avoid plotting the coordinates as an attribute
     node_attrs.remove("x")
 
+    if len(node_attrs) == 0:
+        LOGGER.warning(f"No node attributes found for {nodes_name} nodes.")
+        return
+
     node_traces = {}
     for node_attr in node_attrs:
         node_attr_values = graph[nodes_name][node_attr].float().numpy()
