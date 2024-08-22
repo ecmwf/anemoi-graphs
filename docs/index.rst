@@ -80,7 +80,7 @@ of the *Anemoi* packages.
 
 -  :doc:`cli/introduction`
 -  :doc:`cli/create`
--  :doc:`cli/inspect`
+-  :doc:`cli/describe`
 -  :doc:`cli/inspect`
 
 .. toctree::
