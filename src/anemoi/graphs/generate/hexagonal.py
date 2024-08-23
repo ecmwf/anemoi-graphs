@@ -48,7 +48,7 @@ def create_hexagonal_nodes(
     return graph, coords_rad, list(node_ordering)
 
 
-def create_hexagonal_nx_graph_from_coords(nodes: set[str], node_ordering: np.ndarray) -> nx.Graph:
+def create_hexagonal_nx_graph_from_coords(nodes: list[str], node_ordering: np.ndarray) -> nx.Graph:
     """Add all nodes at a specified refinement level to a graph.
 
     Parameters
