@@ -1,7 +1,7 @@
-import logging
+from __future__ import annotations
+
 from abc import ABC
 from abc import abstractmethod
-from typing import Optional
 
 import numpy as np
 import torch
@@ -11,13 +11,11 @@ from anemoi.graphs.edges.directional import directional_edge_features
 from anemoi.graphs.normalizer import NormalizerMixin
 from anemoi.graphs.utils import haversine_distance
 
-LOGGER = logging.getLogger(__name__)
-
 
 class BaseEdgeAttribute(ABC, NormalizerMixin):
     """Base class for edge attributes."""
 
-    def __init__(self, norm: Optional[str] = None) -> None:
+    def __init__(self, norm: str | None = None) -> None:
         self.norm = norm
 
     @abstractmethod
@@ -49,10 +47,12 @@ class BaseEdgeAttribute(ABC, NormalizerMixin):
 class EdgeDirection(BaseEdgeAttribute):
     """Edge direction feature.
 
-    If using the rotated features, the direction of the edge is computed
-    rotating the target nodes to the north pole. If not, it is computed
-    as the diference in latitude and longitude between the source and
-    target nodes.
+    This class calculates the direction of an edge using either:
+    1. Rotated features: The target nodes are rotated to the north pole to compute the edge direction.
+    2. Non-rotated features: The direction is computed as the difference in latitude and longitude between the source
+    and target nodes.
+
+    The resulting direction is represented as a unit vector starting at (0, 0), with X and Y components.
 
     Attributes
     ----------
@@ -69,7 +69,7 @@ class EdgeDirection(BaseEdgeAttribute):
         Compute directional attributes.
     """
 
-    def __init__(self, norm: Optional[str] = None, luse_rotated_features: bool = True) -> None:
+    def __init__(self, norm: str | None = None, luse_rotated_features: bool = True) -> None:
         super().__init__(norm)
         self.luse_rotated_features = luse_rotated_features
 
@@ -115,7 +115,7 @@ class EdgeLength(BaseEdgeAttribute):
         Compute edge lengths attributes.
     """
 
-    def __init__(self, norm: Optional[str] = None, invert: bool = False) -> None:
+    def __init__(self, norm: str | None = None, invert: bool = False) -> None:
         super().__init__(norm)
         self.invert = invert
 

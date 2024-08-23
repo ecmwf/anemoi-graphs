@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import logging
 
 import numpy as np
@@ -25,13 +27,17 @@ class KNNAreaMaskBuilder:
 
     Methods
     -------
+    fit_coords(coords_rad: np.ndarray)
+        Fit the KNN model to the coordinates in radians.
     fit(graph: HeteroData)
         Fit the KNN model to the reference nodes.
     get_mask(coords_rad: np.ndarray) -> np.ndarray
         Get the mask for the nodes based on the distance to the reference nodes.
     """
 
-    def __init__(self, reference_node_name: str, margin_radius_km: float = 100, mask_attr_name: str = None):
+    def __init__(self, reference_node_name: str, margin_radius_km: float = 100, mask_attr_name: str | None = None):
+        assert isinstance(margin_radius_km, (int, float)), "The margin radius must be a number."
+        assert margin_radius_km > 0, "The margin radius must be positive."
 
         self.nearest_neighbour = NearestNeighbors(metric="haversine", n_jobs=4)
         self.margin_radius_km = margin_radius_km
@@ -39,8 +45,16 @@ class KNNAreaMaskBuilder:
         self.mask_attr_name = mask_attr_name
 
     def get_reference_coords(self, graph: HeteroData) -> np.ndarray:
+        """Retrive coordinates from the reference nodes."""
+        assert (
+            self.reference_node_name in graph.node_types
+        ), f'Reference node "{self.reference_node_name}" not found in the graph.'
+
         coords_rad = graph[self.reference_node_name].x.numpy()
         if self.mask_attr_name is not None:
+            assert (
+                self.mask_attr_name in graph[self.reference_node_name].node_attrs()
+            ), f'Mask attribute "{self.mask_attr_name}" not found in the reference nodes.'
             mask = graph[self.reference_node_name][self.mask_attr_name].squeeze()
             coords_rad = coords_rad[mask]
 
@@ -52,12 +66,15 @@ class KNNAreaMaskBuilder:
 
     def fit(self, graph: HeteroData):
         """Fit the KNN model to the nodes of interest."""
+        # Prepare string for logging
         reference_mask_str = self.reference_node_name
         if self.mask_attr_name is not None:
             reference_mask_str += f" ({self.mask_attr_name})"
 
+        # Fit to the reference nodes
         coords_rad = self.get_reference_coords(graph)
         self.fit_coords(coords_rad)
+
         LOGGER.info(
             'Fitting %s with %d reference nodes from "%s".',
             self.__class__.__name__,

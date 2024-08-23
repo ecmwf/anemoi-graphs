@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import logging
 from pathlib import Path
 
@@ -130,9 +132,9 @@ class LimitedAreaNPZFileNodes(NPZFileNodes):
         self,
         resolution: str,
         grid_definition_path: str,
-        name: str,
         reference_node_name: str,
-        mask_attr_name: str,
+        name: str,
+        mask_attr_name: str | None = None,
         margin_radius_km: float = 100.0,
     ) -> None:
 

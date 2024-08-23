@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import logging
 
 import numpy as np
@@ -65,9 +67,9 @@ class LimitedAreaHEALPixNodes(HEALPixNodes):
     def __init__(
         self,
         resolution: str,
-        name: str,
         reference_node_name: str,
-        mask_attr_name: str,
+        name: str,
+        mask_attr_name: str | None = None,
         margin_radius_km: float = 100.0,
     ) -> None:
 

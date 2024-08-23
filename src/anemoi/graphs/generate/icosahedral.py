@@ -1,6 +1,6 @@
-import logging
+from __future__ import annotations
+
 from collections.abc import Iterable
-from typing import Optional
 
 import networkx as nx
 import numpy as np
@@ -11,11 +11,9 @@ from anemoi.graphs.generate.masks import KNNAreaMaskBuilder
 from anemoi.graphs.generate.transforms import cartesian_to_latlon_rad
 from anemoi.graphs.generate.utils import get_coordinates_ordering
 
-logger = logging.getLogger(__name__)
-
 
 def create_icosahedral_nodes(
-    resolution: int, aoi_mask_builder: Optional[KNNAreaMaskBuilder] = None
+    resolution: int, aoi_mask_builder: KNNAreaMaskBuilder | None = None
 ) -> tuple[nx.DiGraph, np.ndarray, list[int]]:
     """Creates a global mesh following AIFS strategy.
 
@@ -54,7 +52,7 @@ def create_icosahedral_nodes(
 def create_stretched_icosahedral_nodes(
     base_resolution: int,
     lam_resolution: int,
-    aoi_mask_builder: Optional[KNNAreaMaskBuilder],
+    aoi_mask_builder: KNNAreaMaskBuilder | None = None,
 ) -> tuple[nx.DiGraph, np.ndarray, list[int]]:
     """Creates a global mesh with 2 levels of resolution.
 
@@ -132,7 +130,7 @@ def add_edges_to_nx_graph(
     graph: nx.DiGraph,
     resolutions: list[int],
     x_hops: int = 1,
-    aoi_mask_builder: Optional[KNNAreaMaskBuilder] = None,
+    aoi_mask_builder: KNNAreaMaskBuilder | None = None,
 ) -> nx.DiGraph:
     """Adds the edges to the graph.
 
@@ -183,7 +181,7 @@ def add_edges_to_nx_graph(
 
 
 def get_neighbours_within_hops(
-    tri_mesh: trimesh.Trimesh, x_hops: int, valid_nodes: Optional[list[int]] = None
+    tri_mesh: trimesh.Trimesh, x_hops: int, valid_nodes: list[int] | None = None
 ) -> dict[int, set[int]]:
     """Get the neigbour connections in the graph.
 
@@ -223,8 +221,8 @@ def add_neigbours_edges(
     node_idx: int,
     neighbour_indices: Iterable[int],
     self_loops: bool = False,
-    vertex_mapping_index: Optional[np.ndarray] = None,
-) -> None:
+    vertex_mapping_index: np.ndarray | None = None,
+) -> nx.Graph:
     """Adds the edges of one node to its neighbours.
 
     Parameters

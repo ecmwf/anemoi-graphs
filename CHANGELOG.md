@@ -16,12 +16,23 @@ Keep it human-readable, your future self will thank you!
 - New node builder classes, LimitedAreaXXXXXNodes, to create nodes within an Area of Interest (AOI).
 - Expanded MultiScaleEdges to support multi-scale connections in limited area graphs.
 - HEALPixNodes - nodebuilder based on Hierarchical Equal Area isoLatitude Pixelation of a sphere
+- HEALPixNodes - nodebuilder based on Hierarchical Equal Area isoLatitude Pixelation of a sphere.
+- Inspection tools: interactive plots, and distribution plots of edge & node attributes.
+- Graph description print in the console.
+- CLI entry point: 'anemoi-graphs inspect ...'.
 - added downstream-ci pipeline and cd-pypi reusable workflow
+- Changelog release updater
 
 ### Changed
-- Fix `anemoi-graphs create`. Config argument is cast to a Path.
-- Fix GraphCreator().clean() to not iterate over a dictionary that may change size during iterations.
-- Fix missing binary dependency
+- fix: added support for Python3.9.
+- fix: bug in graph cleaning method
+- fix: `anemoi-graphs create` CLI argument is casted to a Path.
+- ci: fix missing binary dependency in ci-config.yaml
+- fix: Updated `get_raw_values` method in `AreaWeights` to ensure compatibility with `scipy.spatial.SphericalVoronoi` by converting `latitudes` and `longitudes` to NumPy arrays before passing them to the `latlon_rad_to_cartesian` function. This resolves an issue where the function would fail if passed Torch Tensors directly.
+- ci: Reusable workflows for push, PR, and releases
+- ci: ignore docs for downstream ci
+- ci: changed Changelog action to create PR
+- ci: fixes and permissions on changelog updater
 
 ### Removed
 

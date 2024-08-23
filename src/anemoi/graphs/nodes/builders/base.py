@@ -1,6 +1,7 @@
+from __future__ import annotations
+
 from abc import ABC
 from abc import abstractmethod
-from typing import Optional
 
 import numpy as np
 import torch
@@ -26,7 +27,7 @@ class BaseNodeBuilder(ABC):
         self.name = name
         self.aoi_mask_builder = None
 
-    def register_nodes(self, graph: HeteroData) -> None:
+    def register_nodes(self, graph: HeteroData) -> HeteroData:
         """Register nodes in the graph.
 
         Parameters
@@ -38,7 +39,7 @@ class BaseNodeBuilder(ABC):
         graph[self.name].node_type = type(self).__name__
         return graph
 
-    def register_attributes(self, graph: HeteroData, config: Optional[DotDict] = None) -> HeteroData:
+    def register_attributes(self, graph: HeteroData, config: DotDict | None = None) -> HeteroData:
         """Register attributes in the nodes of the graph specified.
 
         Parameters
@@ -80,7 +81,7 @@ class BaseNodeBuilder(ABC):
         coords = np.deg2rad(coords)
         return torch.tensor(coords, dtype=torch.float32)
 
-    def update_graph(self, graph: HeteroData, attr_config: Optional[DotDict] = None) -> HeteroData:
+    def update_graph(self, graph: HeteroData, attr_config: DotDict | None = None) -> HeteroData:
         """Update the graph with new nodes.
 
         Parameters
