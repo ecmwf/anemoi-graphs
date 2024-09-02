@@ -5,7 +5,7 @@
 The multi-scale connections can only be defined with the same source and
 target nodes. Edges of different scales are defined based on the
 refinement level of an icosahedron. The higher the refinement level, the
-shorther the length of the edges. By default, all possible refinements
+shorter the length of the edges. By default, all possible refinements
 levels are considered.
 
 To use this method to build your connections, you can use the following
