@@ -1,6 +1,6 @@
-####################################################
- Multi-scale connections at refinemened icosahedron
-####################################################
+################################################
+ Multi-scale connections at refined icosahedron
+################################################
 
 The multi-scale connections can only be defined with the same source and
 target nodes. Edges of different scales are defined based on the
