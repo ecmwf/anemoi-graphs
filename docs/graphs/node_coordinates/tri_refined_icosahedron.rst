@@ -17,7 +17,7 @@ The class `TriNodes` allows us to define the nodes over the entire globe
 .. code:: yaml
 
    nodes:
-     data:
+     hidden: # name of the nodes
        node_builder:
          _target_: anemoi.graphs.nodes.TriNodes
          resolution: 4
@@ -36,9 +36,9 @@ specific area of interest.
 .. code:: yaml
 
    nodes:
-     data:
+     hidden: # name of the nodes
        node_builder:
-         _target_: anemoi.graphs.nodes.LimitedAreaHexNodes
+         _target_: anemoi.graphs.nodes.LimitedAreaTriNodes
          resolution: 4
          reference_node_name: nodes_name
          mask_attr_name: mask_name  # optional
@@ -58,7 +58,7 @@ different resolution for inside and outside the area of interest.
 .. code:: yaml
 
    nodes:
-     data:
+     hidden: # name of the nodes
        node_builder:
          _target_: anemoi.graphs.nodes.StretchedTriNodes
          global_resolution: 3

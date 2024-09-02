@@ -20,7 +20,7 @@ globe.
 .. code:: yaml
 
    nodes:
-     data:
+     hidden: # name of the nodes
        node_builder:
          _target_: anemoi.graphs.nodes.HexNodes
          resolution: 4
@@ -38,7 +38,7 @@ specific area of interest.
 .. code:: yaml
 
    nodes:
-     data:
+     hidden: # name of the nodes
        node_builder:
          _target_: anemoi.graphs.nodes.LimitedAreaHexNodes
          resolution: 4

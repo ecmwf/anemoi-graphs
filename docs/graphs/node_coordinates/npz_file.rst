@@ -8,7 +8,7 @@ following YAML configuration:
 .. code:: yaml
 
    nodes:
-     data:
+     data: # name of the nodes
        node_builder:
          _target_: anemoi.graphs.nodes.NPZFileNodes
          grids_definition_path: /path/to/folder/with/grids/

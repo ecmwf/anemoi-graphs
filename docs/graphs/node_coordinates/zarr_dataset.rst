@@ -13,7 +13,7 @@ the following YAML configuration:
 .. code:: yaml
 
    nodes:
-     data:
+     data: # name of the nodes
        node_builder:
          _target_: anemoi.graphs.nodes.ZarrDatasetNodes
          dataset: /path/to/dataset.zarr
@@ -28,7 +28,7 @@ Below, an example of how to use the "cutout" operation directly within
 .. code:: yaml
 
    nodes:
-     data:
+     data:  # name of the nodes
        node_builder:
          _target_: anemoi.graphs.nodes.ZarrDatasetNodes
          dataset:
