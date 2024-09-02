@@ -4,6 +4,8 @@
 
 This method allows us to define the nodes based on the Hexagonal
 Hierarchical Geospatial Indexing System, which uses hexagons to divide
+the sphere. Each refinement level divides each hexagon into seven smaller hexagons.
+```suggestion
 the sphere. With each refinement, each hexagon into seven smaller
 hexagons.
 
