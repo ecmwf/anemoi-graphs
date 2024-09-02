@@ -21,5 +21,5 @@ YAML configuration:
 
 .. note::
 
-   The knn method is recommended for the decoder edge, to connect all
+   The knn method is recommended for the decoder edges, to connect all
    data nodes with the surrounding hidden nodes.
