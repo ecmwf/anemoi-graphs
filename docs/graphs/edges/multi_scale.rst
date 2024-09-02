@@ -30,6 +30,6 @@ refinement level to be considered neighbours, and then connected.
 
 .. warning::
 
-   This connection method is only support for building the connections
+   This connection method is only supported for building the connections
    within a set of nodes defined with the ``TriNodes`` or ``HexNodes``
    classes.
