@@ -65,8 +65,7 @@ This will generate the following graph:
 
    Note that that the resulting graph will only work with a Transformer
    processor because there are no connections between the `hidden
-   nodes`. This is the default behaviour for :ref:`anemoi-training
-   <anemoi-training:index-page>`.
+   nodes`.
 
 ******************************
  Adding processor connections
