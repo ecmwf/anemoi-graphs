@@ -20,6 +20,11 @@ icosahedron, you can use the following YAML configuration:
 where resolution is the number of refinements to be applied to the
 icosahedron.
 
+Note that the refinement level is the parameter used to control the
+resolution of the nodes, but the resolution also depends on the
+refinement method. Then, for the same refinement level, ``HexNodes``
+will have a higher resolution than ``TriNodes``.
+
 .. warning::
 
    This class will require the `trimesh <https://trimesh.org>`_ package
