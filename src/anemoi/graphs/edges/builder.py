@@ -119,10 +119,8 @@ class BaseEdgeBuilder(ABC):
         """
         graph = self.register_edges(graph)
 
-        if attrs_config is None:
-            return graph
-
-        graph = self.register_attributes(graph, attrs_config)
+        if attrs_config is not None:
+            graph = self.register_attributes(graph, attrs_config)
 
         return graph
 
