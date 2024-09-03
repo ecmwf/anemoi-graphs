@@ -3,7 +3,6 @@ from __future__ import annotations
 import logging
 from itertools import chain
 from pathlib import Path
-
 import torch
 from anemoi.utils.config import DotDict
 from hydra.utils import instantiate
@@ -118,7 +117,7 @@ class GraphCreator:
         return graph
 
 
-class HierarchicalGraphCreator:
+class HierarchicalGraphCreator(GraphCreator):
 
     def __init__(
             self,
@@ -141,13 +140,13 @@ class HierarchicalGraphCreator:
         for i in range(self.config.num_hidden):
             graph = instantiate(
                 self.config.processor_node,
-                resolution=self.config.resolution[i]
+                resolution=self.config.resolution[i],
                 name=f"hidden_{i+1}").update_graph(graph, {})
 
         ### Edges ###
         # Encoder and Decoder
         for edges_cfg in self.config.edges:
-            graph = instantiate(edges_cfg.edge_builder, edges_cfg.source_name, edges_cfg.target_name).update_graph(
+            graph = instantiate(edges_cfg.edge_builder, source_name=edges_cfg.source_name, target_name=edges_cfg.target_name).update_graph(
                 graph, edges_cfg.get("attributes", {})
             )
         
@@ -174,5 +173,13 @@ class HierarchicalGraphCreator:
                 num_nearest_neighbours=self.config.num_nearest_neighbours, 
                 source_name=f"hidden_{i+1}", 
                 target_name=f"hidden_{i}").update_graph(graph, self.config.processor_attributes)
+        
+        # Hiddenmost level process
+        if self.config.level_process:
+            graph = instantiate(
+                self.config.processor_edge, 
+                num_nearest_neighbours=self.config.num_nearest_neighbours, 
+                source_name=f"hidden_{i+1}", 
+                target_name=f"hidden_{i+1}").update_graph(graph, self.config.processor_attributes)
         
         return graph

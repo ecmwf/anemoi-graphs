@@ -2,7 +2,7 @@ import argparse
 import logging
 from pathlib import Path
 
-from anemoi.graphs.create import GraphCreator
+from anemoi.graphs.creators.create import GraphCreator
 from anemoi.graphs.descriptor import GraphDescriptor
 
 from . import Command

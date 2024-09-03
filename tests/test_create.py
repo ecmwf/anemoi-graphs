@@ -12,7 +12,7 @@ import pytest
 import torch
 from torch_geometric.data import HeteroData
 
-from anemoi.graphs.create import GraphCreator
+from anemoi.graphs.creators.create import GraphCreator
 
 
 class TestGraphCreator:
