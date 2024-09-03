@@ -116,3 +116,63 @@ class GraphCreator:
             self.save(graph, save_path, overwrite)
 
         return graph
+
+
+class HierarchicalGraphCreator:
+
+    def __init__(
+            self,
+            config: str | Path | DotDict,
+    ):
+        super().__init__(config)
+
+
+    def generate_graph(self):
+
+        graph = HeteroData()
+        
+        ### Nodes ###
+        # Data nodes
+        graph = instantiate(
+            self.config.nodes.data.node_builder, 
+            name='data').update_graph(graph, self.config.nodes.data.get("attributes", {}))
+        
+        # Hidden nodes
+        for i in range(self.config.num_hidden):
+            graph = instantiate(
+                self.config.processor_node,
+                resolution=self.config.resolution[i]
+                name=f"hidden_{i+1}").update_graph(graph, {})
+
+        ### Edges ###
+        # Encoder and Decoder
+        for edges_cfg in self.config.edges:
+            graph = instantiate(edges_cfg.edge_builder, edges_cfg.source_name, edges_cfg.target_name).update_graph(
+                graph, edges_cfg.get("attributes", {})
+            )
+        
+        # Processor
+        for i in range(1, self.config.num_hidden):
+            # Level process
+            if self.config.level_process:
+                graph = instantiate(
+                    self.config.processor_edge, 
+                    num_nearest_neighbours=self.config.num_nearest_neighbours, 
+                    source_name=f"hidden_{i}", 
+                    target_name=f"hidden_{i}").update_graph(graph, self.config.processor_attributes)
+
+            # Downscale
+            graph = instantiate(
+                self.config.processor_edge, 
+                num_nearest_neighbours=self.config.num_nearest_neighbours, 
+                source_name=f"hidden_{i}", 
+                target_name=f"hidden_{i+1}").update_graph(graph, self.config.processor_attributes)
+            
+            # Upscale
+            graph = instantiate(
+                self.config.processor_edge, 
+                num_nearest_neighbours=self.config.num_nearest_neighbours, 
+                source_name=f"hidden_{i+1}", 
+                target_name=f"hidden_{i}").update_graph(graph, self.config.processor_attributes)
+        
+        return graph
