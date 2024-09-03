@@ -318,7 +318,7 @@ def vis_level(data_nodes, hidden_nodes, data_to_hidden_edges, hidden_edges, layo
 
     # Hidden
     graphs = []
-    for i in range(0, len(upscale_edges)):
+    for i in range(0, len(hidden_edges)):
         graphs.append(
             to_networkx(
                 torch_geometric.data.Data(x=hidden_nodes[i], edge_index=hidden_edges[i]),
