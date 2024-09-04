@@ -1,0 +1,62 @@
+overwrite: True
+creator: HierarchicalGraphCreator
+
+num_hidden: 3
+level_process: True
+data: 'data'
+
+processor_node: 
+  _target_: anemoi.graphs.nodes.TriNodes
+resolution: [5, 4, 3]
+
+processor_edge: 
+  downscale:
+    _target_: anemoi.graphs.edges.CutOffEdges
+    cutoff_factor: 1.0
+  upscale:
+    _target_: anemoi.graphs.edges.KNNEdges
+    num_nearest_neighbours: 5
+  level:
+    _target_: anemoi.graphs.edges.CutOffEdges
+    cutoff_factor: 1.5
+
+
+processor_attributes: ${graph.attributes.edges}
+
+nodes:
+  # Data nodes
+  data:
+    node_builder:
+      _target_: anemoi.graphs.nodes.ZarrDatasetNodes
+      dataset: ${dataloader.dataset}
+    attributes: ${graph.attributes.nodes}
+  
+edges:
+  # Encoder configuration
+  - source_name: "data"
+    target_name: "hidden_1"
+    edge_builder:
+      _target_: anemoi.graphs.edges.CutOffEdges
+      cutoff_factor: 1.0
+    attributes: ${graph.attributes.edges}
+
+    # Decoder configuration
+  - source_name: "hidden_1"
+    target_name: "data"
+    edge_builder:
+      _target_: anemoi.graphs.edges.KNNEdges
+      num_nearest_neighbours: 5
+    attributes: ${graph.attributes.edges}
+
+attributes:
+  edges:
+    edge_dirs:
+      _target_: anemoi.graphs.edges.attributes.EdgeDirection
+      norm: unit-std
+    edge_length:
+      _target_: anemoi.graphs.edges.attributes.EdgeLength
+      norm: unit-std
+  nodes:
+    area_weight:
+      _target_: anemoi.graphs.nodes.attributes.AreaWeights
+      norm: unit-max
