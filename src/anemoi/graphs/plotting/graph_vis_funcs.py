@@ -1,7 +1,8 @@
 import hydra
-from omegaconf import DictConfig
-from aifs.utils.logger import get_code_logger
+from omegaconf import DictConfig, OmegaConf
 from print_color import print
+from pathlib import Path
+from aifs.utils.logger import get_code_logger
 import plotly.graph_objs as go
 import matplotlib.colors as mcolors
 import matplotlib.pyplot as plt
@@ -12,6 +13,7 @@ import plotly.io as pio
 import torch_geometric
 import numpy as np
 from tqdm import tqdm
+
 LOGGER = get_code_logger(__name__)
 
 def get_edge_trace(g1, g2, n1, n2, scale_1, scale_2, color, filter_limit=0.5):
@@ -51,7 +53,7 @@ def convert_and_plot_nodes(G, coords, rads=True, filter=False, filter_limit=0, s
     x_nodes, y_nodes, z_nodes = lat_lon_to_cartesian(lat, lon, rads=rads)
 
     # Filter nodes for the first quadrant
-    if filter:
+    if filter_limit>0:
         first_quadrant_nodes = [i for i, (x, y, z) in enumerate(zip(x_nodes, y_nodes, z_nodes)) if x > filter_limit and y > filter_limit and z > filter_limit]
 
         if not first_quadrant_nodes:
@@ -174,9 +176,32 @@ def generate_shades(color_name, num_shades):
     
     return shades
 
-def vis_downscale(data_nodes, hidden_nodes, data_to_hidden_edges, downscale_edges, layout, color='red', num_hidden=3, filter_limit=0.4):
+def make_layout(title):
+    # Create a layout for the plot
+    layout = go.Layout(
+        title={
+        'text': f'Hierarchical Graph Visualisation <br><sup>{title}</sup>',
+        'x': 0.5,  # Center the title horizontally
+        'xanchor': 'center',  # Anchor the title to the center of the plot area
+        'y': 0.95,  # Position the title vertically
+        'yanchor': 'top'  # Anchor the title to the top of the plot area
+        },
+        scene=dict(
+            xaxis=dict(showbackground=False, visible=False),
+            yaxis=dict(showbackground=False, visible=False),
+            zaxis=dict(showbackground=False, visible=False),
+        ),
+        width=900,  # Increase width
+        height=600,  # Increase height
+        showlegend=False,
+    )
+    return layout
+
+def vis_downscale(data_nodes, hidden_nodes, data_to_hidden_edges, downscale_edges, title, color='red', num_hidden=3, filter_limit=0.4):
 
     colorscale = generate_shades(color, num_hidden)
+    layout = make_layout(title)
+    scale_increment = 1/num_hidden
 
     # Data
     g_data = to_networkx(
@@ -197,12 +222,12 @@ def vis_downscale(data_nodes, hidden_nodes, data_to_hidden_edges, downscale_edge
         )
 
     # Node trace
-    node_trace_data, graph_data, coords_data = convert_and_plot_nodes(g_data, data_nodes, rads=True, filter=filter, filter_limit=filter_limit, scale=1.0, color='skyblue')
+    node_trace_data, graph_data, coords_data = convert_and_plot_nodes(g_data, data_nodes, rads=True, filter=filter, filter_limit=filter_limit, scale=1.0, color='darkgrey')
     node_trace_hidden = [node_trace_data]
     graph_processed = []
     coords_hidden = []
     for i in range(num_hidden):
-        trace, g, tmp_coords = convert_and_plot_nodes(graphs[i], hidden_nodes[i], rads=True, filter=filter, filter_limit=filter_limit, scale=1.0-(0.2*(i+1)), color='skyblue')
+        trace, g, tmp_coords = convert_and_plot_nodes(graphs[i], hidden_nodes[i], rads=True, filter=filter, filter_limit=filter_limit, scale=1.0-(scale_increment*(i+1)), color='skyblue')
         node_trace_hidden.append(trace)
         graph_processed.append(g)
         coords_hidden.append(tmp_coords)
@@ -215,8 +240,8 @@ def vis_downscale(data_nodes, hidden_nodes, data_to_hidden_edges, downscale_edge
             graphs[0], 
             coords_data, 
             coords_hidden[0], 
-            1.0, 1.0-(0.2*1), 
-            colorscale[0], 
+            1.0, 1.0-scale_increment, 
+            'yellowgreen', 
             filter_limit=filter_limit
             )
     ]
@@ -227,8 +252,8 @@ def vis_downscale(data_nodes, hidden_nodes, data_to_hidden_edges, downscale_edge
                 graphs[i+1], 
                 coords_hidden[i], 
                 coords_hidden[i+1], 
-                1.0-(0.2*(i+1)), 1.0-(0.2*(i+2)), 
-                colorscale[i+1], 
+                1.0-(scale_increment*(i+1)), 1.0-(scale_increment*(i+2)), 
+                colorscale[i], 
                 filter_limit=filter_limit
             )
         )
@@ -238,9 +263,11 @@ def vis_downscale(data_nodes, hidden_nodes, data_to_hidden_edges, downscale_edge
     fig = go.Figure(data=node_trace_hidden + edge_traces, layout=layout)
     fig.show()
 
-def vis_upscale(data_nodes, hidden_nodes, data_to_hidden_edges, upscale_edges, layout,  color='red', num_hidden=3, filter_limit=0.4):
+def vis_upscale(data_nodes, hidden_nodes, data_to_hidden_edges, upscale_edges, title,  color='red', num_hidden=3, filter_limit=0.4):
 
     colorscale = generate_shades(color, num_hidden)
+    layout = make_layout(title)
+    scale_increment = 1/num_hidden
 
     # Hidden
     graphs = []
@@ -261,12 +288,12 @@ def vis_upscale(data_nodes, hidden_nodes, data_to_hidden_edges, upscale_edges, l
             )
 
     # Node trace
-    node_trace_data, graph_data, coords_data = convert_and_plot_nodes(g_data, data_nodes, rads=True, filter=filter, filter_limit=filter_limit, scale=1.0, color='skyblue')
+    node_trace_data, graph_data, coords_data = convert_and_plot_nodes(g_data, data_nodes, rads=True, filter=filter, filter_limit=filter_limit, scale=1.0, color='darkgrey')
     node_trace_hidden = [node_trace_data]
     graph_processed = []
     coords_hidden = []
     for i in range(num_hidden):
-        trace, g, tmp_coords = convert_and_plot_nodes(graphs[i], hidden_nodes[len(upscale_edges)-1-i], rads=True, filter=filter, filter_limit=filter_limit, scale=1-((num_hidden)*0.2) + (0.2*(i)), color='skyblue')
+        trace, g, tmp_coords = convert_and_plot_nodes(graphs[i], hidden_nodes[len(upscale_edges)-1-i], rads=True, filter=filter, filter_limit=filter_limit, scale=1-((num_hidden)*scale_increment) + (scale_increment*(i)), color='skyblue')
         node_trace_hidden.append(trace)
         graph_processed.append(g)
         coords_hidden.append(tmp_coords)
@@ -281,8 +308,8 @@ def vis_upscale(data_nodes, hidden_nodes, data_to_hidden_edges, upscale_edges, l
                 graphs[i+1], 
                 coords_hidden[i], 
                 coords_hidden[i+1], 
-                1-((len(graphs)-i)*0.2), 1-((len(graphs)-i-1)*0.2), 
-                colorscale[i],
+                1-((len(graphs)-i)*scale_increment), 1-((len(graphs)-i-1)*scale_increment),
+                colorscale[-1-i],
                 filter_limit=filter_limit
             )
         )
@@ -293,8 +320,8 @@ def vis_upscale(data_nodes, hidden_nodes, data_to_hidden_edges, upscale_edges, l
             g_data, 
             coords_hidden[-1], 
             coords_data, 
-            0.8, 1.0, 
-            colorscale[-1],
+            1-scale_increment, 1.0, 
+            'yellowgreen',
             filter_limit=filter_limit
             )
     )
@@ -305,9 +332,12 @@ def vis_upscale(data_nodes, hidden_nodes, data_to_hidden_edges, upscale_edges, l
     fig = go.Figure(data=node_trace_hidden + edge_traces, layout=layout)
     fig.show()
 
-def vis_level(data_nodes, hidden_nodes, data_to_hidden_edges, hidden_edges, layout, color='red', num_hidden=3, filter_limit=0.4):
+def vis_level(data_nodes, hidden_nodes, data_to_hidden_edges, hidden_edges, title, color='red', num_hidden=3, filter_limit=0.4):
 
     colorscale = generate_shades(color, num_hidden)
+    layout = make_layout(title)
+    scale_increment = 1/num_hidden
+
 
     # Data
     g_data = to_networkx(
@@ -329,12 +359,12 @@ def vis_level(data_nodes, hidden_nodes, data_to_hidden_edges, hidden_edges, layo
     
 
     # Node trace
-    node_trace_data, graph_data, coords_data = convert_and_plot_nodes(g_data, data_nodes, rads=True, filter=filter, filter_limit=filter_limit, scale=1.0, color='skyblue')
+    node_trace_data, graph_data, coords_data = convert_and_plot_nodes(g_data, data_nodes, rads=True, filter=filter, filter_limit=filter_limit, scale=1.0, color='darkgrey')
     node_trace_hidden = [node_trace_data]
     graph_processed = []
     coords_hidden = []
     for i in range(num_hidden):
-        trace, g, tmp_coords = convert_and_plot_nodes(graphs[i], hidden_nodes[i], rads=True, filter=filter, filter_limit=filter_limit, scale=1.0-(0.2*(i+1)), color='skyblue')
+        trace, g, tmp_coords = convert_and_plot_nodes(graphs[i], hidden_nodes[i], rads=True, filter=filter, filter_limit=filter_limit, scale=1.0-(scale_increment*(i+1)), color='skyblue')
         node_trace_hidden.append(trace)
         graph_processed.append(g)
         coords_hidden.append(tmp_coords)
@@ -349,7 +379,7 @@ def vis_level(data_nodes, hidden_nodes, data_to_hidden_edges, hidden_edges, layo
                 graphs[i], 
                 coords_hidden[i], 
                 coords_hidden[i], 
-                1.0-(0.2*(i+1)),  1.0-(0.2*(i+1)), 
+                1.0-(scale_increment*(i+1)),  1.0-(scale_increment*(i+1)), 
                 colorscale[i], 
                 filter_limit=filter_limit
             )
@@ -361,10 +391,66 @@ def vis_level(data_nodes, hidden_nodes, data_to_hidden_edges, hidden_edges, layo
     fig.show()
     return
 
-@hydra.main(version_base=None, config_path="aifs/config", config_name="graph_factory")
+@hydra.main(version_base=None, config_path="/users/apennino/aifs-mono/aifs/config", config_name="hierarchical_test")
 def main(config: DictConfig) -> None:
-    from anemoi.graphs.creators import GraphCreator
-    GraphCreator(config=config.graph).create(save_path='/scratch/mch/apennino/output/graphs/hierarchical_1.pt', overwrite=True)
+    OmegaConf.resolve(config)
+    graph_filename = Path(
+            config.hardware.paths.graph,
+            config.hardware.files.graph,
+        )
+    
+    num_hidden=config.hardware.paths.graph.num_hidden
+
+    from anemoi.graphs.creators import HierarchicalGraphCreator
+
+    HierarchicalGraphCreator(config=config.graph).create(save_path=graph_filename, overwrite=config.graph.overwrite)
+
+    hetero_data = torch.load(graph_filename, weights_only=False) 
+
+    data_nodes = hetero_data['data'].x
+
+    data_to_hidden_edges = hetero_data[('data', 'to', 'hidden_1')].edge_index
+
+    hidden_nodes = []
+    hidden_edges = []
+    downscale_edges = []
+    upscale_edges = []
+
+    for i in range(1, num_hidden):
+        hidden_nodes.append(hetero_data[f'hidden_{i}'].x)
+        hidden_edges.append(hetero_data[(f'hidden_{i}', 'to', f'hidden_{i}')].edge_index)
+        downscale_edges.append(hetero_data[(f'hidden_{i}', 'to', f'hidden_{i+1}')].edge_index)
+        upscale_edges.append(hetero_data[(f'hidden_{num_hidden+1-i}', 'to', f'hidden_{num_hidden-i}')].edge_index)
+
+    hidden_nodes.append(hetero_data[f'hidden_{num_hidden}'].x)
+    hidden_edges.append(hetero_data[(f'hidden_{num_hidden}', 'to', f'hidden_{num_hidden}')].edge_index)
+    downscale_edges.append(hetero_data[(f'hidden_{num_hidden}', 'to', f'hidden_{i}')].edge_index)
+    upscale_edges.append(hetero_data[(f'hidden_1', 'to', f'data')].edge_index)
+
+    hidden_to_data_edges = hetero_data[('hidden_1', 'to', 'data')].edge_index
+
+    # Create a layout for the plot
+    layout = go.Layout(
+        title={
+        'text': 'Graph Vis',
+        'x': 0.5,  # Center the title horizontally
+        'xanchor': 'center',  # Anchor the title to the center of the plot area
+        'y': 0.95,  # Position the title vertically
+        'yanchor': 'top'  # Anchor the title to the top of the plot area
+        },
+        scene=dict(
+            xaxis=dict(showbackground=False, visible=False),
+            yaxis=dict(showbackground=False, visible=False),
+            zaxis=dict(showbackground=False, visible=False),
+        ),
+        width=900,  # Increase width
+        height=600,  # Increase height
+        showlegend=False,
+    )
+
+    vis_downscale(data_nodes, hidden_nodes, data_to_hidden_edges, downscale_edges, layout,  color='red', num_hidden=3, filter_limit=0.4)
+    vis_upscale(data_nodes, hidden_nodes, hidden_to_data_edges, upscale_edges, layout, color='blue', num_hidden=3, filter_limit=0.4)
+    vis_level(data_nodes, hidden_nodes, data_to_hidden_edges, hidden_edges, layout, color='green', num_hidden=3, filter_limit=0.4)
 
 if __name__ == "__main__":
     main()

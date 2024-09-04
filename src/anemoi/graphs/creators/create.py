@@ -155,30 +155,26 @@ class HierarchicalGraphCreator(GraphCreator):
             # Level process
             if self.config.level_process:
                 graph = instantiate(
-                    self.config.processor_edge, 
-                    num_nearest_neighbours=self.config.num_nearest_neighbours, 
+                    self.config.processor_edge.level, 
                     source_name=f"hidden_{i}", 
                     target_name=f"hidden_{i}").update_graph(graph, self.config.processor_attributes)
 
             # Downscale
             graph = instantiate(
-                self.config.processor_edge, 
-                num_nearest_neighbours=self.config.num_nearest_neighbours, 
+                self.config.processor_edge.downscale, 
                 source_name=f"hidden_{i}", 
                 target_name=f"hidden_{i+1}").update_graph(graph, self.config.processor_attributes)
             
             # Upscale
             graph = instantiate(
-                self.config.processor_edge, 
-                num_nearest_neighbours=self.config.num_nearest_neighbours, 
+                self.config.processor_edge.upscale, 
                 source_name=f"hidden_{i+1}", 
                 target_name=f"hidden_{i}").update_graph(graph, self.config.processor_attributes)
         
         # Hiddenmost level process
         if self.config.level_process:
             graph = instantiate(
-                self.config.processor_edge, 
-                num_nearest_neighbours=self.config.num_nearest_neighbours, 
+                self.config.processor_edge.level, 
                 source_name=f"hidden_{i+1}", 
                 target_name=f"hidden_{i+1}").update_graph(graph, self.config.processor_attributes)
         
