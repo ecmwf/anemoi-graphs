@@ -295,3 +295,29 @@ class HEALPixNodes(BaseNodeBuilder):
         hpxlon, hpxlat = hp.pix2ang(2**self.resolution, range(npix), nest=True, lonlat=True)
 
         return self.reshape_coords(hpxlat, hpxlon)
+
+
+class TensorNodes(BaseNodeBuilder):
+    """Implements nodes with coordinates stored as a tensor.
+
+    Attributes
+    ----------
+    name : str
+        The name of the nodes.
+    coords : torch.Tensor
+        The coordinates of the nodes.
+    """
+
+    def __init__(self, name: str, coords: torch.Tensor) -> None:
+        super().__init__(name)
+        self.coords = coords
+
+    def get_coordinates(self) -> torch.Tensor:
+        """Get the coordinates of the nodes.
+
+        Returns
+        -------
+        torch.Tensor of shape (num_nodes, 2)
+            A 2D tensor with the coordinates, in radians.
+        """
+        return self.coords

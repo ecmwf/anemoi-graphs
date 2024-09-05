@@ -131,3 +131,28 @@ def haversine_distance(source_coords: np.ndarray, target_coords: np.ndarray) -> 
     a = np.sin(dlat / 2) ** 2 + np.cos(source_coords[:, 0]) * np.cos(target_coords[:, 0]) * np.sin(dlon / 2) ** 2
     c = 2 * np.arctan2(np.sqrt(a), np.sqrt(1 - a))
     return c
+
+
+def haversine_distance_torch(source_coords: torch.Tensor, target_coords: torch.Tensor) -> torch.Tensor:
+    """Haversine distance.
+
+    Parameters
+    ----------
+    source_coords : np.ndarray of shape (N, 2)
+        Source coordinates in radians.
+    target_coords : np.ndarray of shape (N, 2)
+        Destination coordinates in radians.
+
+    Returns
+    -------
+    np.ndarray of shape (N,)
+        Haversine distance between source and destination coordinates.
+    """
+    dlat = target_coords[:, 0] - source_coords[:, 0]
+    dlon = target_coords[:, 1] - source_coords[:, 1]
+    a = (
+        torch.sin(dlat / 2) ** 2
+        + torch.cos(source_coords[:, 0]) * torch.cos(target_coords[:, 0]) * torch.sin(dlon / 2) ** 2
+    )
+    c = 2 * torch.atan2(torch.sqrt(a), torch.sqrt(1 - a))
+    return c
