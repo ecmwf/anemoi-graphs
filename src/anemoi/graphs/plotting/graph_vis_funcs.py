@@ -201,7 +201,7 @@ def vis_downscale(data_nodes, hidden_nodes, data_to_hidden_edges, downscale_edge
 
     colorscale = generate_shades(color, num_hidden)
     layout = make_layout(title)
-    scale_increment = 1/num_hidden
+    scale_increment = 1/(num_hidden+1)
 
     # Data
     g_data = to_networkx(
@@ -267,7 +267,7 @@ def vis_upscale(data_nodes, hidden_nodes, data_to_hidden_edges, upscale_edges, t
 
     colorscale = generate_shades(color, num_hidden)
     layout = make_layout(title)
-    scale_increment = 1/num_hidden
+    scale_increment = 1/(num_hidden+1)
 
     # Hidden
     graphs = []
@@ -336,7 +336,7 @@ def vis_level(data_nodes, hidden_nodes, data_to_hidden_edges, hidden_edges, titl
 
     colorscale = generate_shades(color, num_hidden)
     layout = make_layout(title)
-    scale_increment = 1/num_hidden
+    scale_increment = 1/(num_hidden+1)
 
 
     # Data

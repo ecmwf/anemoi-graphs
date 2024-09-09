@@ -3,7 +3,6 @@ creator: HierarchicalGraphCreator
 
 num_hidden: 3
 level_process: True
-data: 'data'
 
 processor_node: 
   _target_: anemoi.graphs.nodes.TriNodes
