@@ -7,6 +7,7 @@ import numpy as np
 import torch
 from torch_geometric.data import HeteroData
 
+from anemoi.graphs.edges.attributes_geom import EdgeFeatureBuilder
 from anemoi.graphs.edges.directional import directional_edge_features
 from anemoi.graphs.normalizer import NormalizerMixin
 from anemoi.graphs.utils import haversine_distance
@@ -141,6 +142,58 @@ class EdgeLength(BaseEdgeAttribute):
         target_coords = graph[target_name].x.numpy()[edge_index[1]]
         edge_lengths = haversine_distance(source_coords, target_coords)
         return edge_lengths
+
+    def post_process(self, values: np.ndarray) -> torch.Tensor:
+        """Post-process edge lengths."""
+        if self.invert:
+            values = 1 - values
+        return super().post_process(values)
+
+
+class EdgeFeaturesTorch(BaseEdgeAttribute):
+    """Edge length feature.
+
+    Attributes
+    ----------
+    norm : str
+        Normalization method.
+    invert : bool
+        Whether to invert the edge lengths, i.e. 1 - edge_length.
+
+    Methods
+    -------
+    get_raw_values(graph, source_name, target_name)
+        Compute haversine distance between nodes connected by edges.
+    compute(graph, source_name, target_name)
+        Compute edge lengths attributes.
+    """
+
+    def __init__(self, norm: Optional[str] = None, invert: bool = False) -> None:
+        super().__init__(norm)
+        self.invert = invert
+
+    def get_raw_values(self, graph: HeteroData, source_name: str, target_name: str) -> np.ndarray:
+        """Compute haversine distance (in kilometers) between nodes connected by edges.
+
+        Parameters
+        ----------
+        graph : HeteroData
+            The graph.
+        source_name : str
+            The name of the source nodes.
+        target_name : str
+            The name of the target nodes.
+
+        Returns
+        -------
+        np.ndarray
+            The edge lengths.
+        """
+        edge_index = graph[(source_name, "to", target_name)].edge_index
+        source_coords = graph[source_name].x[edge_index[0]]
+        target_coords = graph[target_name].x[edge_index[1]]
+        edge_features = EdgeFeatureBuilder()(x=(source_coords, target_coords), edge_index=edge_index)
+        return edge_features
 
     def post_process(self, values: np.ndarray) -> torch.Tensor:
         """Post-process edge lengths."""

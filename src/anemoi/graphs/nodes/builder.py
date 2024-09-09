@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import logging
 from abc import ABC
 from abc import abstractmethod
@@ -297,20 +299,12 @@ class HEALPixNodes(BaseNodeBuilder):
         return self.reshape_coords(hpxlat, hpxlon)
 
 
-class TensorNodes(BaseNodeBuilder):
-    """Implements nodes with coordinates stored as a tensor.
+class DataframeNodes(BaseNodeBuilder):
 
-    Attributes
-    ----------
-    name : str
-        The name of the nodes.
-    coords : torch.Tensor
-        The coordinates of the nodes.
-    """
-
-    def __init__(self, name: str, coords: torch.Tensor) -> None:
+    def __init__(self, df, name: str, attribute_columns: list[str] | None = None) -> None:
+        self.df = df
+        self.attribute_columns = attribute_columns
         super().__init__(name)
-        self.coords = coords
 
     def get_coordinates(self) -> torch.Tensor:
         """Get the coordinates of the nodes.
@@ -320,4 +314,15 @@ class TensorNodes(BaseNodeBuilder):
         torch.Tensor of shape (num_nodes, 2)
             A 2D tensor with the coordinates, in radians.
         """
-        return self.coords
+        latitudes = np.arctan2(self.df["sin_latitude"], self.df["cos_latitude"])
+        longitudes = np.arctan2(self.df["sin_longitude"], self.df["cos_longitude"])
+        return self.reshape_coords(latitudes, longitudes)
+
+    def register_attributes(self, graph: HeteroData, config: Optional[DotDict] = None) -> HeteroData:
+        graph = super().register_attributes(graph, config)
+
+        if self.attribute_columns is not None:
+            for attr_name in self.attribute_columns:
+                graph[self.name][attr_name] = torch.tensor(self.df[attr_name].values, dtype=torch.float32)
+
+        return graph
