@@ -12,9 +12,9 @@ Keep it human-readable, your future self will thank you!
 
 ### Added
 - New node builder class, CutOutZarrDatasetNodes, to create nodes from 2 datasets. (#30)
-- New class, KNNAreaMaskBuilder, to specify Area of Interest (AOI) based on a set of nodes.
-- New node builder classes, LimitedAreaXXXXXNodes, to create nodes within an Area of Interest (AOI).
-- Expanded MultiScaleEdges to support multi-scale connections in limited area graphs.
+- New class, KNNAreaMaskBuilder, to specify Area of Interest (AOI) based on a set of nodes. (#30)
+- New node builder classes, LimitedAreaXXXXXNodes, to create nodes within an Area of Interest (AOI). (#30)
+- Expanded MultiScaleEdges to support multi-scale connections in limited area graphs. (#30)
 
 ## [0.3.0 Anemoi-graphs, minor release](https://github.com/ecmwf/anemoi-graphs/compare/0.2.1...0.3.0) - 2024-09-03
 
