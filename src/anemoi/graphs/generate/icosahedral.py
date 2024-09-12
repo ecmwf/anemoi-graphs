@@ -67,7 +67,7 @@ def add_edges_to_nx_graph(
     graph: nx.DiGraph,
     resolutions: list[int],
     x_hops: int = 1,
-    aoi_mask_builder: KNNAreaMaskBuilder | None = None,
+    area_mask_builder: KNNAreaMaskBuilder | None = None,
 ) -> nx.DiGraph:
     """Adds the edges to the graph.
 
@@ -82,7 +82,7 @@ def add_edges_to_nx_graph(
         Levels of mesh refinement levels to consider.
     x_hops : int, optional
         Number of hops between 2 nodes to consider them neighbours, by default 1.
-    aoi_mask_builder : KNNAreaMaskBuilder
+    area_mask_builder : KNNAreaMaskBuilder
         NearestNeighbors with the cloud of points to limit the mesh area, by default None.
 
     Returns
@@ -110,8 +110,8 @@ def add_edges_to_nx_graph(
         r_vertices_rad = cartesian_to_latlon_rad(r_sphere.vertices)
 
         # Limit area of mesh points.
-        if aoi_mask_builder is not None:
-            aoi_mask = aoi_mask_builder.get_mask(vertices_rad)
+        if area_mask_builder is not None:
+            aoi_mask = area_mask_builder.get_mask(vertices_rad)
             valid_nodes = np.where(aoi_mask)[0]
         else:
             valid_nodes = None

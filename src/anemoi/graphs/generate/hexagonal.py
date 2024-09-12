@@ -10,7 +10,7 @@ from anemoi.graphs.generate.utils import get_coordinates_ordering
 
 def create_hexagonal_nodes(
     resolution: int,
-    aoi_mask_builder: KNNAreaMaskBuilder | None = None,
+    area_mask_builder: KNNAreaMaskBuilder | None = None,
 ) -> tuple[nx.Graph, np.ndarray, list[int]]:
     """Creates a global mesh from a refined icosahedron.
 
@@ -21,7 +21,7 @@ def create_hexagonal_nodes(
     ----------
     resolution : int
         Level of mesh resolution to consider.
-    aoi_mask_builder : KNNAreaMaskBuilder, optional
+    area_mask_builder : KNNAreaMaskBuilder, optional
         KNNAreaMaskBuilder with the cloud of points to limit the mesh area, by default None.
 
     Returns
@@ -39,8 +39,8 @@ def create_hexagonal_nodes(
 
     node_ordering = get_coordinates_ordering(coords_rad)
 
-    if aoi_mask_builder is not None:
-        aoi_mask = aoi_mask_builder.get_mask(coords_rad)
+    if area_mask_builder is not None:
+        aoi_mask = area_mask_builder.get_mask(coords_rad)
         node_ordering = node_ordering[aoi_mask[node_ordering]]
 
     graph = create_hexagonal_nx_graph_from_coords(nodes, node_ordering)
@@ -76,8 +76,6 @@ def get_nodes_at_resolution(
     resolution: int,
 ) -> list[str]:
     """Get nodes at a specified refinement level over the entire globe.
-
-    If area is not None, it will return the nodes within the specified area
 
     Parameters
     ----------
