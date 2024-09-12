@@ -10,9 +10,9 @@ import torch
 from anemoi.utils.config import DotDict
 from torch_geometric.data import HeteroData
 
-from anemoi.graphs.generate.hexagonal import create_hexagonal_nodes
-from anemoi.graphs.generate.icosahedral import create_icosahedral_nodes
+from anemoi.graphs.generate.hex_icosahedron import create_hex_nodes
 from anemoi.graphs.generate.masks import KNNAreaMaskBuilder
+from anemoi.graphs.generate.tri_icosahedron import create_tri_nodes
 from anemoi.graphs.nodes.builders.base import BaseNodeBuilder
 
 LOGGER = logging.getLogger(__name__)
@@ -95,7 +95,7 @@ class TriNodes(IcosahedralNodes):
     """
 
     def create_nodes(self) -> tuple[nx.Graph, np.ndarray, list[int]]:
-        return create_icosahedral_nodes(resolution=max(self.resolutions))
+        return create_tri_nodes(resolution=max(self.resolutions))
 
 
 class HexNodes(IcosahedralNodes):
@@ -105,7 +105,7 @@ class HexNodes(IcosahedralNodes):
     """
 
     def create_nodes(self) -> tuple[nx.Graph, np.ndarray, list[int]]:
-        return create_hexagonal_nodes(resolution=max(self.resolutions))
+        return create_hex_nodes(resolution=max(self.resolutions))
 
 
 class LimitedAreaTriNodes(LimitedAreaIcosahedralNodes):
@@ -120,7 +120,7 @@ class LimitedAreaTriNodes(LimitedAreaIcosahedralNodes):
     """
 
     def create_nodes(self) -> tuple[nx.Graph, np.ndarray, list[int]]:
-        return create_icosahedral_nodes(resolution=max(self.resolutions), aoi_mask_builder=self.aoi_mask_builder)
+        return create_tri_nodes(resolution=max(self.resolutions), aoi_mask_builder=self.aoi_mask_builder)
 
 
 class LimitedAreaHexNodes(LimitedAreaIcosahedralNodes):
@@ -135,4 +135,4 @@ class LimitedAreaHexNodes(LimitedAreaIcosahedralNodes):
     """
 
     def create_nodes(self) -> tuple[nx.Graph, np.ndarray, list[int]]:
-        return create_hexagonal_nodes(resolution=max(self.resolutions), aoi_mask_builder=self.aoi_mask_builder)
+        return create_hex_nodes(resolution=max(self.resolutions), aoi_mask_builder=self.aoi_mask_builder)

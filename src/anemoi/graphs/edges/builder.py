@@ -14,8 +14,8 @@ from torch_geometric.data import HeteroData
 from torch_geometric.data.storage import NodeStorage
 
 from anemoi.graphs import EARTH_RADIUS
-from anemoi.graphs.generate import hexagonal
-from anemoi.graphs.generate import icosahedral
+from anemoi.graphs.generate import hex_icosahedron
+from anemoi.graphs.generate import tri_icosahedron
 from anemoi.graphs.nodes.builders.from_refined_icosahedron import HexNodes
 from anemoi.graphs.nodes.builders.from_refined_icosahedron import LimitedAreaHexNodes
 from anemoi.graphs.nodes.builders.from_refined_icosahedron import LimitedAreaTriNodes
@@ -295,7 +295,7 @@ class MultiScaleEdges(BaseEdgeBuilder):
         self.node_type = None
 
     def add_edges_from_tri_nodes(self, nodes: NodeStorage) -> NodeStorage:
-        nodes["_nx_graph"] = icosahedral.add_edges_to_nx_graph(
+        nodes["_nx_graph"] = tri_icosahedron.add_edges_to_nx_graph(
             nodes["_nx_graph"],
             resolutions=nodes["_resolutions"],
             x_hops=self.x_hops,
@@ -305,7 +305,7 @@ class MultiScaleEdges(BaseEdgeBuilder):
         return nodes
 
     def add_edges_from_hex_nodes(self, nodes: NodeStorage) -> NodeStorage:
-        nodes["_nx_graph"] = hexagonal.add_edges_to_nx_graph(
+        nodes["_nx_graph"] = hex_icosahedron.add_edges_to_nx_graph(
             nodes["_nx_graph"],
             resolutions=nodes["_resolutions"],
             x_hops=self.x_hops,

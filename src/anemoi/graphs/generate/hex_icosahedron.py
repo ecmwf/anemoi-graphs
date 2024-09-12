@@ -8,7 +8,7 @@ from anemoi.graphs.generate.masks import KNNAreaMaskBuilder
 from anemoi.graphs.generate.utils import get_coordinates_ordering
 
 
-def create_hexagonal_nodes(
+def create_hex_nodes(
     resolution: int,
     area_mask_builder: KNNAreaMaskBuilder | None = None,
 ) -> tuple[nx.Graph, np.ndarray, list[int]]:
@@ -43,12 +43,12 @@ def create_hexagonal_nodes(
         aoi_mask = area_mask_builder.get_mask(coords_rad)
         node_ordering = node_ordering[aoi_mask[node_ordering]]
 
-    graph = create_hexagonal_nx_graph_from_coords(nodes, node_ordering)
+    graph = create_nx_graph_from_hex_coords(nodes, node_ordering)
 
     return graph, coords_rad, list(node_ordering)
 
 
-def create_hexagonal_nx_graph_from_coords(nodes: list[str], node_ordering: np.ndarray) -> nx.Graph:
+def create_nx_graph_from_hex_coords(nodes: list[str], node_ordering: np.ndarray) -> nx.Graph:
     """Add all nodes at a specified refinement level to a graph.
 
     Parameters

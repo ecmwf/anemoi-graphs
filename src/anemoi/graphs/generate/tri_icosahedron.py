@@ -12,10 +12,10 @@ from anemoi.graphs.generate.transforms import cartesian_to_latlon_rad
 from anemoi.graphs.generate.utils import get_coordinates_ordering
 
 
-def create_icosahedral_nodes(
+def create_tri_nodes(
     resolution: int, aoi_mask_builder: KNNAreaMaskBuilder | None = None
 ) -> tuple[nx.DiGraph, np.ndarray, list[int]]:
-    """Creates a global mesh following AIFS strategy.
+    """Creates a global mesh from a refined icosahedron.
 
     This method relies on the trimesh python library.
 
@@ -46,12 +46,12 @@ def create_icosahedral_nodes(
         node_ordering = node_ordering[aoi_mask[node_ordering]]
 
     # Creates the graph, with the nodes sorted by latitude and longitude.
-    nx_graph = create_icosahedral_nx_graph_from_coords(coords_rad, node_ordering)
+    nx_graph = create_nx_graph_from_tri_coords(coords_rad, node_ordering)
 
     return nx_graph, coords_rad, list(node_ordering)
 
 
-def create_icosahedral_nx_graph_from_coords(coords_rad: np.ndarray, node_ordering: np.ndarray) -> nx.DiGraph:
+def create_nx_graph_from_tri_coords(coords_rad: np.ndarray, node_ordering: np.ndarray) -> nx.DiGraph:
     """Creates the networkx graph from the coordinates and the node ordering."""
     graph = nx.DiGraph()
     for i, coords in enumerate(coords_rad[node_ordering]):

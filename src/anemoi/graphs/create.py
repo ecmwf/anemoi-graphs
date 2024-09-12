@@ -41,7 +41,7 @@ class GraphCreator:
                 graph, nodes_cfg.get("attributes", {})
             )
 
-        for edges_cfg in self.config.edges:
+        for edges_cfg in self.config.get("edges", {}):
             graph = instantiate(edges_cfg.edge_builder, edges_cfg.source_name, edges_cfg.target_name).update_graph(
                 graph, edges_cfg.get("attributes", {})
             )
