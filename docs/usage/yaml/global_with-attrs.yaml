@@ -14,7 +14,7 @@ edges:
         _target_: anemoi.graphs.edges.attributes.EdgeLength
   # B) Decoder connections
   - source_name: hidden
-    target_name: hidden
+    target_name: data
     edge_builder:
       _target_: anemoi.graphs.edges.KNNEdges
       nearest_neighbours: 3
@@ -23,10 +23,10 @@ edges:
         _target_: anemoi.graphs.edges.attributes.EdgeLength
  # C) Processor connections
   - source_name: hidden
-    target_name: data
+    target_name: hidden
     edge_builder:
-      _target_: anemoi.graphs.edges.KNNEdges
-      nearest_neighbours: 3
+      _target_: anemoi.graphs.edges.MultiScaleEdges
+      x_hops: 1
     attributes:
       edge_length:
         _target_: anemoi.graphs.edges.attributes.EdgeLength
