@@ -28,6 +28,10 @@ refinement level to be considered neighbours, and then connected.
    This method is used by data-driven weather models like GraphCast to
    process the latent/hidden state.
 
+.. csv-table:: Triangular refinements specifications (x_hops=1)
+   :file: ./tri_refined_edges.csv
+   :header-rows: 1
+
 .. warning::
 
    This connection method is only support for building the connections

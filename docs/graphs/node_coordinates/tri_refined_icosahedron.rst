@@ -72,6 +72,10 @@ where `resolution` argument is dropped divided into `global_resolution`
 and `lam_resolution`, which are the number of refinements to be applied
 to the icosahedron outside and inside the area of interest respectively.
 
+.. csv-table:: Triangular refinements specifications
+   :file: ./tri_nodes.csv
+   :header-rows: 1
+
 .. warning::
 
    This class will require the `trimesh <https://trimesh.org>`_ package
