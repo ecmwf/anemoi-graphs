@@ -153,14 +153,14 @@ class NodeMaskingMixin:
 
     def undo_masking(self, adj_matrix, source_nodes: NodeStorage, target_nodes: NodeStorage):
         if self.target_mask_attr_name is not None:
-            dst_mask = target_nodes[self.target_mask_attr_name].squeeze()
-            dst_mapper = dict(zip(list(range(len(adj_matrix.row))), np.where(dst_mask)[0]))
-            adj_matrix.row = np.vectorize(dst_mapper.get)(adj_matrix.row)
+            target_mask = target_nodes[self.target_mask_attr_name].squeeze()
+            target_mapper = dict(zip(list(range(len(adj_matrix.row))), np.where(target_mask)[0]))
+            adj_matrix.row = np.vectorize(target_mapper.get)(adj_matrix.row)
 
         if self.source_mask_attr_name is not None:
-            src_mask = source_nodes[self.source_mask_attr_name].squeeze()
-            src_mapper = dict(zip(list(range(len(adj_matrix.col))), np.where(src_mask)[0]))
-            adj_matrix.col = np.vectorize(src_mapper.get)(adj_matrix.col)
+            source_mask = source_nodes[self.source_mask_attr_name].squeeze()
+            source_mapper = dict(zip(list(range(len(adj_matrix.col))), np.where(source_mask)[0]))
+            adj_matrix.col = np.vectorize(source_mapper.get)(adj_matrix.col)
 
         if self.source_mask_attr_name is not None or self.target_mask_attr_name is not None:
             true_shape = target_nodes.x.shape[0], source_nodes.x.shape[0]
