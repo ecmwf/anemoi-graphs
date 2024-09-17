@@ -13,7 +13,7 @@ from anemoi.graphs.generate.utils import get_coordinates_ordering
 
 
 def create_tri_nodes(
-    resolution: int, aoi_mask_builder: KNNAreaMaskBuilder | None = None
+    resolution: int, area_mask_builder: KNNAreaMaskBuilder | None = None
 ) -> tuple[nx.DiGraph, np.ndarray, list[int]]:
     """Creates a global mesh from a refined icosahedron.
 
@@ -23,7 +23,7 @@ def create_tri_nodes(
     ----------
     resolution : int
         Level of mesh resolution to consider.
-    aoi_mask_builder : KNNAreaMaskBuilder
+    area_mask_builder : KNNAreaMaskBuilder
         KNNAreaMaskBuilder with the cloud of points to limit the mesh area, by default None.
 
     Returns
@@ -41,9 +41,9 @@ def create_tri_nodes(
 
     node_ordering = get_coordinates_ordering(coords_rad)
 
-    if aoi_mask_builder is not None:
-        aoi_mask = aoi_mask_builder.get_mask(coords_rad)
-        node_ordering = node_ordering[aoi_mask[node_ordering]]
+    if area_mask_builder is not None:
+        area_mask = area_mask_builder.get_mask(coords_rad)
+        node_ordering = node_ordering[area_mask[node_ordering]]
 
     # Creates the graph, with the nodes sorted by latitude and longitude.
     nx_graph = create_nx_graph_from_tri_coords(coords_rad, node_ordering)
@@ -51,15 +51,15 @@ def create_tri_nodes(
     return nx_graph, coords_rad, list(node_ordering)
 
 
-def create_stretched_icosahedral_nodes(
+def create_stretched_tri_nodes(
     base_resolution: int,
     lam_resolution: int,
-    aoi_mask_builder: KNNAreaMaskBuilder | None = None,
+    area_mask_builder: KNNAreaMaskBuilder | None = None,
 ) -> tuple[nx.DiGraph, np.ndarray, list[int]]:
     """Creates a global mesh with 2 levels of resolution.
 
-    The base resolution is used to define the nodes outside the AOI, while the
-    lam_resolution is used to define the nodes inside the AOI.
+    The base resolution is used to define the nodes outside the Area Of Interest (AOI),
+    while the lam_resolution is used to define the nodes inside the AOI.
 
     Parameters
     ---------
@@ -67,7 +67,7 @@ def create_stretched_icosahedral_nodes(
         Global resolution level.
     lam_resolution : int
         Local resolution level.
-    aoi_mask_builder : KNNAreaMaskBuilder
+    area_mask_builder : KNNAreaMaskBuilder
         NearestNeighbors with the cloud of points to limit the mesh area.
 
     Returns
@@ -79,16 +79,16 @@ def create_stretched_icosahedral_nodes(
     node_ordering : list[int]
         Order of the node coordinates to be sorted by latitude and longitude.
     """
-    assert aoi_mask_builder is not None, "AOI mask builder must be provided to build refined grid."
+    assert area_mask_builder is not None, "AOI mask builder must be provided to build refined grid."
     # Get the low resolution nodes outside the AOI
     base_coords_rad = get_latlon_coords_icosphere(base_resolution)
-    base_aoi_mask = ~aoi_mask_builder.get_mask(base_coords_rad)
+    base_area_mask = ~area_mask_builder.get_mask(base_coords_rad)
 
     # Get the high resolution nodes inside the AOI
     lam_coords_rad = get_latlon_coords_icosphere(lam_resolution)
-    lam_aoi_mask = aoi_mask_builder.get_mask(lam_coords_rad)
+    lam_area_mask = area_mask_builder.get_mask(lam_coords_rad)
 
-    coords_rad = np.concatenate([base_coords_rad[base_aoi_mask], lam_coords_rad[lam_aoi_mask]])
+    coords_rad = np.concatenate([base_coords_rad[base_area_mask], lam_coords_rad[lam_area_mask]])
 
     node_ordering = get_coordinates_ordering(coords_rad)
 
@@ -176,8 +176,8 @@ def add_edges_to_nx_graph(
 
         # Limit area of mesh points.
         if area_mask_builder is not None:
-            aoi_mask = area_mask_builder.get_mask(vertices_rad)
-            valid_nodes = np.where(aoi_mask)[0]
+            area_mask = area_mask_builder.get_mask(vertices_rad)
+            valid_nodes = np.where(area_mask)[0]
         else:
             valid_nodes = None
 
