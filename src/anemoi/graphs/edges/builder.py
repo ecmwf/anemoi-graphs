@@ -9,13 +9,14 @@ import numpy as np
 import torch
 from anemoi.utils.config import DotDict
 from hydra.utils import instantiate
+from scipy.sparse import coo_matrix
 from sklearn.neighbors import NearestNeighbors
 from torch_geometric.data import HeteroData
 from torch_geometric.data.storage import NodeStorage
 
 from anemoi.graphs import EARTH_RADIUS
-from anemoi.graphs.generate import hexagonal
-from anemoi.graphs.generate import icosahedral
+from anemoi.graphs.generate import hex_icosahedron
+from anemoi.graphs.generate import tri_icosahedron
 from anemoi.graphs.generate.masks import KNNAreaMaskBuilder
 from anemoi.graphs.nodes.builders.from_refined_icosahedron import HexNodes
 from anemoi.graphs.nodes.builders.from_refined_icosahedron import LimitedAreaHexNodes
@@ -30,9 +31,17 @@ LOGGER = logging.getLogger(__name__)
 class BaseEdgeBuilder(ABC):
     """Base class for edge builders."""
 
-    def __init__(self, source_name: str, target_name: str):
+    def __init__(
+        self,
+        source_name: str,
+        target_name: str,
+        source_mask_attr_name: str | None = None,
+        target_mask_attr_name: str | None = None,
+    ):
         self.source_name = source_name
         self.target_name = target_name
+        self.source_mask_attr_name = source_mask_attr_name
+        self.target_mask_attr_name = target_mask_attr_name
 
     @property
     def name(self) -> tuple[str, str, str]:
@@ -121,15 +130,48 @@ class BaseEdgeBuilder(ABC):
         """
         graph = self.register_edges(graph)
 
-        if attrs_config is None:
-            return graph
-
-        graph = self.register_attributes(graph, attrs_config)
+        if attrs_config is not None:
+            graph = self.register_attributes(graph, attrs_config)
 
         return graph
 
 
-class KNNEdges(BaseEdgeBuilder):
+class NodeMaskingMixin:
+    """Mixin class for masking source/target nodes when building edges."""
+
+    def get_node_coordinates(
+        self, source_nodes: NodeStorage, target_nodes: NodeStorage
+    ) -> tuple[np.ndarray, np.ndarray]:
+        """Get the node coordinates."""
+        source_coords, target_coords = source_nodes.x.numpy(), target_nodes.x.numpy()
+
+        if self.source_mask_attr_name is not None:
+            source_coords = source_coords[source_nodes[self.source_mask_attr_name].squeeze()]
+
+        if self.target_mask_attr_name is not None:
+            target_coords = target_coords[target_nodes[self.target_mask_attr_name].squeeze()]
+
+        return source_coords, target_coords
+
+    def undo_masking(self, adj_matrix, source_nodes: NodeStorage, target_nodes: NodeStorage):
+        if self.target_mask_attr_name is not None:
+            target_mask = target_nodes[self.target_mask_attr_name].squeeze()
+            target_mapper = dict(zip(list(range(len(adj_matrix.row))), np.where(target_mask)[0]))
+            adj_matrix.row = np.vectorize(target_mapper.get)(adj_matrix.row)
+
+        if self.source_mask_attr_name is not None:
+            source_mask = source_nodes[self.source_mask_attr_name].squeeze()
+            source_mapper = dict(zip(list(range(len(adj_matrix.col))), np.where(source_mask)[0]))
+            adj_matrix.col = np.vectorize(source_mapper.get)(adj_matrix.col)
+
+        if self.source_mask_attr_name is not None or self.target_mask_attr_name is not None:
+            true_shape = target_nodes.x.shape[0], source_nodes.x.shape[0]
+            adj_matrix = coo_matrix((adj_matrix.data, (adj_matrix.row, adj_matrix.col)), shape=true_shape)
+
+        return adj_matrix
+
+
+class KNNEdges(BaseEdgeBuilder, NodeMaskingMixin):
     """Computes KNN based edges and adds them to the graph.
 
     Attributes
@@ -140,11 +182,13 @@ class KNNEdges(BaseEdgeBuilder):
         The name of the target nodes.
     num_nearest_neighbours : int
         Number of nearest neighbours.
+    source_mask_attr_name : str | None
+        The name of the source mask attribute to filter edge connections.
+    target_mask_attr_name : str | None
+        The name of the target mask attribute to filter edge connections.
 
     Methods
     -------
-    get_adjacency_matrix(source_nodes, target_nodes)
-        Compute the adjacency matrix for the KNN method.
     register_edges(graph)
         Register the edges in the graph.
     register_attributes(graph, config)
@@ -153,22 +197,30 @@ class KNNEdges(BaseEdgeBuilder):
         Update the graph with the edges.
     """
 
-    def __init__(self, source_name: str, target_name: str, num_nearest_neighbours: int):
-        super().__init__(source_name, target_name)
+    def __init__(
+        self,
+        source_name: str,
+        target_name: str,
+        num_nearest_neighbours: int,
+        source_mask_attr_name: str | None = None,
+        target_mask_attr_name: str | None = None,
+    ):
+        super().__init__(source_name, target_name, source_mask_attr_name, target_mask_attr_name)
         assert isinstance(num_nearest_neighbours, int), "Number of nearest neighbours must be an integer"
         assert num_nearest_neighbours > 0, "Number of nearest neighbours must be positive"
         self.num_nearest_neighbours = num_nearest_neighbours
 
-    def get_adjacency_matrix(self, source_nodes: np.ndarray, target_nodes: np.ndarray):
+    def get_adjacency_matrix(self, source_nodes: NodeStorage, target_nodes: NodeStorage):
         """Compute the adjacency matrix for the KNN method.
 
         Parameters
         ----------
-        source_nodes : np.ndarray
+        source_nodes : NodeStorage
             The source nodes.
-        target_nodes : np.ndarray
+        target_nodes : NodeStorage
             The target nodes.
         """
+        source_coords, target_coords = self.get_node_coordinates(source_nodes, target_nodes)
         assert self.num_nearest_neighbours is not None, "number of neighbors required for knn encoder"
         LOGGER.info(
             "Using KNN-Edges (with %d nearest neighbours) between %s and %s.",
@@ -178,16 +230,20 @@ class KNNEdges(BaseEdgeBuilder):
         )
 
         nearest_neighbour = NearestNeighbors(metric="haversine", n_jobs=4)
-        nearest_neighbour.fit(source_nodes.x.numpy())
+        nearest_neighbour.fit(source_coords)
         adj_matrix = nearest_neighbour.kneighbors_graph(
-            target_nodes.x.numpy(),
+            target_coords,
             n_neighbors=self.num_nearest_neighbours,
             mode="distance",
         ).tocoo()
+
+        # Post-process the adjacency matrix. Add masked nodes.
+        adj_matrix = self.undo_masking(adj_matrix, source_nodes, target_nodes)
+
         return adj_matrix
 
 
-class CutOffEdges(BaseEdgeBuilder):
+class CutOffEdges(BaseEdgeBuilder, NodeMaskingMixin):
     """Computes cut-off based edges and adds them to the graph.
 
     Attributes
@@ -198,13 +254,13 @@ class CutOffEdges(BaseEdgeBuilder):
         The name of the target nodes.
     cutoff_factor : float
         Factor to multiply the grid reference distance to get the cut-off radius.
+    source_mask_attr_name : str | None
+        The name of the source mask attribute to filter edge connections.
+    target_mask_attr_name : str | None
+        The name of the target mask attribute to filter edge connections.
 
     Methods
     -------
-    get_cutoff_radius(graph, mask_attr)
-        Compute the cut-off radius.
-    get_adjacency_matrix(source_nodes, target_nodes)
-        Get the adjacency matrix for the cut-off method.
     register_edges(graph)
         Register the edges in the graph.
     register_attributes(graph, config)
@@ -213,8 +269,15 @@ class CutOffEdges(BaseEdgeBuilder):
         Update the graph with the edges.
     """
 
-    def __init__(self, source_name: str, target_name: str, cutoff_factor: float):
-        super().__init__(source_name, target_name)
+    def __init__(
+        self,
+        source_name: str,
+        target_name: str,
+        cutoff_factor: float,
+        source_mask_attr_name: str | None = None,
+        target_mask_attr_name: str | None = None,
+    ):
+        super().__init__(source_name, target_name, source_mask_attr_name, target_mask_attr_name)
         assert isinstance(cutoff_factor, (int, float)), "Cutoff factor must be a float"
         assert cutoff_factor > 0, "Cutoff factor must be positive"
         self.cutoff_factor = cutoff_factor
@@ -222,7 +285,8 @@ class CutOffEdges(BaseEdgeBuilder):
     def get_cutoff_radius(self, graph: HeteroData, mask_attr: torch.Tensor | None = None):
         """Compute the cut-off radius.
 
-        The cut-off radius is computed as the product of the target nodes reference distance and the cut-off factor.
+        The cut-off radius is computed as the product of the target nodes
+        reference distance and the cut-off factor.
 
         Parameters
         ----------
@@ -257,6 +321,7 @@ class CutOffEdges(BaseEdgeBuilder):
         target_nodes : NodeStorage
             The target nodes.
         """
+        source_coords, target_coords = self.get_node_coordinates(source_nodes, target_nodes)
         LOGGER.info(
             "Using CutOff-Edges (with radius = %.1f km) between %s and %s.",
             self.radius * EARTH_RADIUS,
@@ -265,17 +330,41 @@ class CutOffEdges(BaseEdgeBuilder):
         )
 
         nearest_neighbour = NearestNeighbors(metric="haversine", n_jobs=4)
-        nearest_neighbour.fit(source_nodes.x)
-        adj_matrix = nearest_neighbour.radius_neighbors_graph(target_nodes.x, radius=self.radius).tocoo()
+        nearest_neighbour.fit(source_coords)
+        adj_matrix = nearest_neighbour.radius_neighbors_graph(target_coords, radius=self.radius).tocoo()
+
+        # Post-process the adjacency matrix. Add masked nodes.
+        adj_matrix = self.undo_masking(adj_matrix, source_nodes, target_nodes)
+
         return adj_matrix
 
 
 class MultiScaleEdges(BaseEdgeBuilder):
-    """Base class for multi-scale edges in the nodes of a graph."""
+    """Base class for multi-scale edges in the nodes of a graph.
+
+    Attributes
+    ----------
+    source_name : str
+        The name of the source nodes.
+    target_name : str
+        The name of the target nodes.
+    x_hops : int
+        Number of hops (in the refined icosahedron) between two nodes to connect
+        them with an edge.
+
+    Methods
+    -------
+    register_edges(graph)
+        Register the edges in the graph.
+    register_attributes(graph, config)
+        Register attributes in the edges of the graph.
+    update_graph(graph, attrs_config)
+        Update the graph with the edges.
+    """
 
     VALID_NODES = [TriNodes, HexNodes, LimitedAreaTriNodes, LimitedAreaHexNodes, StretchedTriNodes]
 
-    def __init__(self, source_name: str, target_name: str, x_hops: int):
+    def __init__(self, source_name: str, target_name: str, x_hops: int, **kwargs):
         super().__init__(source_name, target_name)
         assert source_name == target_name, f"{self.__class__.__name__} requires source and target nodes to be the same."
         assert isinstance(x_hops, int), "Number of x_hops must be an integer"
@@ -284,11 +373,11 @@ class MultiScaleEdges(BaseEdgeBuilder):
         self.node_type = None
 
     def add_edges_from_tri_nodes(self, nodes: NodeStorage) -> NodeStorage:
-        nodes["_nx_graph"] = icosahedral.add_edges_to_nx_graph(
+        nodes["_nx_graph"] = tri_icosahedron.add_edges_to_nx_graph(
             nodes["_nx_graph"],
             resolutions=nodes["_resolutions"],
             x_hops=self.x_hops,
-            aoi_mask_builder=nodes.get("_aoi_mask_builder", None),
+            area_mask_builder=nodes.get("_area_mask_builder", None),
         )
 
         return nodes
@@ -297,16 +386,16 @@ class MultiScaleEdges(BaseEdgeBuilder):
         all_points_mask_builder = KNNAreaMaskBuilder("all_nodes", 1.0)
         all_points_mask_builder.fit_coords(nodes.x.numpy())
 
-        nodes["_nx_graph"] = icosahedral.add_edges_to_nx_graph(
+        nodes["_nx_graph"] = tri_icosahedron.add_edges_to_nx_graph(
             nodes["_nx_graph"],
             resolutions=nodes["_resolutions"],
             x_hops=self.x_hops,
-            aoi_mask_builder=all_points_mask_builder,
+            area_mask_builder=all_points_mask_builder,
         )
         return nodes
 
     def add_edges_from_hex_nodes(self, nodes: NodeStorage) -> NodeStorage:
-        nodes["_nx_graph"] = hexagonal.add_edges_to_nx_graph(
+        nodes["_nx_graph"] = hex_icosahedron.add_edges_to_nx_graph(
             nodes["_nx_graph"],
             resolutions=nodes["_resolutions"],
             x_hops=self.x_hops,

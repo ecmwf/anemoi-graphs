@@ -10,10 +10,10 @@ import torch
 from anemoi.utils.config import DotDict
 from torch_geometric.data import HeteroData
 
-from anemoi.graphs.generate.hexagonal import create_hexagonal_nodes
-from anemoi.graphs.generate.icosahedral import create_icosahedral_nodes
-from anemoi.graphs.generate.icosahedral import create_stretched_icosahedral_nodes
+from anemoi.graphs.generate.hex_icosahedron import create_hex_nodes
 from anemoi.graphs.generate.masks import KNNAreaMaskBuilder
+from anemoi.graphs.generate.tri_icosahedron import create_stretched_tri_nodes
+from anemoi.graphs.generate.tri_icosahedron import create_tri_nodes
 from anemoi.graphs.nodes.builders.base import BaseNodeBuilder
 
 LOGGER = logging.getLogger(__name__)
@@ -58,7 +58,7 @@ class IcosahedralNodes(BaseNodeBuilder, ABC):
         graph[self.name]["_resolutions"] = self.resolutions
         graph[self.name]["_nx_graph"] = self.nx_graph
         graph[self.name]["_node_ordering"] = self.node_ordering
-        graph[self.name]["_aoi_mask_builder"] = self.aoi_mask_builder
+        graph[self.name]["_rea_mask_builder"] = self.area_mask_builder
         return super().register_attributes(graph, config)
 
 
@@ -82,10 +82,10 @@ class LimitedAreaIcosahedralNodes(IcosahedralNodes):
 
         super().__init__(resolution, name)
 
-        self.aoi_mask_builder = KNNAreaMaskBuilder(reference_node_name, margin_radius_km, mask_attr_name)
+        self.area_mask_builder = KNNAreaMaskBuilder(reference_node_name, margin_radius_km, mask_attr_name)
 
     def register_nodes(self, graph: HeteroData) -> None:
-        self.aoi_mask_builder.fit(graph)
+        self.area_mask_builder.fit(graph)
         return super().register_nodes(graph)
 
 
@@ -96,7 +96,7 @@ class TriNodes(IcosahedralNodes):
     """
 
     def create_nodes(self) -> tuple[nx.Graph, np.ndarray, list[int]]:
-        return create_icosahedral_nodes(resolution=max(self.resolutions))
+        return create_tri_nodes(resolution=max(self.resolutions))
 
 
 class HexNodes(IcosahedralNodes):
@@ -106,7 +106,7 @@ class HexNodes(IcosahedralNodes):
     """
 
     def create_nodes(self) -> tuple[nx.Graph, np.ndarray, list[int]]:
-        return create_hexagonal_nodes(resolution=max(self.resolutions))
+        return create_hex_nodes(resolution=max(self.resolutions))
 
 
 class LimitedAreaTriNodes(LimitedAreaIcosahedralNodes):
@@ -121,7 +121,7 @@ class LimitedAreaTriNodes(LimitedAreaIcosahedralNodes):
     """
 
     def create_nodes(self) -> tuple[nx.Graph, np.ndarray, list[int]]:
-        return create_icosahedral_nodes(resolution=max(self.resolutions), aoi_mask_builder=self.aoi_mask_builder)
+        return create_tri_nodes(resolution=max(self.resolutions), area_mask_builder=self.area_mask_builder)
 
 
 class LimitedAreaHexNodes(LimitedAreaIcosahedralNodes):
@@ -136,7 +136,7 @@ class LimitedAreaHexNodes(LimitedAreaIcosahedralNodes):
     """
 
     def create_nodes(self) -> tuple[nx.Graph, np.ndarray, list[int]]:
-        return create_hexagonal_nodes(resolution=max(self.resolutions), aoi_mask_builder=self.aoi_mask_builder)
+        return create_hex_nodes(resolution=max(self.resolutions), aoi_mask_builder=self.area_mask_builder)
 
 
 class StretchedIcosahedronNodes(IcosahedralNodes):
@@ -162,10 +162,10 @@ class StretchedIcosahedronNodes(IcosahedralNodes):
         super().__init__(lam_resolution, name)
         self.global_resolution = global_resolution
 
-        self.aoi_mask_builder = KNNAreaMaskBuilder(reference_node_name, margin_radius_km, mask_attr_name)
+        self.area_mask_builder = KNNAreaMaskBuilder(reference_node_name, margin_radius_km, mask_attr_name)
 
     def register_nodes(self, graph: HeteroData) -> None:
-        self.aoi_mask_builder.fit(graph)
+        self.area_mask_builder.fit(graph)
         return super().register_nodes(graph)
 
 
@@ -177,8 +177,8 @@ class StretchedTriNodes(StretchedIcosahedronNodes):
     """
 
     def create_nodes(self) -> tuple[nx.Graph, np.ndarray, list[int]]:
-        return create_stretched_icosahedral_nodes(
+        return create_stretched_tri_nodes(
             base_resolution=self.global_resolution,
             lam_resolution=max(self.resolutions),
-            aoi_mask_builder=self.aoi_mask_builder,
+            area_mask_builder=self.area_mask_builder,
         )
