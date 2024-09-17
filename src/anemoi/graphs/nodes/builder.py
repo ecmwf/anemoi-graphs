@@ -134,6 +134,9 @@ class ZarrDatasetNodes(BaseNodeBuilder):
 
     def __init__(self, dataset: DotDict, name: str) -> None:
         LOGGER.info("Reading the dataset from %s.", dataset)
+        from omegaconf import OmegaConf
+
+        dataset = OmegaConf.to_container(dataset)
         self.dataset = open_dataset(dataset)
         super().__init__(name)
 
