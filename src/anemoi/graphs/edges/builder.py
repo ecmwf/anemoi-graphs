@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import logging
+import time
 from abc import ABC
 from abc import abstractmethod
 
@@ -103,12 +104,18 @@ class BaseEdgeBuilder(ABC):
         HeteroData
             The graph with the edges.
         """
+        t0 = time.time()
         graph = self.register_edges(graph)
+        t1 = time.time()
+        LOGGER.info("Time to register edge indices (%s): %.2f s", self.__class__.__name__, t1 - t0)
 
         if attrs_config is None:
             return graph
 
+        t0 = time.time()
         graph = self.register_attributes(graph, attrs_config)
+        t1 = time.time()
+        LOGGER.info("Time to register edge attributes (%s): %.2f s", self.__class__.__name__, t1 - t0)
 
         return graph
 
