@@ -58,7 +58,7 @@ class IcosahedralNodes(BaseNodeBuilder, ABC):
         graph[self.name]["_resolutions"] = self.resolutions
         graph[self.name]["_nx_graph"] = self.nx_graph
         graph[self.name]["_node_ordering"] = self.node_ordering
-        graph[self.name]["_rea_mask_builder"] = self.area_mask_builder
+        graph[self.name]["_area_mask_builder"] = self.area_mask_builder
         return super().register_attributes(graph, config)
 
 
@@ -67,7 +67,7 @@ class LimitedAreaIcosahedralNodes(IcosahedralNodes):
 
     Attributes
     ----------
-    aoi_mask_builder : KNNAreaMaskBuilder
+    area_mask_builder : KNNAreaMaskBuilder
         The area of interest mask builder.
     """
 
@@ -116,7 +116,7 @@ class LimitedAreaTriNodes(LimitedAreaIcosahedralNodes):
 
     Parameters
     ----------
-    aoi_mask_builder: KNNAreaMaskBuilder
+    area_mask_builder: KNNAreaMaskBuilder
         The area of interest mask builder.
     """
 
@@ -131,12 +131,12 @@ class LimitedAreaHexNodes(LimitedAreaIcosahedralNodes):
 
     Parameters
     ----------
-    aoi_mask_builder: KNNAreaMaskBuilder
+    area_mask_builder: KNNAreaMaskBuilder
         The area of interest mask builder.
     """
 
     def create_nodes(self) -> tuple[nx.Graph, np.ndarray, list[int]]:
-        return create_hex_nodes(resolution=max(self.resolutions), aoi_mask_builder=self.area_mask_builder)
+        return create_hex_nodes(resolution=max(self.resolutions), area_mask_builder=self.area_mask_builder)
 
 
 class StretchedIcosahedronNodes(IcosahedralNodes):
@@ -145,7 +145,7 @@ class StretchedIcosahedronNodes(IcosahedralNodes):
 
     Attributes
     ----------
-    aoi_mask_builder : KNNAreaMaskBuilder
+    area_mask_builder : KNNAreaMaskBuilder
         The area of interest mask builder.
     """
 
