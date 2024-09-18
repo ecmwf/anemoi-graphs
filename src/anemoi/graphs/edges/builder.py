@@ -9,9 +9,10 @@ import numpy as np
 import torch
 from anemoi.utils.config import DotDict
 from hydra.utils import instantiate
-from sklearn.neighbors import NearestNeighbors
 from torch_geometric.data import HeteroData
 from torch_geometric.data.storage import NodeStorage
+from torch_geometric.nn import knn
+from torch_geometric.nn import radius
 
 from anemoi.graphs import EARTH_RADIUS
 from anemoi.graphs.generate import hexagonal
@@ -36,33 +37,16 @@ class BaseEdgeBuilder(ABC):
         return self.source_name, "to", self.target_name
 
     @abstractmethod
-    def get_adjacency_matrix(self, source_nodes: NodeStorage, target_nodes: NodeStorage): ...
+    def compute_edge_index(self, source_nodes: NodeStorage, target_nodes: NodeStorage) -> torch.Tensor: ...
 
     def prepare_node_data(self, graph: HeteroData) -> tuple[NodeStorage, NodeStorage]:
         """Prepare node information and get source and target nodes."""
         return graph[self.source_name], graph[self.target_name]
 
     def get_edge_index(self, graph: HeteroData) -> torch.Tensor:
-        """Get the edge indices of source and target nodes.
-
-        Parameters
-        ----------
-        graph : HeteroData
-            The graph.
-
-        Returns
-        -------
-        torch.Tensor of shape (2, num_edges)
-            The edge indices.
-        """
+        """Get the edge index."""
         source_nodes, target_nodes = self.prepare_node_data(graph)
-
-        adjmat = self.get_adjacency_matrix(source_nodes, target_nodes)
-
-        # Get source & target indices of the edges
-        edge_index = np.stack([adjmat.col, adjmat.row], axis=0)
-
-        return torch.from_numpy(edge_index).to(torch.int32)
+        return self.compute_edge_index(source_nodes, target_nodes)
 
     def register_edges(self, graph: HeteroData) -> HeteroData:
         """Register edges in the graph.
@@ -97,7 +81,11 @@ class BaseEdgeBuilder(ABC):
             The graph with the registered attributes.
         """
         for attr_name, attr_config in config.items():
-            graph[self.name][attr_name] = instantiate(attr_config).compute(graph, self.name)
+            edge_index = graph[self.name].edge_index
+            source_coords = graph[self.name[0]].x[edge_index[1]]
+            target_coords = graph[self.name[2]].x[edge_index[0]]
+            edge_builder = instantiate(attr_config)
+            graph[self.name][attr_name] = edge_builder(x=(source_coords, target_coords), edge_index=edge_index)
         return graph
 
     def update_graph(self, graph: HeteroData, attrs_config: DotDict | None = None) -> HeteroData:
@@ -153,15 +141,20 @@ class KNNEdges(BaseEdgeBuilder):
         assert num_nearest_neighbours > 0, "Number of nearest neighbours must be positive"
         self.num_nearest_neighbours = num_nearest_neighbours
 
-    def get_adjacency_matrix(self, source_nodes: np.ndarray, target_nodes: np.ndarray):
-        """Compute the adjacency matrix for the KNN method.
+    def compute_edge_index(self, source_nodes: NodeStorage, target_nodes: NodeStorage) -> torch.Tensor:
+        """Compute the edge indices for the KNN method.
 
         Parameters
         ----------
-        source_nodes : np.ndarray
+        source_nodes : NodeStorage
             The source nodes.
-        target_nodes : np.ndarray
+        target_nodes : NodeStorage
             The target nodes.
+
+        Returns
+        -------
+        torch.Tensor of shape (2, num_edges)
+            Indices of source and target nodes connected by an edge.
         """
         assert self.num_nearest_neighbours is not None, "number of neighbors required for knn encoder"
         LOGGER.info(
@@ -170,15 +163,8 @@ class KNNEdges(BaseEdgeBuilder):
             self.source_name,
             self.target_name,
         )
-
-        nearest_neighbour = NearestNeighbors(metric="haversine", n_jobs=4)
-        nearest_neighbour.fit(source_nodes.x.numpy())
-        adj_matrix = nearest_neighbour.kneighbors_graph(
-            target_nodes.x.numpy(),
-            n_neighbors=self.num_nearest_neighbours,
-            mode="distance",
-        ).tocoo()
-        return adj_matrix
+        edge_idx = knn(source_nodes.x, target_nodes.x, k=self.num_nearest_neighbours)
+        return edge_idx
 
 
 class CutOffEdges(BaseEdgeBuilder):
@@ -238,7 +224,7 @@ class CutOffEdges(BaseEdgeBuilder):
         self.radius = self.get_cutoff_radius(graph)
         return super().prepare_node_data(graph)
 
-    def get_adjacency_matrix(self, source_nodes: NodeStorage, target_nodes: NodeStorage):
+    def compute_edge_index(self, source_nodes: NodeStorage, target_nodes: NodeStorage):
         """Get the adjacency matrix for the cut-off method.
 
         Parameters
@@ -255,10 +241,8 @@ class CutOffEdges(BaseEdgeBuilder):
             self.target_name,
         )
 
-        nearest_neighbour = NearestNeighbors(metric="haversine", n_jobs=4)
-        nearest_neighbour.fit(source_nodes.x)
-        adj_matrix = nearest_neighbour.radius_neighbors_graph(target_nodes.x, radius=self.radius).tocoo()
-        return adj_matrix
+        edge_idx = radius(source_nodes.x, target_nodes.x, r=self.radius)
+        return edge_idx
 
 
 class MultiScaleEdges(BaseEdgeBuilder):
@@ -314,7 +298,7 @@ class MultiScaleEdges(BaseEdgeBuilder):
         adjmat = nx.to_scipy_sparse_array(source_nodes["_nx_graph"], format="coo")
         return adjmat
 
-    def get_adjacency_matrix(self, source_nodes: NodeStorage, target_nodes: NodeStorage):
+    def compute_edge_index(self, source_nodes: NodeStorage, target_nodes: NodeStorage) -> torch.Tensor:
         if self.node_type == TriNodes.__name__:
             adjmat = self.adjacency_from_tri_nodes(source_nodes)
         elif self.node_type == HexNodes.__name__:
@@ -324,7 +308,10 @@ class MultiScaleEdges(BaseEdgeBuilder):
 
         adjmat = self.post_process_adjmat(source_nodes, adjmat)
 
-        return adjmat
+        # Get source & target indices of the edges
+        edge_index = np.stack([adjmat.col, adjmat.row], axis=0)
+
+        return torch.from_numpy(edge_index).to(torch.int32)
 
     def post_process_adjmat(self, nodes: NodeStorage, adjmat):
         graph_sorted = {node_pos: i for i, node_pos in enumerate(nodes["_node_ordering"])}
