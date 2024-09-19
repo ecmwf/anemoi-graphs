@@ -43,7 +43,7 @@ class BaseNodeBuilder(ABC):
         """
         graph[self.name].x = self.get_coordinates()
         graph[self.name].node_type = type(self).__name__
-        graph[self.name]["_grid_reference_distance"] = get_grid_reference_distance(graph[self.name])
+        graph[self.name]["_grid_reference_distance"] = get_grid_reference_distance(graph[self.name].x.cpu())
         return graph
 
     def register_attributes(self, graph: HeteroData, config: DotDict) -> HeteroData:
