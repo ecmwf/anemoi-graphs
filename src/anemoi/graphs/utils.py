@@ -4,6 +4,8 @@ import numpy as np
 import torch
 from sklearn.neighbors import NearestNeighbors
 
+from anemoi.graphs.generate.transforms import latlon_rad_to_cartesian_torch
+
 
 def get_nearest_neighbour(coords_rad: torch.Tensor, mask: torch.Tensor | None = None) -> NearestNeighbors:
     """Get NearestNeighbour object fitted to coordinates.
@@ -25,7 +27,7 @@ def get_nearest_neighbour(coords_rad: torch.Tensor, mask: torch.Tensor | None = 
         1,
     ), "Mask must have the same shape as the number of nodes."
 
-    nearest_neighbour = NearestNeighbors(metric="haversine", n_jobs=4)
+    nearest_neighbour = NearestNeighbors(metric="euclidean", n_jobs=4)
 
     nearest_neighbour.fit(coords_rad)
 
@@ -49,8 +51,9 @@ def get_grid_reference_distance(coords_rad: torch.Tensor, mask: torch.Tensor | N
     float
         The reference distance of the grid.
     """
-    nearest_neighbours = get_nearest_neighbour(coords_rad, mask)
-    dists, _ = nearest_neighbours.kneighbors(coords_rad, n_neighbors=2, return_distance=True)
+    xyz = latlon_rad_to_cartesian_torch(coords_rad)
+    nearest_neighbours = get_nearest_neighbour(xyz, mask)
+    dists, _ = nearest_neighbours.kneighbors(xyz, n_neighbors=2, return_distance=True)
     return dists[dists > 0].max()
 
 

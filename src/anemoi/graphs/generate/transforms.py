@@ -1,4 +1,5 @@
 import numpy as np
+import torch
 
 
 def cartesian_to_latlon_degrees(xyz: np.ndarray) -> np.ndarray:
@@ -63,6 +64,14 @@ def latlon_rad_to_cartesian(loc: tuple[np.ndarray, np.ndarray], radius: float = 
     y = radius * np.cos(latr) * np.sin(lonr)
     z = radius * np.sin(latr)
     return np.array((x, y, z)).T
+
+
+def latlon_rad_to_cartesian_torch(loc: torch.Tensor, radius: float = 1) -> torch.Tensor:
+    latr, lonr = loc[..., 0], loc[..., 1]
+    x = radius * torch.cos(latr) * torch.cos(lonr)
+    y = radius * torch.cos(latr) * torch.sin(lonr)
+    z = radius * torch.sin(latr)
+    return torch.stack((x, y, z), dim=-1)
 
 
 def direction_vec(points: np.ndarray, reference: np.ndarray, epsilon: float = 10e-11) -> np.ndarray:

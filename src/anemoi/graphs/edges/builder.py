@@ -18,6 +18,7 @@ from torch_geometric.nn import radius
 from anemoi.graphs import EARTH_RADIUS
 from anemoi.graphs.generate import hexagonal
 from anemoi.graphs.generate import icosahedral
+from anemoi.graphs.generate.transforms import latlon_rad_to_cartesian_torch
 from anemoi.graphs.nodes.builder import HexNodes
 from anemoi.graphs.nodes.builder import TriNodes
 from anemoi.graphs.utils import get_grid_reference_distance
@@ -170,7 +171,11 @@ class KNNEdges(BaseEdgeBuilder):
             self.source_name,
             self.target_name,
         )
-        edge_idx = knn(source_nodes.x, target_nodes.x, k=self.num_nearest_neighbours)
+        edge_idx = knn(
+            latlon_rad_to_cartesian_torch(source_nodes.x),
+            latlon_rad_to_cartesian_torch(target_nodes.x),
+            k=self.num_nearest_neighbours,
+        )
         return edge_idx
 
 
@@ -221,8 +226,13 @@ class CutOffEdges(BaseEdgeBuilder):
             The cut-off radius.
         """
         target_nodes = graph[self.target_name]
-        mask = target_nodes[mask_attr] if mask_attr is not None else None
-        target_grid_reference_distance = get_grid_reference_distance(target_nodes.x, mask)
+        if mask_attr is not None:
+            # If masking target nodes, we have to recompute the grid reference distance only over the masked nodes
+            mask = target_nodes[mask_attr].cpu()
+            target_grid_reference_distance = get_grid_reference_distance(target_nodes.x.cpu(), mask)
+        else:
+            target_grid_reference_distance = target_nodes._grid_reference_distance
+
         radius = target_grid_reference_distance * self.cutoff_factor
         return radius
 
@@ -248,7 +258,9 @@ class CutOffEdges(BaseEdgeBuilder):
             self.target_name,
         )
 
-        edge_idx = radius(source_nodes.x, target_nodes.x, r=self.radius)
+        edge_idx = radius(
+            latlon_rad_to_cartesian_torch(source_nodes.x), latlon_rad_to_cartesian_torch(target_nodes.x), r=self.radius
+        )
         return edge_idx
 
 

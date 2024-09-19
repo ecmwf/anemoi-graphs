@@ -14,6 +14,7 @@ from torch_geometric.data import HeteroData
 
 from anemoi.graphs.generate.hexagonal import create_hexagonal_nodes
 from anemoi.graphs.generate.icosahedral import create_icosahedral_nodes
+from anemoi.graphs.utils import get_grid_reference_distance
 
 LOGGER = logging.getLogger(__name__)
 
@@ -32,7 +33,7 @@ class BaseNodeBuilder(ABC):
     def __init__(self, name: str) -> None:
         self.name = name
 
-    def register_nodes(self, graph: HeteroData) -> None:
+    def register_nodes(self, graph: HeteroData) -> HeteroData:
         """Register nodes in the graph.
 
         Parameters
@@ -42,9 +43,10 @@ class BaseNodeBuilder(ABC):
         """
         graph[self.name].x = self.get_coordinates()
         graph[self.name].node_type = type(self).__name__
+        graph[self.name]["_grid_reference_distance"] = get_grid_reference_distance(graph[self.name])
         return graph
 
-    def register_attributes(self, graph: HeteroData, config: DotDict = None) -> HeteroData:
+    def register_attributes(self, graph: HeteroData, config: DotDict) -> HeteroData:
         """Register attributes in the nodes of the graph specified.
 
         Parameters
