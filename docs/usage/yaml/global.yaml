@@ -12,6 +12,7 @@ edges:
   # B) Decoder connections
   - source_name: hidden
     target_name: data
+    target_mask_attr_name: cutout
     edge_builder:
       _target_: anemoi.graphs.edges.KNNEdges
       num_nearest_neighbours: 3
