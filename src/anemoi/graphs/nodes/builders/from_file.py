@@ -52,7 +52,32 @@ class ZarrDatasetNodes(BaseNodeBuilder):
 
 
 class CutOutZarrDatasetNodes(ZarrDatasetNodes):
-    """Nodes from Zarr dataset."""
+    """Nodes from Zarr dataset.
+
+    Attributes
+    ----------
+    lam_dataset : str
+        The limited area dataset.
+    forcing_dataset : str
+        The forcing dataset.
+    thinning : int, optional
+        The thinning factor. Defaults to 1, which means no thinning.
+    forcing_area : list[float], optional
+        The area of the forcing dataset. Specify the longitude and
+        latitudes boundaries as (north, west, south, east). Defaults
+        to None, which means the forcing dataset is not cropped.
+
+    Methods
+    -------
+    get_coordinates()
+        Get the lat-lon coordinates of the nodes.
+    register_nodes(graph, name)
+        Register the nodes in the graph.
+    register_attributes(graph, name, config)
+        Register the attributes in the nodes of the graph specified.
+    update_graph(graph, name, attr_config)
+        Update the graph with new nodes and attributes.
+    """
 
     def __init__(
         self,
