@@ -55,10 +55,19 @@ class CutOutZarrDatasetNodes(ZarrDatasetNodes):
     """Nodes from Zarr dataset."""
 
     def __init__(
-        self, name: str, lam_dataset: str, forcing_dataset: str, thinning: int = 1, adjust: str = "all"
+        self,
+        name: str,
+        lam_dataset: str,
+        forcing_dataset: str,
+        thinning: int = 1,
+        forcing_area: list[float] | None = None,
+        adjust: str = "all",
     ) -> None:
         dataset_config = {
-            "cutout": [{"dataset": lam_dataset, "thinning": thinning}, {"dataset": forcing_dataset}],
+            "cutout": [
+                {"dataset": lam_dataset, "thinning": thinning},
+                {"dataset": forcing_dataset, "area": forcing_area},
+            ],
             "adjust": adjust,
         }
         super().__init__(dataset_config, name)
