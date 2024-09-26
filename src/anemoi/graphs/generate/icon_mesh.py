@@ -1,13 +1,10 @@
-# AICON-GRAPH
+# (C) Copyright 2024 ECMWF, DWD.
 #
-# ---------------------------------------------------------------
-# Copyright (C) 2004-2024, DWD, MPI-M, DKRZ, KIT, ETH, MeteoSwiss
-# Contact information: icon-model.org
-#
-# See AUTHORS.md for a list of authors
-# See LICENSES/ for license information
-# SPDX-License-Identifier: BSD-3-Clause
-# ---------------------------------------------------------------
+# This software is licensed under the terms of the Apache Licence Version 2.0
+# which can be obtained at http://www.apache.org/licenses/LICENSE-2.0.
+# In applying this licence, the above institution do not waive the privileges
+# and immunities granted to it by virtue of its status as an intergovernmental
+# organisation  nor does it submit to any jurisdiction.
 #
 
 import itertools
