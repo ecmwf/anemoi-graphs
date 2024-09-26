@@ -35,9 +35,7 @@ def create_tri_nodes(
     node_ordering : list[int]
         Order of the node coordinates to be sorted by latitude and longitude.
     """
-    sphere = trimesh.creation.icosphere(subdivisions=resolution, radius=1.0)
-
-    coords_rad = cartesian_to_latlon_rad(sphere.vertices)
+    coords_rad = get_latlon_coords_icosphere(resolution)
 
     node_ordering = get_coordinates_ordering(coords_rad)
 
@@ -157,27 +155,19 @@ def add_edges_to_nx_graph(
     """
     assert x_hops > 0, "x_hops == 0, graph would have no edges ..."
 
-    sphere = trimesh.creation.icosphere(subdivisions=resolutions[-1], radius=1.0)
-    vertices_rad = cartesian_to_latlon_rad(sphere.vertices)
-    node_neighbours = get_neighbours_within_hops(sphere, x_hops, valid_nodes=list(graph.nodes))
-
-    for idx_node, idx_neighbours in node_neighbours.items():
-        add_neigbours_edges(graph, idx_node, idx_neighbours)
-
-    tree = BallTree(vertices_rad, metric="haversine")
+    graph_vertices = np.array([graph.nodes[i]["hcoords_rad"] for i in sorted(graph.nodes)])
+    tree = BallTree(graph_vertices, metric="haversine")
 
     # Build the multi-scale connections
-    for resolution in resolutions[:-1]:
-        # Define the isophere at specified 'resolution' level
+    for resolution in resolutions:
+        # Define the coordinates of the isophere vertices at specified 'resolution' level
         r_sphere = trimesh.creation.icosphere(subdivisions=resolution, radius=1.0)
-
-        # Get the vertices of the isophere
         r_vertices_rad = cartesian_to_latlon_rad(r_sphere.vertices)
 
         # Limit area of mesh points.
         if area_mask_builder is not None:
-            area_mask = area_mask_builder.get_mask(r_vertices_rad)
-            valid_nodes = np.where(area_mask)[0]
+            aoi_mask = area_mask_builder.get_mask(r_vertices_rad)
+            valid_nodes = np.where(aoi_mask)[0]
         else:
             valid_nodes = None
 
@@ -185,7 +175,7 @@ def add_edges_to_nx_graph(
 
         _, vertex_mapping_index = tree.query(r_vertices_rad, k=1)
         for idx_node, idx_neighbours in node_neighbours.items():
-            add_neigbours_edges(graph, idx_node, idx_neighbours, vertex_mapping_index=vertex_mapping_index)
+            graph = add_neigbours_edges(graph, idx_node, idx_neighbours, vertex_mapping_index=vertex_mapping_index)
 
     return graph
 
@@ -232,7 +222,7 @@ def add_neigbours_edges(
     neighbour_indices: Iterable[int],
     self_loops: bool = False,
     vertex_mapping_index: np.ndarray | None = None,
-) -> None:
+) -> nx.Graph:
     """Adds the edges of one node to its neighbours.
 
     Parameters
@@ -247,18 +237,27 @@ def add_neigbours_edges(
         Whether is supported to add self-loops, by default False.
     vertex_mapping_index : np.ndarray, optional
         Index to map the vertices from the refined sphere to the original one, by default None.
+
+    Returns
+    -------
+    nx.Graph
+        The graph with the added edges.
     """
+    graph_nodes_idx = list(sorted(graph.nodes))
     for neighbour_idx in neighbour_indices:
         if not self_loops and node_idx == neighbour_idx:  # no self-loops
             continue
 
         if vertex_mapping_index is not None:
             # Use the same method to add edge in all spheres
-            node_neighbour = vertex_mapping_index[neighbour_idx][0]
-            node = vertex_mapping_index[node_idx][0]
+            node_neighbour = graph_nodes_idx[vertex_mapping_index[neighbour_idx][0]]
+            node = graph_nodes_idx[vertex_mapping_index[node_idx][0]]
         else:
-            node, node_neighbour = node_idx, neighbour_idx
+            node_neighbour = graph_nodes_idx[neighbour_idx]
+            node = graph_nodes_idx[node_idx]
 
         # add edge to the graph
         if node in graph and node_neighbour in graph:
             graph.add_edge(node_neighbour, node)
+
+    return graph
