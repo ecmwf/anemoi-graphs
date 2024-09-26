@@ -6,6 +6,7 @@ from abc import abstractmethod
 
 import networkx as nx
 import numpy as np
+import scipy
 import torch
 from anemoi.utils.config import DotDict
 from hydra.utils import instantiate
@@ -58,10 +59,8 @@ class BaseEdgeBuilder(ABC):
         source_nodes, target_nodes = self.prepare_node_data(graph)
 
         adjmat = self.get_adjacency_matrix(source_nodes, target_nodes)
-
         # Get source & target indices of the edges
         edge_index = np.stack([adjmat.col, adjmat.row], axis=0)
-
         return torch.from_numpy(edge_index).to(torch.int32)
 
     def register_edges(self, graph: HeteroData) -> HeteroData:
@@ -352,3 +351,117 @@ class MultiScaleEdges(BaseEdgeBuilder):
         self.node_type = graph[self.source_name].node_type
 
         return super().update_graph(graph, attrs_config)
+
+
+class ICONTopologicalProcessorEdges(BaseEdgeBuilder):
+    """Computes edges based on ICON grid topology.
+
+    Attributes
+    ----------
+    source_name : str
+        The name of the source nodes.
+    target_name : str
+        The name of the target nodes.
+    icon_mesh   : str
+        The name of the ICON mesh (defines both the processor mesh and the data)
+    """
+
+    def __init__(self, source_name: str, target_name: str, icon_mesh: str):
+        self.icon_mesh = icon_mesh
+        super().__init__(source_name, target_name)
+
+    def update_graph(self, graph: HeteroData, attrs_config: DotDict = None) -> HeteroData:
+        """Update the graph with the edges."""
+        self.multi_mesh = graph[self.icon_mesh]["_multi_mesh"]
+        return super().update_graph(graph, attrs_config)
+
+    def get_adjacency_matrix(self, source_nodes: NodeStorage, target_nodes: NodeStorage):
+        """Parameters
+        ----------
+        source_nodes : NodeStorage
+            The source nodes.
+        target_nodes : NodeStorage
+            The target nodes.
+        """
+        LOGGER.info(f"Using ICON topology {self.source_name}>{self.target_name}")
+        nrows = self.multi_mesh.num_edges
+        adj_matrix = scipy.sparse.coo_matrix(
+            (np.ones(nrows), (self.multi_mesh.edge_vertices[:, 1], self.multi_mesh.edge_vertices[:, 0]))
+        )
+        return adj_matrix
+
+
+class ICONTopologicalEncoderEdges(BaseEdgeBuilder):
+    """Computes edges based on ICON grid topology.
+
+    Attributes
+    ----------
+    source_name : str
+        The name of the source nodes.
+    target_name : str
+        The name of the target nodes.
+    icon_mesh   : str
+        The name of the ICON mesh (defines both the processor mesh and the data)
+    """
+
+    def __init__(self, source_name: str, target_name: str, icon_mesh: str):
+        self.icon_mesh = icon_mesh
+        super().__init__(source_name, target_name)
+
+    def update_graph(self, graph: HeteroData, attrs_config: DotDict = None) -> HeteroData:
+        """Update the graph with the edges."""
+        self.cell_data_grid = graph[self.icon_mesh]["_cell_grid"]
+        return super().update_graph(graph, attrs_config)
+
+    def get_adjacency_matrix(self, source_nodes: NodeStorage, target_nodes: NodeStorage):
+        """Parameters
+        ----------
+        source_nodes : NodeStorage
+            The source nodes.
+        target_nodes : NodeStorage
+            The target nodes.
+        """
+        LOGGER.info(f"Using ICON topology {self.source_name}>{self.target_name}")
+        nrows = self.cell_data_grid.num_edges
+        adj_matrix = scipy.sparse.coo_matrix(
+            (np.ones(nrows), (self.cell_data_grid.edge_vertices[:, 1], self.cell_data_grid.edge_vertices[:, 0]))
+        )
+        return adj_matrix
+
+
+class ICONTopologicalDecoderEdges(BaseEdgeBuilder):
+    """Computes edges based on ICON grid topology.
+
+    Attributes
+    ----------
+    source_name : str
+        The name of the source nodes.
+    target_name : str
+        The name of the target nodes.
+    icon_mesh   : str
+        The name of the ICON mesh (defines both the processor mesh and the data)
+    """
+
+    def __init__(self, source_name: str, target_name: str, icon_mesh: str):
+        self.icon_mesh = icon_mesh
+        super().__init__(source_name, target_name)
+
+    def update_graph(self, graph: HeteroData, attrs_config: DotDict = None) -> HeteroData:
+        """Update the graph with the edges."""
+        self.cell_data_grid = graph[self.icon_mesh]["_cell_grid"]
+        return super().update_graph(graph, attrs_config)
+
+    def get_adjacency_matrix(self, source_nodes: NodeStorage, target_nodes: NodeStorage):
+        """Parameters
+        ----------
+        source_nodes : NodeStorage
+            The source nodes.
+        target_nodes : NodeStorage
+            The target nodes.
+        """
+        LOGGER.info(f"Using ICON topology {self.source_name}>{self.target_name}")
+        nrows = self.cell_data_grid.num_edges
+        adj_matrix = scipy.sparse.coo_matrix(
+            (np.ones(nrows), (self.cell_data_grid.edge_vertices[:, 0], self.cell_data_grid.edge_vertices[:, 1]))
+        )
+        return adj_matrix

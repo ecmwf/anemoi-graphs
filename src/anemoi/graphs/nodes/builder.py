@@ -13,6 +13,7 @@ from hydra.utils import instantiate
 from torch_geometric.data import HeteroData
 
 from anemoi.graphs.generate.hexagonal import create_hexagonal_nodes
+from anemoi.graphs.generate.icon_mesh import get_icon_mesh_and_grid
 from anemoi.graphs.generate.icosahedral import create_icosahedral_nodes
 
 LOGGER = logging.getLogger(__name__)
@@ -104,7 +105,6 @@ class BaseNodeBuilder(ABC):
 
         if attr_config is None:
             return graph
-
         graph = self.register_attributes(graph, attr_config)
 
         return graph
@@ -280,6 +280,77 @@ class HexNodes(IcosahedralNodes):
 
     def create_nodes(self) -> np.ndarray:
         return create_hexagonal_nodes(self.resolutions)
+
+
+class ICONNodes(BaseNodeBuilder):
+    """ICON grid (cell and vertex locations)."""
+
+    def __init__(self, name: str, grid_filename: str, max_level_multimesh: int, max_level_dataset: int) -> None:
+        self.grid_filename = grid_filename
+        self.multi_mesh, self.cell_grid = get_icon_mesh_and_grid(
+            iverbosity=1,
+            grid_file=self.grid_filename,
+            max_level_multimesh=max_level_multimesh,
+            max_level_dataset=max_level_dataset,
+        )
+        super().__init__(name)
+
+    def get_coordinates(self) -> torch.Tensor:
+        return torch.from_numpy(self.multi_mesh.nodeset.gc_vertices.astype(np.float32)).fliplr()
+
+    def register_attributes(self, graph: HeteroData, config: DotDict) -> HeteroData:
+        graph[self.name]["_grid_filename"] = self.grid_filename
+        graph[self.name]["_multi_mesh"] = self.multi_mesh
+        graph[self.name]["_cell_grid"] = self.cell_grid
+        return super().register_attributes(graph, config)
+
+
+class ICONMultimeshNodes(BaseNodeBuilder):
+    """Processor mesh based on an ICON grid.
+
+    Parameters
+    ----------
+    name : str
+        key for the nodes in the HeteroData graph object.
+    icon_mesh : str
+        key corresponding to the ICON mesh (cells and vertices).
+    """
+
+    def __init__(self, name: str, icon_mesh: str) -> None:
+        self.icon_mesh = icon_mesh
+        super().__init__(name)
+
+    def update_graph(self, graph: HeteroData, attr_config: DotDict | None = None) -> HeteroData:
+        """Update the graph with new nodes."""
+        self.multi_mesh = graph[self.icon_mesh]["_multi_mesh"]
+        return super().update_graph(graph, attr_config)
+
+    def get_coordinates(self) -> torch.Tensor:
+        return torch.from_numpy(self.multi_mesh.nodeset.gc_vertices.astype(np.float32)).fliplr()
+
+
+class ICONCellGridNodes(BaseNodeBuilder):
+    """Data mesh based on an ICON grid.
+
+    Parameters
+    ----------
+    name : str
+        key for the nodes in the HeteroData graph object.
+    icon_mesh : str
+        key corresponding to the ICON mesh (cells and vertices).
+    """
+
+    def __init__(self, name: str, icon_mesh: str) -> None:
+        self.icon_mesh = icon_mesh
+        super().__init__(name)
+
+    def update_graph(self, graph: HeteroData, attr_config: DotDict | None = None) -> HeteroData:
+        """Update the graph with new nodes."""
+        self.cell_grid = graph[self.icon_mesh]["_cell_grid"]
+        return super().update_graph(graph, attr_config)
+
+    def get_coordinates(self) -> torch.Tensor:
+        return torch.from_numpy(self.cell_grid.nodeset[0].gc_vertices.astype(np.float32)).fliplr()
 
 
 class HEALPixNodes(BaseNodeBuilder):
