@@ -66,7 +66,7 @@ class BaseNodeBuilder(ABC):
         return graph
 
     @abstractmethod
-    def get_coordinates(self) -> torch.Tensor: ...
+    def get_coordinates(self, *args, **kwargs) -> torch.Tensor: ...
 
     def reshape_coords(self, latitudes: np.ndarray, longitudes: np.ndarray) -> torch.Tensor:
         """Reshape latitude and longitude coordinates.
@@ -328,3 +328,27 @@ class DataframeNodes(BaseNodeBuilder):
                 graph[self.name][attr_name] = torch.tensor(self.df[attr_name].values, dtype=torch.float32)
 
         return graph
+
+
+class TensorNodes(BaseNodeBuilder):
+
+    def __init__(self, name: str, lat_idx: tuple[int, int], lon_idx: tuple[int, int]) -> None:
+        self.lat_idx = lat_idx
+        self.lon_idx = lon_idx
+        super().__init__(name)
+
+    def get_coordinates(self, x: torch.Tensor) -> torch.Tensor:
+        """Get the coordinates of the nodes.
+
+        Returns
+        -------
+        torch.Tensor of shape (num_nodes, 2)
+            A 2D tensor with the coordinates, in radians.
+        """
+        latitudes = np.arctan2(x[self.lat_idx[0]], x[self.lat_idx[1]])  # sin and cos(latitude)
+        longitudes = np.arctan2(x[self.lon_idx[0]], x[self.lon_idx[1]])  # sin and cos(longitude)
+        return self.reshape_coords(latitudes, longitudes)
+
+    # def register_attributes(self, graph: HeteroData, config: Optional[DotDict] = None) -> HeteroData:
+    #     graph = super().register_attributes(graph, config)
+    #     return graph
