@@ -124,10 +124,7 @@ class BipartiteGraph:
     def __init__(self, nodeset: tuple[NodeSet, NodeSet], edge_vertices: np.ndarray, edge_id: Optional[EdgeID] = None):
         self.nodeset = nodeset
         self.edge_vertices = edge_vertices
-        if edge_id is None:
-            self.edge_id = None
-        else:
-            self.edge_id = edge_id
+        self.edge_id = edge_id
 
     @property
     def num_edges(self) -> int:
