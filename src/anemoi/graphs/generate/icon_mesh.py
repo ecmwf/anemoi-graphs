@@ -273,13 +273,13 @@ class ICONMultiMesh(GeneralGraph):
 
         num_vertices = reflvl_vertex.shape[0]
         # edge-to-vertex adjacency matrix with 2 non-zero entries per row:
-        e2v_matrix = convert_list_to_adjacency_matrix(edge_vertices_fine, num_vertices)
+        edge2vertex_matrix = convert_list_to_adjacency_matrix(edge_vertices_fine, num_vertices)
         # cell-to-vertex adjacency matrix with 3 non-zero entries per row:
-        c2v_matrix = convert_list_to_adjacency_matrix(cell_vertices_fine, num_vertices)
-        v2v_matrix = e2v_matrix.transpose() * e2v_matrix
-        v2v_matrix.setdiag(np.ones(num_vertices))  # vertices are self-connected
+        cell2vertex_matrix = convert_list_to_adjacency_matrix(cell_vertices_fine, num_vertices)
+        vertex2vertex_matrix = edge2vertex_matrix.transpose() * edge2vertex_matrix
+        vertex2vertex_matrix.setdiag(np.ones(num_vertices))  # vertices are self-connected
 
-        s_v_coarse = scipy.sparse.diags(np.ones(num_vertices), dtype=bool)
+        selected_vertex_coarse = scipy.sparse.diags(np.ones(num_vertices), dtype=bool)
 
         # coarsen edge-vertex list from level `ilevel -> ilevel - 1`:
         for ilevel in reversed(range(1, reflvl_vertex.max() + 1)):
@@ -292,34 +292,36 @@ class ICONMultiMesh(GeneralGraph):
             # has refinement level index `ilevel`:
             ref_level_mask = reflvl_vertex[edge_vertices[0]] == ilevel
             edges_coarse = np.logical_xor(ref_level_mask[:, 0], ref_level_mask[:, 1])  # = bisected coarse edges
-            idx_e2e = np.argwhere(edges_coarse).flatten()
-            s_edges = selection_matrix(idx_e2e, edges_coarse.shape[0])
+            idx_edge2edge = np.argwhere(edges_coarse).flatten()
+            selected_edges = selection_matrix(idx_edge2edge, edges_coarse.shape[0])
 
             # define vertex selection matrix selecting only vertices of
             # level `ilevel`:
             idx_v_fine = np.argwhere(reflvl_vertex == ilevel).flatten()
-            s_v_fine = selection_matrix(idx_v_fine, num_vertices)
+            selected_vertex_fine = selection_matrix(idx_v_fine, num_vertices)
             # define vertex selection matrix, selecting only vertices of
             # level < `ilevel`, by successively removing `s_fine` from an identity matrix.
-            s_v_coarse.data[0][idx_v_fine] = False
+            selected_vertex_coarse.data[0][idx_v_fine] = False
 
             # create an adjacency matrix which links each fine level
             # vertex to its two coarser neighbor vertices:
-            v2v_fine2coarse = s_v_fine * v2v_matrix * s_v_coarse
+            vertex2vertex_fine2coarse = selected_vertex_fine * vertex2vertex_matrix * selected_vertex_coarse
             # remove rows that have only one non-zero entry
             # (corresponding to incomplete parent triangles in LAM grids):
-            csum = v2v_fine2coarse * np.ones((v2v_fine2coarse.shape[1], 1))
-            s_v2v = selection_matrix(np.argwhere(csum == 2).flatten(), v2v_fine2coarse.shape[0])
-            v2v_fine2coarse = s_v2v * v2v_fine2coarse
+            csum = vertex2vertex_fine2coarse * np.ones((vertex2vertex_fine2coarse.shape[1], 1))
+            selected_vertex2vertex = selection_matrix(
+                np.argwhere(csum == 2).flatten(), vertex2vertex_fine2coarse.shape[0]
+            )
+            vertex2vertex_fine2coarse = selected_vertex2vertex * vertex2vertex_fine2coarse
 
             # then construct the edges-to-parent-vertex adjacency matrix:
-            parent_edge_vertices = s_edges * e2v_matrix * v2v_fine2coarse
+            parent_edge_vertices = selected_edges * edge2vertex_matrix * vertex2vertex_fine2coarse
             # again, we have might have selected edges within
-            # `s_edges` which are part of an incomplete parent edge
+            # `selected_edges` which are part of an incomplete parent edge
             # (LAM case). We filter these here:
             csum = parent_edge_vertices * np.ones((parent_edge_vertices.shape[1], 1))
-            s_e2e = selection_matrix(np.argwhere(csum == 2).flatten(), parent_edge_vertices.shape[0])
-            parent_edge_vertices = s_e2e * parent_edge_vertices
+            selected_edge2edge = selection_matrix(np.argwhere(csum == 2).flatten(), parent_edge_vertices.shape[0])
+            parent_edge_vertices = selected_edge2edge * parent_edge_vertices
 
             # note: the edges-vertex adjacency matrix still has duplicate
             # rows, since two child edges have the same parent edge.
@@ -328,28 +330,28 @@ class ICONMultiMesh(GeneralGraph):
 
             # store cell-to-vert adjacency matrix
             if ilevel > self.max_level:
-                c2v_matrix = c2v_matrix * v2v_fine2coarse
+                cell2vertex_matrix = cell2vertex_matrix * vertex2vertex_fine2coarse
                 # similar to the treatment above, we need to handle
                 # coarse LAM cells which are incomplete.
-                csum = c2v_matrix * np.ones((c2v_matrix.shape[1], 1))
-                s_c2c = selection_matrix(np.argwhere(csum == 3).flatten(), c2v_matrix.shape[0])
-                c2v_matrix = s_c2c * c2v_matrix
+                csum = cell2vertex_matrix * np.ones((cell2vertex_matrix.shape[1], 1))
+                selected_cell2cell = selection_matrix(np.argwhere(csum == 3).flatten(), cell2vertex_matrix.shape[0])
+                cell2vertex_matrix = selected_cell2cell * cell2vertex_matrix
 
             # replace edge-to-vertex and vert-to-vert adjacency matrices (for next level):
             if ilevel > 1:
-                v2v_matrix = s_v_coarse * v2v_matrix * v2v_fine2coarse
-                e2v_matrix = convert_list_to_adjacency_matrix(edge_vertices_coarse, num_vertices)
+                vertex2vertex_matrix = selected_vertex_coarse * vertex2vertex_matrix * vertex2vertex_fine2coarse
+                edge2vertex_matrix = convert_list_to_adjacency_matrix(edge_vertices_coarse, num_vertices)
 
         # Fine-level cells outside of multi-mesh (LAM boundary)
         # correspond to empty rows in the adjacency matrix. We
         # substitute these by three additional, non-existent vertices:
-        csum = 3 - c2v_matrix * np.ones((c2v_matrix.shape[1], 1))
-        nvmax = c2v_matrix.shape[1]
-        c2v_matrix = scipy.sparse.csr_matrix(scipy.sparse.hstack((c2v_matrix, csum, csum, csum)))
+        csum = 3 - cell2vertex_matrix * np.ones((cell2vertex_matrix.shape[1], 1))
+        nvmax = cell2vertex_matrix.shape[1]
+        cell2vertex_matrix = scipy.sparse.csr_matrix(scipy.sparse.hstack((cell2vertex_matrix, csum, csum, csum)))
 
         # build a list of cell-vertices [1..num_cells,1..3] for all
         # fine-level cells:
-        cell_vertices = convert_adjacency_matrix_to_list(c2v_matrix, remove_duplicates=False, ncols_per_row=3)
+        cell_vertices = convert_adjacency_matrix_to_list(cell2vertex_matrix, remove_duplicates=False, ncols_per_row=3)
 
         # finally, translate non-existent vertices into "-1" indices:
         cell_vertices = np.where(cell_vertices >= nvmax, -np.ones(cell_vertices.shape, dtype=np.int32), cell_vertices)
