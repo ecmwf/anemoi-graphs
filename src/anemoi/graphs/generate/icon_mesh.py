@@ -146,12 +146,12 @@ class BipartiteGraph:
         )
         if self.edge_id is None:
             return edge_feature_arr
-        else:
-            # one-hot-encoded categorical data (`edge_id`)
-            one_hot = torch_geometric.utils.one_hot(
-                index=torch.tensor(self.edge_id.edge_id), num_classes=self.edge_id.num_classes
-            )
-            return torch.concatenate((one_hot, edge_feature_arr), dim=1)
+
+        # one-hot-encoded categorical data (`edge_id`)
+        one_hot = torch_geometric.utils.one_hot(
+            index=torch.tensor(self.edge_id.edge_id), num_classes=self.edge_id.num_classes
+        )
+        return torch.concatenate((one_hot, edge_feature_arr), dim=1)
 
     def set_constant_edge_id(self, edge_id: int, num_classes: int):
         self.edge_id = EdgeID(edge_id=np.full(self.num_edges, fill_value=edge_id), num_classes=num_classes)
