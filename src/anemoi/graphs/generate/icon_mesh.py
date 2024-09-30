@@ -150,9 +150,6 @@ class BipartiteGraph:
         )
         return torch.concatenate((one_hot, edge_feature_arr), dim=1)
 
-    def set_constant_edge_id(self, edge_id: int, num_classes: int):
-        self.edge_id = EdgeID(edge_id=np.full(self.num_edges, fill_value=edge_id), num_classes=num_classes)
-
     def __add__(self, other: "BipartiteGraph"):
         """Concatenates two bipartite graphs that share a common target node set.
         Shifts the node indices of the second bipartite graph.
