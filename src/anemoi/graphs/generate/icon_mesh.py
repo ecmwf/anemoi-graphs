@@ -551,7 +551,7 @@ def convert_adjacency_matrix_to_list(
 
 
 @typechecked
-def selection_matrix(idx: np.ndarray, isize: int = 0) -> scipy.sparse.csr_matrix:
+def selection_matrix(idx: np.ndarray, isize: int) -> scipy.sparse.csr_matrix:
     """Create a diagonal selection matrix.
 
     Parameters
