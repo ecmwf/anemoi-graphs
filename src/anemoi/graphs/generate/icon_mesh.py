@@ -163,10 +163,8 @@ class BipartiteGraph:
         shifted_edge_vertices = other.edge_vertices
         shifted_edge_vertices[:, 0] += self.nodeset[0].num_vertices
         # (Optional:) merge one-hot-encoded categorical data (`edge_id`)
-        if None not in (self.edge_id, other.edge_id):
-            edge_id = self.edge_id + other.edge_id
-        else:
-            edge_id = None
+        edge_id = None if None in (self.edge_id, other.edge_id) else self.edge_id + other.edge_id
+
         return BipartiteGraph(
             nodeset=(self.nodeset[0] + other.nodeset[0], self.nodeset[1]),
             edge_vertices=np.concatenate((self.edge_vertices, shifted_edge_vertices)),
