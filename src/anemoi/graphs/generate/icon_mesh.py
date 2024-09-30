@@ -542,7 +542,7 @@ def convert_adjacency_matrix_to_list(
     if remove_duplicates:
         # The edges-vertex adjacency matrix may have duplicate rows, remove
         # them by selecting the rows that are unique:
-        nrows = int(adj_matrix.nnz / ncols_per_row)
+        nrows = int(adj_matrix.nnz // ncols_per_row)
         mat = adj_matrix.indices.reshape((nrows, ncols_per_row))
         return np.unique(mat, axis=0)
     else:
