@@ -478,7 +478,7 @@ def get_edge_attributes(
 
 
 @typechecked
-def arc_length(v1, v2) -> np.ndarray:
+def arc_length(v1: np.ndarray, v2: np.ndarray) -> np.ndarray:
     """Calculate length of great circle arc on the unit sphere."""
     return np.arccos(np.clip(np.einsum("ij,ij->i", v1, v2), a_min=0.0, a_max=1.0))
 
