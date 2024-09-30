@@ -250,15 +250,15 @@ class ICONMultiMesh(GeneralGraph):
         """Creates a new mesh with only the vertices at the desired level."""
 
         num_vertices = reflvl_vertex.shape[0]
-        vertex_idx = reflvl_vertex <= self.max_level
+        vertex_mask = reflvl_vertex <= self.max_level
         vertex_glb2loc = np.zeros(num_vertices, dtype=int)
-        vertex_glb2loc[vertex_idx] = np.arange(vertex_idx.sum())
+        vertex_glb2loc[vertex_mask] = np.arange(vertex_mask.sum())
         return (
             [vertex_glb2loc[vertices] for vertices in edge_vertices[: self.max_level + 1]],
             # cell_vertices: preserve negative indices (incomplete cells)
             np.where(cell_vertices >= 0, vertex_glb2loc[cell_vertices], cell_vertices),
-            vlon[vertex_idx],
-            vlat[vertex_idx],
+            vlon[vertex_mask],
+            vlat[vertex_mask],
         )
 
     def _get_hierarchy_of_icon_edge_graphs(
