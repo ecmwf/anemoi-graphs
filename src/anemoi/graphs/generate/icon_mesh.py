@@ -2,7 +2,7 @@
 #
 # This software is licensed under the terms of the Apache Licence Version 2.0
 # which can be obtained at http://www.apache.org/licenses/LICENSE-2.0.
-# In applying this licence, the above institution do not waive the privileges
+# In applying this licence, the above institutions do not waive the privileges
 # and immunities granted to it by virtue of its status as an intergovernmental
 # organisation  nor does it submit to any jurisdiction.
 #
@@ -495,13 +495,17 @@ def read_coordinate_array(ncfile, arrname: str, dimname: str) -> np.ndarray:
 def convert_list_to_adjacency_matrix(list_matrix: np.ndarray, ncols: int = 0) -> scipy.sparse.csr_matrix:
     """Convert an edge list into an adjacency matrix.
 
-    Args:
-      list_matrix : np.ndarray
+    Parameters
+    ----------
+    list_matrix : np.ndarray
         boolean matrix given by list of column indices for each row.
-      ncols : int
+    ncols : int
         number of columns in result matrix.
-    Returns:
-      Returns sparse matrix [nrows, ncols]
+
+    Returns
+    -------
+    scipy.sparse.csr_matrix
+        sparse matrix [nrows, ncols]
     """
     nrows, ncols_per_row = list_matrix.shape
     indptr = np.arange(ncols_per_row * (nrows + 1), step=ncols_per_row)
@@ -517,15 +521,19 @@ def convert_adjacency_matrix_to_list(
 ) -> np.ndarray:
     """Convert an adjacency matrix into an edge list.
 
-    Args:
-      adj_matrix: scipy.sparse.csr_matrix
-          sparse (boolean) adjacency matrix
-      ncols_per_row: int
-          number of nonzero entries per row
-      remove_duplicates: bool
-          logical flag: remove duplicate rows.
-    Returns:
-      boolean matrix given by list of column indices for each row.
+    Parameters
+    ----------
+    adj_matrix : scipy.sparse.csr_matrix
+        sparse (boolean) adjacency matrix
+    ncols_per_row : int
+        number of nonzero entries per row
+    remove_duplicates : bool
+        logical flag: remove duplicate rows.
+
+    Returns
+    -------
+    np.ndarray
+        boolean matrix given by list of column indices for each row.
     """
     if remove_duplicates:
         # The edges-vertex adjacency matrix may have duplicate rows, remove
@@ -542,12 +550,16 @@ def convert_adjacency_matrix_to_list(
 def selection_matrix(idx: np.ndarray, isize: int = 0) -> scipy.sparse.csr_matrix:
     """Create a diagonal selection matrix.
 
-    Args:
-        idx : np.ndarray
-           integer array of indices
-        isize: int
-           size of (square) selection matrix
-    Returns:
+    Parameters
+    ----------
+    idx : np.ndarray
+        integer array of indices
+    isize : int
+        size of (square) selection matrix
+
+    Returns
+    -------
+    scipy.sparse.csr_matrix
         diagonal matrix with ones at selected indices (idx,idx).
     """
     return scipy.sparse.csr_matrix((np.ones((len(idx))), (idx, idx)), dtype=bool, shape=(isize, isize))
