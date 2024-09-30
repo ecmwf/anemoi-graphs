@@ -199,11 +199,10 @@ class ICONMultiMesh(GeneralGraph):
     nodeset: NodeSet  # set of ICON grid vertices
     cell_vertices: np.ndarray
 
-    def __init__(self, icon_grid_filename: str, max_level: Optional[int] = None, iverbosity: int = 0):
+    def __init__(self, icon_grid_filename: str, max_level: Optional[int] = None):
 
         # open file, representing the finest level
-        if iverbosity > 0:
-            LOGGER.info(f"{type(self).__name__}: read ICON grid file '{icon_grid_filename}'")
+        LOGGER.debug(f"{type(self).__name__}: read ICON grid file '{icon_grid_filename}'")
         with netCDF4.Dataset(icon_grid_filename, "r") as ncfile:
             # read vertex coordinates
             vlon = read_coordinate_array(ncfile, "vlon", "vertex")
@@ -227,7 +226,6 @@ class ICONMultiMesh(GeneralGraph):
             edge_vertices_fine=edge_vertices_fine,
             cell_vertices_fine=cell_vertices_fine,
             reflvl_vertex=reflvl_vertex,
-            iverbosity=iverbosity,
         )
         # restrict edge-vertex list to multi_mesh level "max_level":
         if self.max_level < len(edge_vertices):
@@ -268,7 +266,6 @@ class ICONMultiMesh(GeneralGraph):
         edge_vertices_fine: np.ndarray,
         cell_vertices_fine: np.ndarray,
         reflvl_vertex: np.ndarray,
-        iverbosity: int = 1,
     ) -> tuple[list[np.ndarray], np.ndarray]:
         """Returns a list of edge-vertex relations (coarsest to finest level)."""
 
@@ -286,8 +283,7 @@ class ICONMultiMesh(GeneralGraph):
 
         # coarsen edge-vertex list from level `ilevel -> ilevel - 1`:
         for ilevel in reversed(range(1, reflvl_vertex.max() + 1)):
-            if iverbosity > 0:
-                LOGGER.info(f"  edges[{ilevel}] = {edge_vertices[0].shape[0] : >9}")
+            LOGGER.debug(f"  edges[{ilevel}] = {edge_vertices[0].shape[0] : >9}")
 
             # define edge selection matrix (selecting only edges of which have
             # exactly one coarse vertex):
@@ -375,11 +371,9 @@ class ICONCellDataGrid(BipartiteGraph):
         icon_grid_filename: str,
         multi_mesh: Optional[ICONMultiMesh] = None,
         max_level: Optional[int] = None,
-        iverbosity: int = 0,
     ):
         # open file, representing the finest level
-        if iverbosity > 0:
-            LOGGER.info(f"{type(self).__name__}: read ICON grid file '{icon_grid_filename}'")
+        LOGGER.debug(f"{type(self).__name__}: read ICON grid file '{icon_grid_filename}'")
         with netCDF4.Dataset(icon_grid_filename, "r") as ncfile:
             # read cell circumcenter coordinates
             clon = read_coordinate_array(ncfile, "clon", "cell")
@@ -423,12 +417,12 @@ class ICONCellDataGrid(BipartiteGraph):
 
 @typechecked
 def get_icon_mesh_and_grid(
-    iverbosity: int, grid_file: str, max_level_multimesh: int, max_level_dataset: int
+    grid_file: str, max_level_multimesh: int, max_level_dataset: int
 ) -> tuple[ICONMultiMesh, ICONCellDataGrid]:
     """Factory function, creating an ICON multi-mesh and an ICON cell-grid."""
     return (
-        multi_mesh := ICONMultiMesh(grid_file, max_level=max_level_multimesh, iverbosity=iverbosity),
-        ICONCellDataGrid(grid_file, multi_mesh, max_level=max_level_dataset, iverbosity=iverbosity),
+        multi_mesh := ICONMultiMesh(grid_file, max_level=max_level_multimesh),
+        ICONCellDataGrid(grid_file, multi_mesh, max_level=max_level_dataset),
     )
 
 

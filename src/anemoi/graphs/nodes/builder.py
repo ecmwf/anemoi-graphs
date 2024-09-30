@@ -288,7 +288,6 @@ class ICONNodes(BaseNodeBuilder):
     def __init__(self, name: str, grid_filename: str, max_level_multimesh: int, max_level_dataset: int) -> None:
         self.grid_filename = grid_filename
         self.multi_mesh, self.cell_grid = get_icon_mesh_and_grid(
-            iverbosity=1,
             grid_file=self.grid_filename,
             max_level_multimesh=max_level_multimesh,
             max_level_dataset=max_level_dataset,
