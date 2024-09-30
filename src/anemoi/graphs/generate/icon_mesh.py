@@ -264,7 +264,7 @@ class ICONMultiMesh(GeneralGraph):
         vertex_glb2loc = np.zeros(num_vertices, dtype=int)
         vertex_glb2loc[vertex_idx] = np.arange(vertex_idx.sum())
         return (
-            [vertex_glb2loc[M] for M in edge_vertices[: self.max_level + 1]],
+            [vertex_glb2loc[vertices] for vertices in edge_vertices[: self.max_level + 1]],
             # cell_vertices: preserve negative indices (incomplete cells)
             np.where(cell_vertices >= 0, vertex_glb2loc[cell_vertices], cell_vertices),
             vlon[vertex_idx],
