@@ -471,9 +471,9 @@ def get_edge_attributes(
     theta_phi = np.fliplr(phi_theta)
     theta_phi[:, 1] *= -1.0  # angles = [theta, -phi]
     # rotation matrix:
-    R = scipy.spatial.transform.Rotation.from_euler(seq="YZ", angles=theta_phi)
+    rotation = scipy.spatial.transform.Rotation.from_euler(seq="YZ", angles=theta_phi)
     edge_length = np.array([arc_length(cc_recv, cc_send)])
-    distance = R.apply(cc_send) - [1.0, 0.0, 0.0]  # subtract the rotated position of sender
+    distance = rotation.apply(cc_send) - [1.0, 0.0, 0.0]  # subtract the rotated position of sender
     return np.concatenate((edge_length.transpose(), distance), axis=1)
 
 
