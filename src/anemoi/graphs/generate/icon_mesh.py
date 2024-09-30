@@ -36,7 +36,7 @@ class NodeSet:
         self.id = next(self.id_iter)
 
     @property
-    def num_verts(self) -> int:
+    def num_vertices(self) -> int:
         return self.gc_vertices.shape[0]
 
     @cached_property
@@ -93,8 +93,8 @@ class GeneralGraph:
             self.edge_vertices = edge_vertices
 
     @property
-    def num_verts(self) -> int:
-        return self.nodeset.num_verts
+    def num_vertices(self) -> int:
+        return self.nodeset.num_vertices
 
     @property
     def num_edges(self) -> int:
@@ -164,7 +164,7 @@ class BipartiteGraph:
         if not self.nodeset[1] == other.nodeset[1]:
             raise ValueError("Only bipartite graphs with common target node set can be merged.")
         shifted_edge_vertices = other.edge_vertices
-        shifted_edge_vertices[:, 0] += self.nodeset[0].num_verts
+        shifted_edge_vertices[:, 0] += self.nodeset[0].num_vertices
         # (Optional:) merge one-hot-encoded categorical data (`edge_id`)
         if None not in (self.edge_id, other.edge_id):
             edge_id = self.edge_id + other.edge_id
@@ -214,10 +214,10 @@ class ICONMultiMesh(GeneralGraph):
             vlon = read_coordinate_array(ncfile, "vlon", "vertex")
             vlat = read_coordinate_array(ncfile, "vlat", "vertex")
 
-            edge_verts_fine = np.asarray(ncfile.variables["edge_vertices"][:] - 1, dtype=np.int64).transpose()
+            edge_vertices_fine = np.asarray(ncfile.variables["edge_vertices"][:] - 1, dtype=np.int64).transpose()
             assert ncfile.variables["edge_vertices"].dimensions == ("nc", "edge")
 
-            cell_verts_fine = np.asarray(ncfile.variables["vertex_of_cell"][:] - 1, dtype=np.int64).transpose()
+            cell_vertices_fine = np.asarray(ncfile.variables["vertex_of_cell"][:] - 1, dtype=np.int64).transpose()
             assert ncfile.variables["vertex_of_cell"].dimensions == ("nv", "cell")
 
             reflvl_vertex = ncfile.variables["refinement_level_v"][:]
@@ -232,8 +232,8 @@ class ICONMultiMesh(GeneralGraph):
 
         # generate edge-vertex relations for coarser levels:
         (edge_vertices, cell_vertices) = self._get_hierarchy_of_icon_edge_graphs(
-            edge_verts_fine=edge_verts_fine,
-            cell_verts_fine=cell_verts_fine,
+            edge_vertices_fine=edge_vertices_fine,
+            cell_vertices_fine=cell_vertices_fine,
             reflvl_vertex=reflvl_vertex,
             iverbosity=iverbosity,
         )
@@ -259,9 +259,9 @@ class ICONMultiMesh(GeneralGraph):
     ) -> tuple[list[np.ndarray], np.ndarray, np.ndarray, np.ndarray]:
         """Creates a new mesh with only the vertices at the desired level."""
 
-        num_verts = reflvl_vertex.shape[0]
+        num_vertices = reflvl_vertex.shape[0]
         vertex_idx = reflvl_vertex <= self.max_level
-        vertex_glb2loc = np.zeros(num_verts, dtype=int)
+        vertex_glb2loc = np.zeros(num_vertices, dtype=int)
         vertex_glb2loc[vertex_idx] = np.arange(vertex_idx.sum())
         return (
             [vertex_glb2loc[M] for M in edge_vertices[: self.max_level + 1]],
@@ -272,21 +272,25 @@ class ICONMultiMesh(GeneralGraph):
         )
 
     def _get_hierarchy_of_icon_edge_graphs(
-        self, edge_verts_fine: np.ndarray, cell_verts_fine: np.ndarray, reflvl_vertex: np.ndarray, iverbosity: int = 1
+        self,
+        edge_vertices_fine: np.ndarray,
+        cell_vertices_fine: np.ndarray,
+        reflvl_vertex: np.ndarray,
+        iverbosity: int = 1,
     ) -> tuple[list[np.ndarray], np.ndarray]:
         """Returns a list of edge-vertex relations (coarsest to finest level)."""
 
-        edge_vertices = [edge_verts_fine]  # list of edge-vertex relations (coarsest to finest level).
+        edge_vertices = [edge_vertices_fine]  # list of edge-vertex relations (coarsest to finest level).
 
-        num_verts = reflvl_vertex.shape[0]
+        num_vertices = reflvl_vertex.shape[0]
         # edge-to-vertex adjacency matrix with 2 non-zero entries per row:
-        e2v_matrix = convert_list_to_adjacency_matrix(edge_verts_fine, num_verts)
+        e2v_matrix = convert_list_to_adjacency_matrix(edge_vertices_fine, num_vertices)
         # cell-to-vertex adjacency matrix with 3 non-zero entries per row:
-        c2v_matrix = convert_list_to_adjacency_matrix(cell_verts_fine, num_verts)
+        c2v_matrix = convert_list_to_adjacency_matrix(cell_vertices_fine, num_vertices)
         v2v_matrix = e2v_matrix.transpose() * e2v_matrix
-        v2v_matrix.setdiag(np.ones(num_verts))  # vertices are self-connected
+        v2v_matrix.setdiag(np.ones(num_vertices))  # vertices are self-connected
 
-        s_v_coarse = scipy.sparse.diags(np.ones(num_verts), dtype=bool)
+        s_v_coarse = scipy.sparse.diags(np.ones(num_vertices), dtype=bool)
 
         # coarsen edge-vertex list from level `ilevel -> ilevel - 1`:
         for ilevel in reversed(range(1, reflvl_vertex.max() + 1)):
@@ -306,7 +310,7 @@ class ICONMultiMesh(GeneralGraph):
             # define vertex selection matrix selecting only vertices of
             # level `ilevel`:
             idx_v_fine = np.argwhere(reflvl_vertex == ilevel).flatten()
-            s_v_fine = selection_matrix(idx_v_fine, num_verts)
+            s_v_fine = selection_matrix(idx_v_fine, num_vertices)
             # define vertex selection matrix, selecting only vertices of
             # level < `ilevel`, by successively removing `s_fine` from an identity matrix.
             s_v_coarse.data[0][idx_v_fine] = False
@@ -321,18 +325,18 @@ class ICONMultiMesh(GeneralGraph):
             v2v_fine2coarse = s_v2v * v2v_fine2coarse
 
             # then construct the edges-to-parent-vertex adjacency matrix:
-            parent_edge_verts = s_edges * e2v_matrix * v2v_fine2coarse
+            parent_edge_vertices = s_edges * e2v_matrix * v2v_fine2coarse
             # again, we have might have selected edges within
             # `s_edges` which are part of an incomplete parent edge
             # (LAM case). We filter these here:
-            csum = parent_edge_verts * np.ones((parent_edge_verts.shape[1], 1))
-            s_e2e = selection_matrix(np.argwhere(csum == 2).flatten(), parent_edge_verts.shape[0])
-            parent_edge_verts = s_e2e * parent_edge_verts
+            csum = parent_edge_vertices * np.ones((parent_edge_vertices.shape[1], 1))
+            s_e2e = selection_matrix(np.argwhere(csum == 2).flatten(), parent_edge_vertices.shape[0])
+            parent_edge_vertices = s_e2e * parent_edge_vertices
 
             # note: the edges-vertex adjacency matrix still has duplicate
             # rows, since two child edges have the same parent edge.
-            edge_verts_coarse = convert_adjacency_matrix_to_list(parent_edge_verts, ncols_per_row=2)
-            edge_vertices.insert(0, edge_verts_coarse)
+            edge_vertices_coarse = convert_adjacency_matrix_to_list(parent_edge_vertices, ncols_per_row=2)
+            edge_vertices.insert(0, edge_vertices_coarse)
 
             # store cell-to-vert adjacency matrix
             if ilevel > self.max_level:
@@ -346,7 +350,7 @@ class ICONMultiMesh(GeneralGraph):
             # replace edge-to-vertex and vert-to-vert adjacency matrices (for next level):
             if ilevel > 1:
                 v2v_matrix = s_v_coarse * v2v_matrix * v2v_fine2coarse
-                e2v_matrix = convert_list_to_adjacency_matrix(edge_verts_coarse, num_verts)
+                e2v_matrix = convert_list_to_adjacency_matrix(edge_vertices_coarse, num_vertices)
 
         # Fine-level cells outside of multi-mesh (LAM boundary)
         # correspond to empty rows in the adjacency matrix. We
@@ -415,8 +419,8 @@ class ICONCellDataGrid(BipartiteGraph):
         """
 
         num_cells = select_c.shape[0]
-        num_verts_per_cell = multi_mesh.cell_vertices.shape[1]
-        src_list = np.kron(np.arange(num_cells), np.ones((1, num_verts_per_cell), dtype=np.int64)).flatten()
+        num_vertices_per_cell = multi_mesh.cell_vertices.shape[1]
+        src_list = np.kron(np.arange(num_cells), np.ones((1, num_vertices_per_cell), dtype=np.int64)).flatten()
         dst_list = multi_mesh.cell_vertices[select_c[:, 0], :].flatten()
         edge_vertices = np.stack((src_list, dst_list), axis=1, dtype=np.int64)
         return edge_vertices
