@@ -9,6 +9,7 @@
 
 import itertools
 import logging
+import uuid
 from dataclasses import dataclass
 from functools import cached_property
 from typing import Optional
@@ -33,7 +34,7 @@ class NodeSet:
 
     def __init__(self, lon: np.ndarray, lat: np.ndarray):
         self.gc_vertices = np.column_stack((lon, lat))
-        self.id = next(self.id_iter)
+        self.id = uuid.uuid4()
 
     @property
     def num_vertices(self) -> int:
