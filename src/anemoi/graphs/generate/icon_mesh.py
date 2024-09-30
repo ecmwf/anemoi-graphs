@@ -290,8 +290,8 @@ class ICONMultiMesh(GeneralGraph):
             #
             # get a boolean mask, matching all edges where one of its vertices
             # has refinement level index `ilevel`:
-            ref_level = reflvl_vertex[edge_vertices[0]] == ilevel
-            edges_coarse = np.logical_xor(ref_level[:, 0], ref_level[:, 1])  # = bisected coarse edges
+            ref_level_mask = reflvl_vertex[edge_vertices[0]] == ilevel
+            edges_coarse = np.logical_xor(ref_level_mask[:, 0], ref_level_mask[:, 1])  # = bisected coarse edges
             idx_e2e = np.argwhere(edges_coarse).flatten()
             s_edges = selection_matrix(idx_e2e, edges_coarse.shape[0])
 
