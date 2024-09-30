@@ -304,8 +304,8 @@ class ICONNodes(BaseNodeBuilder):
         return super().register_attributes(graph, config)
 
 
-class ICONMultimeshNodes(BaseNodeBuilder):
-    """Processor mesh based on an ICON grid.
+class ICONTopologicalBaseNodeBuilder(BaseNodeBuilder):
+    """Base class for data mesh or processor mesh based on an ICON grid.
 
     Parameters
     ----------
@@ -321,35 +321,30 @@ class ICONMultimeshNodes(BaseNodeBuilder):
 
     def update_graph(self, graph: HeteroData, attr_config: DotDict | None = None) -> HeteroData:
         """Update the graph with new nodes."""
-        self.multi_mesh = graph[self.icon_mesh]["_multi_mesh"]
+        self.icon_sub_graph = graph[self.icon_mesh][self.sub_graph_address]
         return super().update_graph(graph, attr_config)
 
-    def get_coordinates(self) -> torch.Tensor:
-        return torch.from_numpy(self.multi_mesh.nodeset.gc_vertices.astype(np.float32)).fliplr()
 
-
-class ICONCellGridNodes(BaseNodeBuilder):
-    """Data mesh based on an ICON grid.
-
-    Parameters
-    ----------
-    name : str
-        key for the nodes in the HeteroData graph object.
-    icon_mesh : str
-        key corresponding to the ICON mesh (cells and vertices).
-    """
+class ICONMultimeshNodes(ICONTopologicalBaseNodeBuilder):
+    """Processor mesh based on an ICON grid."""
 
     def __init__(self, name: str, icon_mesh: str) -> None:
-        self.icon_mesh = icon_mesh
-        super().__init__(name)
-
-    def update_graph(self, graph: HeteroData, attr_config: DotDict | None = None) -> HeteroData:
-        """Update the graph with new nodes."""
-        self.cell_grid = graph[self.icon_mesh]["_cell_grid"]
-        return super().update_graph(graph, attr_config)
+        self.sub_graph_address = "_multi_mesh"
+        super().__init__(name, icon_mesh)
 
     def get_coordinates(self) -> torch.Tensor:
-        return torch.from_numpy(self.cell_grid.nodeset[0].gc_vertices.astype(np.float32)).fliplr()
+        return torch.from_numpy(self.icon_sub_graph.nodeset.gc_vertices.astype(np.float32)).fliplr()
+
+
+class ICONCellGridNodes(ICONTopologicalBaseNodeBuilder):
+    """Data mesh based on an ICON grid."""
+
+    def __init__(self, name: str, icon_mesh: str) -> None:
+        self.sub_graph_address = "_cell_grid"
+        super().__init__(name, icon_mesh)
+
+    def get_coordinates(self) -> torch.Tensor:
+        return torch.from_numpy(self.icon_sub_graph.nodeset[0].gc_vertices.astype(np.float32)).fliplr()
 
 
 class HEALPixNodes(BaseNodeBuilder):

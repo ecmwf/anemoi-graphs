@@ -353,8 +353,8 @@ class MultiScaleEdges(BaseEdgeBuilder):
         return super().update_graph(graph, attrs_config)
 
 
-class ICONTopologicalProcessorEdges(BaseEdgeBuilder):
-    """Computes edges based on ICON grid topology.
+class ICONTopologicalBaseEdgeBuilder(BaseEdgeBuilder):
+    """Base class for computing edges based on ICON grid topology.
 
     Attributes
     ----------
@@ -372,7 +372,7 @@ class ICONTopologicalProcessorEdges(BaseEdgeBuilder):
 
     def update_graph(self, graph: HeteroData, attrs_config: DotDict = None) -> HeteroData:
         """Update the graph with the edges."""
-        self.multi_mesh = graph[self.icon_mesh]["_multi_mesh"]
+        self.icon_sub_graph = graph[self.icon_mesh][self.sub_graph_address]
         return super().update_graph(graph, attrs_config)
 
     def get_adjacency_matrix(self, source_nodes: NodeStorage, target_nodes: NodeStorage):
@@ -384,84 +384,49 @@ class ICONTopologicalProcessorEdges(BaseEdgeBuilder):
             The target nodes.
         """
         LOGGER.info(f"Using ICON topology {self.source_name}>{self.target_name}")
-        nrows = self.multi_mesh.num_edges
+        nrows = self.icon_sub_graph.num_edges
         adj_matrix = scipy.sparse.coo_matrix(
-            (np.ones(nrows), (self.multi_mesh.edge_vertices[:, 1], self.multi_mesh.edge_vertices[:, 0]))
+            (
+                np.ones(nrows),
+                (
+                    self.icon_sub_graph.edge_vertices[:, self.vertex_index[0]],
+                    self.icon_sub_graph.edge_vertices[:, self.vertex_index[1]],
+                ),
+            )
         )
         return adj_matrix
 
 
-class ICONTopologicalEncoderEdges(BaseEdgeBuilder):
-    """Computes edges based on ICON grid topology.
-
-    Attributes
-    ----------
-    source_name : str
-        The name of the source nodes.
-    target_name : str
-        The name of the target nodes.
-    icon_mesh   : str
-        The name of the ICON mesh (defines both the processor mesh and the data)
+class ICONTopologicalProcessorEdges(ICONTopologicalBaseEdgeBuilder):
+    """Computes edges based on ICON grid topology: processor grid built
+    from ICON grid vertices.
     """
 
     def __init__(self, source_name: str, target_name: str, icon_mesh: str):
-        self.icon_mesh = icon_mesh
-        super().__init__(source_name, target_name)
-
-    def update_graph(self, graph: HeteroData, attrs_config: DotDict = None) -> HeteroData:
-        """Update the graph with the edges."""
-        self.cell_data_grid = graph[self.icon_mesh]["_cell_grid"]
-        return super().update_graph(graph, attrs_config)
-
-    def get_adjacency_matrix(self, source_nodes: NodeStorage, target_nodes: NodeStorage):
-        """Parameters
-        ----------
-        source_nodes : NodeStorage
-            The source nodes.
-        target_nodes : NodeStorage
-            The target nodes.
-        """
-        LOGGER.info(f"Using ICON topology {self.source_name}>{self.target_name}")
-        nrows = self.cell_data_grid.num_edges
-        adj_matrix = scipy.sparse.coo_matrix(
-            (np.ones(nrows), (self.cell_data_grid.edge_vertices[:, 1], self.cell_data_grid.edge_vertices[:, 0]))
-        )
-        return adj_matrix
+        self.sub_graph_address = "_multi_mesh"
+        self.vertex_index = (1, 0)
+        super().__init__(source_name, target_name, icon_mesh)
 
 
-class ICONTopologicalDecoderEdges(BaseEdgeBuilder):
-    """Computes edges based on ICON grid topology.
-
-    Attributes
-    ----------
-    source_name : str
-        The name of the source nodes.
-    target_name : str
-        The name of the target nodes.
-    icon_mesh   : str
-        The name of the ICON mesh (defines both the processor mesh and the data)
+class ICONTopologicalEncoderEdges(ICONTopologicalBaseEdgeBuilder):
+    """Computes encoder edges based on ICON grid topology: ICON cell
+    circumcenters for mapped onto processor grid built from ICON grid
+    vertices.
     """
 
     def __init__(self, source_name: str, target_name: str, icon_mesh: str):
-        self.icon_mesh = icon_mesh
-        super().__init__(source_name, target_name)
+        self.sub_graph_address = "_cell_grid"
+        self.vertex_index = (1, 0)
+        super().__init__(source_name, target_name, icon_mesh)
 
-    def update_graph(self, graph: HeteroData, attrs_config: DotDict = None) -> HeteroData:
-        """Update the graph with the edges."""
-        self.cell_data_grid = graph[self.icon_mesh]["_cell_grid"]
-        return super().update_graph(graph, attrs_config)
 
-    def get_adjacency_matrix(self, source_nodes: NodeStorage, target_nodes: NodeStorage):
-        """Parameters
-        ----------
-        source_nodes : NodeStorage
-            The source nodes.
-        target_nodes : NodeStorage
-            The target nodes.
-        """
-        LOGGER.info(f"Using ICON topology {self.source_name}>{self.target_name}")
-        nrows = self.cell_data_grid.num_edges
-        adj_matrix = scipy.sparse.coo_matrix(
-            (np.ones(nrows), (self.cell_data_grid.edge_vertices[:, 0], self.cell_data_grid.edge_vertices[:, 1]))
-        )
-        return adj_matrix
+class ICONTopologicalDecoderEdges(ICONTopologicalBaseEdgeBuilder):
+    """Computes encoder edges based on ICON grid topology: mapping from
+    processor grid built from ICON grid vertices onto ICON cell
+    circumcenters.
+    """
+
+    def __init__(self, source_name: str, target_name: str, icon_mesh: str):
+        self.sub_graph_address = "_cell_grid"
+        self.vertex_index = (0, 1)
+        super().__init__(source_name, target_name, icon_mesh)
