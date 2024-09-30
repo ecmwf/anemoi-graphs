@@ -220,10 +220,7 @@ class ICONMultiMesh(GeneralGraph):
 
             self.uuidOfHGrid = ncfile.uuidOfHGrid
 
-        if max_level is not None:
-            self.max_level = max_level
-        else:
-            self.max_level = reflvl_vertex.max()
+        self.max_level = max_level if max_level is not None else reflvl_vertex.max()
 
         # generate edge-vertex relations for coarser levels:
         (edge_vertices, cell_vertices) = self._get_hierarchy_of_icon_edge_graphs(
