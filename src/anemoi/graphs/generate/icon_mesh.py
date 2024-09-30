@@ -545,9 +545,9 @@ def convert_adjacency_matrix_to_list(
         nrows = int(adj_matrix.nnz // ncols_per_row)
         mat = adj_matrix.indices.reshape((nrows, ncols_per_row))
         return np.unique(mat, axis=0)
-    else:
-        nrows = adj_matrix.shape[0]
-        return adj_matrix.indices.reshape((nrows, ncols_per_row))
+
+    nrows = adj_matrix.shape[0]
+    return adj_matrix.indices.reshape((nrows, ncols_per_row))
 
 
 @typechecked
