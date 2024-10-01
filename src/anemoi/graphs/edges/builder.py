@@ -84,8 +84,8 @@ class BaseEdgeBuilder(ABC):
         """
         for attr_name, attr_config in config.items():
             edge_index = graph[self.name].edge_index
-            source_coords = graph[self.name[0]].x[edge_index[1]]
-            target_coords = graph[self.name[2]].x[edge_index[0]]
+            source_coords = graph[self.name[0]].x[edge_index[0]]
+            target_coords = graph[self.name[2]].x[edge_index[1]]
             edge_builder = instantiate(attr_config)
             graph[self.name][attr_name] = edge_builder(x=(source_coords, target_coords), edge_index=edge_index)
         return graph
@@ -176,6 +176,7 @@ class KNNEdges(BaseEdgeBuilder):
             latlon_rad_to_cartesian_torch(target_nodes.x),
             k=self.num_nearest_neighbours,
         )
+        edge_idx = torch.flip(edge_idx, [0])
         return edge_idx
 
 
@@ -201,11 +202,14 @@ class CutOffEdges(BaseEdgeBuilder):
         Update the graph with the edges.
     """
 
-    def __init__(self, source_name: str, target_name: str, cutoff_factor: float):
+    def __init__(self, source_name: str, target_name: str, cutoff_factor: float, max_num_neighbours: int = 32):
         super().__init__(source_name, target_name)
         assert isinstance(cutoff_factor, (int, float)), "Cutoff factor must be a float"
+        assert isinstance(max_num_neighbours, int), "Number of nearest neighbours must be an integer"
         assert cutoff_factor > 0, "Cutoff factor must be positive"
+        assert max_num_neighbours > 0, "Number of nearest neighbours must be positive"
         self.cutoff_factor = cutoff_factor
+        self.max_num_neighbours = max_num_neighbours
 
     def get_cutoff_radius(self, graph: HeteroData, mask_attr: torch.Tensor | None = None):
         """Compute the cut-off radius.
@@ -259,8 +263,12 @@ class CutOffEdges(BaseEdgeBuilder):
         )
 
         edge_idx = radius(
-            latlon_rad_to_cartesian_torch(source_nodes.x), latlon_rad_to_cartesian_torch(target_nodes.x), r=self.radius
+            latlon_rad_to_cartesian_torch(source_nodes.x),
+            latlon_rad_to_cartesian_torch(target_nodes.x),
+            r=self.radius,
+            max_num_neighbors=self.max_num_neighbours,
         )
+        edge_idx = torch.flip(edge_idx, [0])
         return edge_idx
 
 
