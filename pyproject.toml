@@ -59,6 +59,7 @@ dependencies = [
   "networkx>=3.1",
   "plotly>=5.19",
   "torch>=2.2",
+  "torch-cluster>=1.5.9",
   "torch-geometric>=2.3.1,<2.5",
   "trimesh>=4.1",
 ]
