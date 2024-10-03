@@ -19,6 +19,8 @@ Keep it human-readable, your future self will thank you!
 
 ### Changed
 - ci: small fixes and updates pre-commit, downsteam-ci (#49)
+- feat: Implementing KNNEdges and CutOffEdges with torch-cluster (#54)
+- feat: Migrate edge attributes to inherit from MessagePassing (#54)
 
 ## [0.3.0 Anemoi-graphs, minor release](https://github.com/ecmwf/anemoi-graphs/compare/0.2.1...0.3.0) - 2024-09-03
 

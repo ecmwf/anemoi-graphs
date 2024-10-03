@@ -8,32 +8,9 @@ from torch_geometric.typing import Adj
 from torch_geometric.typing import PairTensor
 from torch_geometric.typing import Size
 
+from anemoi.graphs.utils import haversine_distance_torch
+
 LOGGER = logging.getLogger(__name__)
-
-
-def haversine_distance_torch(source_coords: torch.Tensor, target_coords: torch.Tensor) -> torch.Tensor:
-    """Haversine distance.
-
-    Parameters
-    ----------
-    source_coords : torch.Tensor of shape (N, 2)
-        Source coordinates in radians.
-    target_coords : torch.Tensor of shape (N, 2)
-        Destination coordinates in radians.
-
-    Returns
-    -------
-    torch.Tensor of shape (N,)
-        Haversine distance between source and destination coordinates.
-    """
-    dlat = target_coords[:, 0] - source_coords[:, 0]
-    dlon = target_coords[:, 1] - source_coords[:, 1]
-    a = (
-        torch.sin(dlat / 2) ** 2
-        + torch.cos(source_coords[:, 0]) * torch.cos(target_coords[:, 0]) * torch.sin(dlon / 2) ** 2
-    )
-    c = 2 * torch.atan2(torch.sqrt(a), torch.sqrt(1 - a))
-    return c
 
 
 class EdgeAttributeBuilderMixin:
