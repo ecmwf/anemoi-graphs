@@ -10,17 +10,20 @@ import numpy as np
 import torch
 from anemoi.utils.config import DotDict
 from hydra.utils import instantiate
+from scipy.sparse import coo_matrix
 from torch_geometric.data import HeteroData
 from torch_geometric.data.storage import NodeStorage
 from torch_geometric.nn import knn
 from torch_geometric.nn import radius
 
 from anemoi.graphs import EARTH_RADIUS
-from anemoi.graphs.generate import hexagonal
-from anemoi.graphs.generate import icosahedral
+from anemoi.graphs.generate import hex_icosahedron
+from anemoi.graphs.generate import tri_icosahedron
 from anemoi.graphs.generate.transforms import latlon_rad_to_cartesian_torch
-from anemoi.graphs.nodes.builder import HexNodes
-from anemoi.graphs.nodes.builder import TriNodes
+from anemoi.graphs.nodes.builders.from_refined_icosahedron import HexNodes
+from anemoi.graphs.nodes.builders.from_refined_icosahedron import LimitedAreaHexNodes
+from anemoi.graphs.nodes.builders.from_refined_icosahedron import LimitedAreaTriNodes
+from anemoi.graphs.nodes.builders.from_refined_icosahedron import TriNodes
 from anemoi.graphs.utils import get_grid_reference_distance
 
 LOGGER = logging.getLogger(__name__)
@@ -29,9 +32,17 @@ LOGGER = logging.getLogger(__name__)
 class BaseEdgeBuilder(ABC):
     """Base class for edge builders."""
 
-    def __init__(self, source_name: str, target_name: str):
+    def __init__(
+        self,
+        source_name: str,
+        target_name: str,
+        source_mask_attr_name: str | None = None,
+        target_mask_attr_name: str | None = None,
+    ):
         self.source_name = source_name
         self.target_name = target_name
+        self.source_mask_attr_name = source_mask_attr_name
+        self.target_mask_attr_name = target_mask_attr_name
 
     @property
     def name(self) -> tuple[str, str, str]:
@@ -110,18 +121,48 @@ class BaseEdgeBuilder(ABC):
         t1 = time.time()
         LOGGER.info("Time to register edge indices (%s): %.2f s", self.__class__.__name__, t1 - t0)
 
-        if attrs_config is None:
-            return graph
-
-        t0 = time.time()
-        graph = self.register_attributes(graph, attrs_config)
-        t1 = time.time()
-        LOGGER.info("Time to register edge attributes (%s): %.2f s", self.__class__.__name__, t1 - t0)
+        if attrs_config is not None:
+            graph = self.register_attributes(graph, attrs_config)
 
         return graph
 
 
-class KNNEdges(BaseEdgeBuilder):
+class NodeMaskingMixin:
+    """Mixin class for masking source/target nodes when building edges."""
+
+    def get_node_coordinates(
+        self, source_nodes: NodeStorage, target_nodes: NodeStorage
+    ) -> tuple[np.ndarray, np.ndarray]:
+        """Get the node coordinates."""
+        source_coords, target_coords = source_nodes.x.numpy(), target_nodes.x.numpy()
+
+        if self.source_mask_attr_name is not None:
+            source_coords = source_coords[source_nodes[self.source_mask_attr_name].squeeze()]
+
+        if self.target_mask_attr_name is not None:
+            target_coords = target_coords[target_nodes[self.target_mask_attr_name].squeeze()]
+
+        return source_coords, target_coords
+
+    def undo_masking(self, adj_matrix, source_nodes: NodeStorage, target_nodes: NodeStorage):
+        if self.target_mask_attr_name is not None:
+            target_mask = target_nodes[self.target_mask_attr_name].squeeze()
+            target_mapper = dict(zip(list(range(len(adj_matrix.row))), np.where(target_mask)[0]))
+            adj_matrix.row = np.vectorize(target_mapper.get)(adj_matrix.row)
+
+        if self.source_mask_attr_name is not None:
+            source_mask = source_nodes[self.source_mask_attr_name].squeeze()
+            source_mapper = dict(zip(list(range(len(adj_matrix.col))), np.where(source_mask)[0]))
+            adj_matrix.col = np.vectorize(source_mapper.get)(adj_matrix.col)
+
+        if self.source_mask_attr_name is not None or self.target_mask_attr_name is not None:
+            true_shape = target_nodes.x.shape[0], source_nodes.x.shape[0]
+            adj_matrix = coo_matrix((adj_matrix.data, (adj_matrix.row, adj_matrix.col)), shape=true_shape)
+
+        return adj_matrix
+
+
+class KNNEdges(BaseEdgeBuilder, NodeMaskingMixin):
     """Computes KNN based edges and adds them to the graph.
 
     Attributes
@@ -132,6 +173,10 @@ class KNNEdges(BaseEdgeBuilder):
         The name of the target nodes.
     num_nearest_neighbours : int
         Number of nearest neighbours.
+    source_mask_attr_name : str | None
+        The name of the source mask attribute to filter edge connections.
+    target_mask_attr_name : str | None
+        The name of the target mask attribute to filter edge connections.
 
     Methods
     -------
@@ -143,8 +188,15 @@ class KNNEdges(BaseEdgeBuilder):
         Update the graph with the edges.
     """
 
-    def __init__(self, source_name: str, target_name: str, num_nearest_neighbours: int):
-        super().__init__(source_name, target_name)
+    def __init__(
+        self,
+        source_name: str,
+        target_name: str,
+        num_nearest_neighbours: int,
+        source_mask_attr_name: str | None = None,
+        target_mask_attr_name: str | None = None,
+    ):
+        super().__init__(source_name, target_name, source_mask_attr_name, target_mask_attr_name)
         assert isinstance(num_nearest_neighbours, int), "Number of nearest neighbours must be an integer"
         assert num_nearest_neighbours > 0, "Number of nearest neighbours must be positive"
         self.num_nearest_neighbours = num_nearest_neighbours
@@ -180,7 +232,7 @@ class KNNEdges(BaseEdgeBuilder):
         return edge_idx
 
 
-class CutOffEdges(BaseEdgeBuilder):
+class CutOffEdges(BaseEdgeBuilder, NodeMaskingMixin):
     """Computes cut-off based edges and adds them to the graph.
 
     Attributes
@@ -191,6 +243,10 @@ class CutOffEdges(BaseEdgeBuilder):
         The name of the target nodes.
     cutoff_factor : float
         Factor to multiply the grid reference distance to get the cut-off radius.
+    source_mask_attr_name : str | None
+        The name of the source mask attribute to filter edge connections.
+    target_mask_attr_name : str | None
+        The name of the target mask attribute to filter edge connections.
 
     Methods
     -------
@@ -202,8 +258,16 @@ class CutOffEdges(BaseEdgeBuilder):
         Update the graph with the edges.
     """
 
-    def __init__(self, source_name: str, target_name: str, cutoff_factor: float, max_num_neighbours: int = 32):
-        super().__init__(source_name, target_name)
+    def __init__(
+        self,
+        source_name: str,
+        target_name: str,
+        cutoff_factor: float,
+        source_mask_attr_name: str | None = None,
+        target_mask_attr_name: str | None = None,
+        max_num_neighbours: int = 32,
+    ) -> None:
+        super().__init__(source_name, target_name, source_mask_attr_name, target_mask_attr_name)
         assert isinstance(cutoff_factor, (int, float)), "Cutoff factor must be a float"
         assert isinstance(max_num_neighbours, int), "Number of nearest neighbours must be an integer"
         assert cutoff_factor > 0, "Cutoff factor must be positive"
@@ -211,7 +275,7 @@ class CutOffEdges(BaseEdgeBuilder):
         self.cutoff_factor = cutoff_factor
         self.max_num_neighbours = max_num_neighbours
 
-    def get_cutoff_radius(self, graph: HeteroData, mask_attr: torch.Tensor | None = None):
+    def get_cutoff_radius(self, graph: HeteroData, mask_attr: torch.Tensor | None = None) -> float:
         """Compute the cut-off radius.
 
         The cut-off radius is computed as the product of the target nodes
@@ -245,7 +309,7 @@ class CutOffEdges(BaseEdgeBuilder):
         self.radius = self.get_cutoff_radius(graph)
         return super().prepare_node_data(graph)
 
-    def compute_edge_index(self, source_nodes: NodeStorage, target_nodes: NodeStorage):
+    def compute_edge_index(self, source_nodes: NodeStorage, target_nodes: NodeStorage) -> torch.Tensor:
         """Get the adjacency matrix for the cut-off method.
 
         Parameters
@@ -254,6 +318,11 @@ class CutOffEdges(BaseEdgeBuilder):
             The source nodes.
         target_nodes : NodeStorage
             The target nodes.
+
+        Returns
+        -------
+        torch.Tensor of shape (2, num_edges)
+            The adjacency matrix.
         """
         LOGGER.info(
             "Using CutOff-Edges (with radius = %.1f km) between %s and %s.",
@@ -295,64 +364,55 @@ class MultiScaleEdges(BaseEdgeBuilder):
         Update the graph with the edges.
     """
 
-    def __init__(self, source_name: str, target_name: str, x_hops: int):
+    VALID_NODES = [TriNodes, HexNodes, LimitedAreaTriNodes, LimitedAreaHexNodes]
+
+    def __init__(self, source_name: str, target_name: str, x_hops: int, **kwargs):
         super().__init__(source_name, target_name)
         assert source_name == target_name, f"{self.__class__.__name__} requires source and target nodes to be the same."
         assert isinstance(x_hops, int), "Number of x_hops must be an integer"
         assert x_hops > 0, "Number of x_hops must be positive"
         self.x_hops = x_hops
+        self.node_type = None
 
-    def adjacency_from_tri_nodes(self, source_nodes: NodeStorage):
-        source_nodes["_nx_graph"] = icosahedral.add_edges_to_nx_graph(
-            source_nodes["_nx_graph"],
-            resolutions=source_nodes["_resolutions"],
+    def add_edges_from_tri_nodes(self, nodes: NodeStorage) -> NodeStorage:
+        nodes["_nx_graph"] = tri_icosahedron.add_edges_to_nx_graph(
+            nodes["_nx_graph"],
+            resolutions=nodes["_resolutions"],
             x_hops=self.x_hops,
-        )  # HeteroData refuses to accept None
-
-        adjmat = nx.to_scipy_sparse_array(
-            source_nodes["_nx_graph"], nodelist=list(range(len(source_nodes["_nx_graph"]))), format="coo"
+            area_mask_builder=nodes.get("_area_mask_builder", None),
         )
-        return adjmat
 
-    def adjacency_from_hex_nodes(self, source_nodes: NodeStorage):
+        return nodes
 
-        source_nodes["_nx_graph"] = hexagonal.add_edges_to_nx_graph(
-            source_nodes["_nx_graph"],
-            resolutions=source_nodes["_resolutions"],
+    def add_edges_from_hex_nodes(self, nodes: NodeStorage) -> NodeStorage:
+        nodes["_nx_graph"] = hex_icosahedron.add_edges_to_nx_graph(
+            nodes["_nx_graph"],
+            resolutions=nodes["_resolutions"],
             x_hops=self.x_hops,
         )
 
-        adjmat = nx.to_scipy_sparse_array(source_nodes["_nx_graph"], format="coo")
-        return adjmat
+        return nodes
 
     def compute_edge_index(self, source_nodes: NodeStorage, target_nodes: NodeStorage) -> torch.Tensor:
-        if self.node_type == TriNodes.__name__:
-            adjmat = self.adjacency_from_tri_nodes(source_nodes)
-        elif self.node_type == HexNodes.__name__:
-            adjmat = self.adjacency_from_hex_nodes(source_nodes)
+        if self.node_type in [TriNodes.__name__, LimitedAreaTriNodes.__name__]:
+            source_nodes = self.add_edges_from_tri_nodes(source_nodes)
+        elif self.node_type in [HexNodes.__name__, LimitedAreaHexNodes.__name__]:
+            source_nodes = self.add_edges_from_hex_nodes(source_nodes)
         else:
             raise ValueError(f"Invalid node type {self.node_type}")
 
-        adjmat = self.post_process_adjmat(source_nodes, adjmat)
+        adjmat = nx.to_scipy_sparse_array(source_nodes["_nx_graph"], format="coo")
 
         # Get source & target indices of the edges
         edge_index = np.stack([adjmat.col, adjmat.row], axis=0)
 
         return torch.from_numpy(edge_index).to(torch.int32)
 
-    def post_process_adjmat(self, nodes: NodeStorage, adjmat):
-        graph_sorted = {node_pos: i for i, node_pos in enumerate(nodes["_node_ordering"])}
-        sort_func = np.vectorize(graph_sorted.get)
-        adjmat.row = sort_func(adjmat.row)
-        adjmat.col = sort_func(adjmat.col)
-        return adjmat
-
     def update_graph(self, graph: HeteroData, attrs_config: DotDict | None = None) -> HeteroData:
-        assert (
-            graph[self.source_name].node_type == TriNodes.__name__
-            or graph[self.source_name].node_type == HexNodes.__name__
-        ), f"{self.__class__.__name__} requires {TriNodes.__name__} or {HexNodes.__name__}."
-
         self.node_type = graph[self.source_name].node_type
+        valid_node_names = [n.__name__ for n in self.VALID_NODES]
+        assert (
+            self.node_type in valid_node_names
+        ), f"{self.__class__.__name__} requires {','.join(valid_node_names)} nodes."
 
         return super().update_graph(graph, attrs_config)
