@@ -112,8 +112,6 @@ def add_edges_to_nx_graph(
     depth_children : int
         The number of resolution levels to consider for the connections of children. Defaults to 1, which includes
         connections up to the next resolution level.
-    aoi_mask_builder : KNNAreaMaskBuilder
-        NearestNeighbors with the cloud of points to limit the mesh area, by default None.
 
     Returns
     -------
