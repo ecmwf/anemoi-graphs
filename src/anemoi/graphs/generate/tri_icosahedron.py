@@ -137,8 +137,7 @@ def get_neighbours_within_hops(
     x_hops : int
         Number of hops between 2 nodes to consider them neighbours.
     valid_nodes : list[int], optional
-        List of valid nodes to consider, by default None. It is useful to consider only a subset of the nodes to save
-        computation time.
+        The list of valid nodes to consider, by default None.
 
     Returns
     -------
@@ -176,7 +175,7 @@ def add_neigbours_edges(
         The graph.
     node_idx : int
         The node considered.
-    neighbours : list[int]
+    neighbour_indices : list[int]
         The neighbours of the node.
     self_loops : bool, optional
         Whether is supported to add self-loops, by default False.
