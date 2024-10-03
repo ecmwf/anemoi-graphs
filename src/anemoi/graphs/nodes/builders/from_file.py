@@ -88,18 +88,16 @@ class CutOutZarrDatasetNodes(ZarrDatasetNodes):
         forcing_area: list[float] | None = None,
         adjust: str = "all",
     ) -> None:
+        lam_config = {"dataset": lam_dataset, "thinning": thinning}
+        forcing_config = {"dataset": forcing_dataset}
+
+        # Add area argument to crop the boundary forcing
         if forcing_area is not None:
-            forcing_area = tuple(forcing_area)
+            forcing_config["area"] = tuple(forcing_area)
             assert len(forcing_area) == 4, "The forcing area must be a list of 4 elements (north, west, south, east)."
             LOGGER.info("Forcing dataset is cropped to area: %s", forcing_area)
 
-        dataset_config = {
-            "cutout": [
-                {"dataset": lam_dataset, "thinning": thinning},
-                {"dataset": forcing_dataset, "area": forcing_area},
-            ],
-            "adjust": adjust,
-        }
+        dataset_config = {"cutout": [lam_config, forcing_config], "adjust": adjust}
         super().__init__(dataset_config, name)
         self.n_cutout, self.n_other = self.dataset.grids
 
