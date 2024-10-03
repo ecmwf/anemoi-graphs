@@ -231,7 +231,7 @@ def add_neigbours_edges(
         The graph.
     node_idx : int
         The node considered.
-    neighbours : list[int]
+    neighbour_indices : list[int]
         The neighbours of the node.
     self_loops : bool, optional
         Whether is supported to add self-loops, by default False.

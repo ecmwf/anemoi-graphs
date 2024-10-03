@@ -34,6 +34,11 @@ class BaseNodeBuilder(ABC):
         ----------
         graph : HeteroData
             The graph to register the nodes.
+
+        Returns
+        -------
+        HeteroData
+            The graph with the registered nodes.
         """
         graph[self.name].x = self.get_coordinates()
         graph[self.name].node_type = type(self).__name__

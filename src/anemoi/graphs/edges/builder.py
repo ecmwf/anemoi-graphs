@@ -204,13 +204,13 @@ class KNNEdges(BaseEdgeBuilder, NodeMaskingMixin):
         num_nearest_neighbours: int,
         source_mask_attr_name: str | None = None,
         target_mask_attr_name: str | None = None,
-    ):
+    ) -> None:
         super().__init__(source_name, target_name, source_mask_attr_name, target_mask_attr_name)
         assert isinstance(num_nearest_neighbours, int), "Number of nearest neighbours must be an integer"
         assert num_nearest_neighbours > 0, "Number of nearest neighbours must be positive"
         self.num_nearest_neighbours = num_nearest_neighbours
 
-    def get_adjacency_matrix(self, source_nodes: NodeStorage, target_nodes: NodeStorage):
+    def get_adjacency_matrix(self, source_nodes: NodeStorage, target_nodes: NodeStorage) -> np.ndarray:
         """Compute the adjacency matrix for the KNN method.
 
         Parameters
@@ -219,6 +219,11 @@ class KNNEdges(BaseEdgeBuilder, NodeMaskingMixin):
             The source nodes.
         target_nodes : NodeStorage
             The target nodes.
+
+        Returns
+        -------
+        np.ndarray
+            The adjacency matrix.
         """
         source_coords, target_coords = self.get_node_coordinates(source_nodes, target_nodes)
         assert self.num_nearest_neighbours is not None, "number of neighbors required for knn encoder"
@@ -282,7 +287,7 @@ class CutOffEdges(BaseEdgeBuilder, NodeMaskingMixin):
         assert cutoff_factor > 0, "Cutoff factor must be positive"
         self.cutoff_factor = cutoff_factor
 
-    def get_cutoff_radius(self, graph: HeteroData, mask_attr: torch.Tensor | None = None):
+    def get_cutoff_radius(self, graph: HeteroData, mask_attr: torch.Tensor | None = None) -> float:
         """Compute the cut-off radius.
 
         The cut-off radius is computed as the product of the target nodes
@@ -311,7 +316,7 @@ class CutOffEdges(BaseEdgeBuilder, NodeMaskingMixin):
         self.radius = self.get_cutoff_radius(graph)
         return super().prepare_node_data(graph)
 
-    def get_adjacency_matrix(self, source_nodes: NodeStorage, target_nodes: NodeStorage):
+    def get_adjacency_matrix(self, source_nodes: NodeStorage, target_nodes: NodeStorage) -> np.ndarray:
         """Get the adjacency matrix for the cut-off method.
 
         Parameters
@@ -320,6 +325,11 @@ class CutOffEdges(BaseEdgeBuilder, NodeMaskingMixin):
             The source nodes.
         target_nodes : NodeStorage
             The target nodes.
+
+        Returns
+        -------
+        np.ndarray
+            The adjacency matrix.
         """
         source_coords, target_coords = self.get_node_coordinates(source_nodes, target_nodes)
         LOGGER.info(
