@@ -13,10 +13,7 @@ from anemoi.graphs.utils import haversine_distance_torch
 LOGGER = logging.getLogger(__name__)
 
 
-class EdgeAttributeBuilderMixin:
-    def forward(self, x: PairTensor, edge_index: Adj, size: Size = None):
-        return self.propagate(edge_index, x=x, size=size)
-
+class NormalizerMixin:
     def normalize(self, values: torch.Tensor) -> torch.Tensor:
         if self.norm is None:
             return values
@@ -31,16 +28,9 @@ class EdgeAttributeBuilderMixin:
 
         raise ValueError(f"Unknown normalization {self.norm}")
 
-    def message(self, x_i: torch.Tensor, x_j: torch.Tensor) -> torch.Tensor:
-        edge_features = self.compute_attribute(x_i, x_j)
-        return self.normalize(edge_features[:, None])
 
-    def aggregate(self, edge_features: torch.Tensor) -> torch.Tensor:
-        return edge_features
-
-
-class EdgeLength(MessagePassing, EdgeAttributeBuilderMixin):
-    """Computes edge features for bipartite graphs."""
+class BaseEdgeAttributeBuilder(MessagePassing, NormalizerMixin):
+    """Base class for edge attribute builders."""
 
     def __init__(self, norm: str | None = None) -> None:
         super().__init__()
@@ -48,22 +38,46 @@ class EdgeLength(MessagePassing, EdgeAttributeBuilderMixin):
         self._idx_lon = 1
         self.norm = norm
 
-    def compute_attribute(self, x_i: torch.Tensor, x_j: torch.Tensor) -> torch.Tensor:
+    def forward(self, x: PairTensor, edge_index: Adj, size: Size = None) -> torch.Tensor:
+        return self.propagate(edge_index, x=x, size=size)
+
+    def compute(self, x_i: torch.Tensor, x_j: torch.Tensor) -> torch.Tensor:
+        """Compute edge features.
+
+        Parameters
+        ----------
+        x_i : torch.Tensor
+            Coordinates of the source nodes.
+        x_j : torch.Tensor
+            Coordinates of the target nodes.
+
+        Returns
+        -------
+        torch.Tensor
+            Edge features.
+        """
+        raise NotImplementedError("Method `compute` must be implemented.")
+
+    def message(self, x_i: torch.Tensor, x_j: torch.Tensor) -> torch.Tensor:
+        edge_features = self.compute(x_i, x_j)
+        return self.normalize(edge_features[:, None])
+
+    def aggregate(self, edge_features: torch.Tensor) -> torch.Tensor:
+        return edge_features
+
+
+class EdgeLength(BaseEdgeAttributeBuilder):
+    """Computes edge features for bipartite graphs."""
+
+    def compute(self, x_i: torch.Tensor, x_j: torch.Tensor) -> torch.Tensor:
         edge_length = haversine_distance_torch(x_i, x_j)
         return edge_length
 
 
-class EdgeDirection(MessagePassing, EdgeAttributeBuilderMixin):
+class EdgeDirection(BaseEdgeAttributeBuilder):
     """Computes edge features for bipartite graphs."""
 
-    def __init__(self, rotated_features: bool = True, norm: str | None = None) -> None:
-        super().__init__()
-        self._idx_lat = 0
-        self._idx_lon = 1
-        self.norm = norm
-        self.rotated_features = rotated_features
-
-    def compute_attribute(self, x_i: torch.Tensor, x_j: torch.Tensor) -> torch.Tensor:
+    def compute(self, x_i: torch.Tensor, x_j: torch.Tensor) -> torch.Tensor:
         if not self.rotated_features:
             return x_j - x_i
 
@@ -76,5 +90,6 @@ class EdgeDirection(MessagePassing, EdgeAttributeBuilderMixin):
         )
         a1 = a11 - a12
         a2 = torch.sin(x_j[..., self._idx_lon] - x_i[..., self._idx_lon]) * torch.cos(x_j[:, self._idx_lat])
-        edge_dir = torch.atan2(a2, a1)
-        return edge_dir
+        edge_dirs = torch.atan2(a2, a1)
+
+        return edge_dirs

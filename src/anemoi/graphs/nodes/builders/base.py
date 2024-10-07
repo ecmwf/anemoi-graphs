@@ -21,13 +21,13 @@ class BaseNodeBuilder(ABC):
     ----------
     name : str
         name of the nodes, key for the nodes in the HeteroData graph object.
-    area_mask_builder : KNNAreaMaskBuilder
+    aoi_mask_builder : KNNAreaMaskBuilder
         The area of interest mask builder, if any. Defaults to None.
     """
 
     def __init__(self, name: str) -> None:
         self.name = name
-        self.area_mask_builder = None
+        self.aoi_mask_builder = None
 
     def register_nodes(self, graph: HeteroData) -> HeteroData:
         """Register nodes in the graph.
