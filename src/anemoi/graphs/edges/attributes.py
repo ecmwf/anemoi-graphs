@@ -85,3 +85,26 @@ class EdgeDirection(BaseEdgeAttributeBuilder):
     def compute(self, x_i: torch.Tensor, x_j: torch.Tensor) -> torch.Tensor:
         edge_dirs = compute_directions(x_i, x_j)
         return edge_dirs
+
+
+class Azimuth(BaseEdgeAttributeBuilder):
+    """Compute the azimuth of the edge.
+
+    References
+    ----------
+    - https://www.movable-type.co.uk/scripts/latlong.html
+    """
+
+    def compute(self, x_i: torch.Tensor, x_j: torch.Tensor) -> torch.Tensor:
+        # Forward bearing. x_i, x_j must bez radians.
+        a11 = torch.cos(x_i[:, self._idx_lat]) * torch.sin(x_j[:, self._idx_lat])
+        a12 = (
+            torch.sin(x_i[:, self._idx_lat])
+            * torch.cos(x_j[:, self._idx_lat])
+            * torch.cos(x_j[..., self._idx_lon] - x_i[..., self._idx_lon])
+        )
+        a1 = a11 - a12
+        a2 = torch.sin(x_j[..., self._idx_lon] - x_i[..., self._idx_lon]) * torch.cos(x_j[:, self._idx_lat])
+        edge_dirs = torch.atan2(a2, a1)
+
+        return edge_dirs
