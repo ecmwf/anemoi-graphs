@@ -60,7 +60,11 @@ class BaseEdgeAttributeBuilder(MessagePassing, NormalizerMixin):
 
     def message(self, x_i: torch.Tensor, x_j: torch.Tensor) -> torch.Tensor:
         edge_features = self.compute(x_i, x_j)
-        return self.normalize(edge_features[:, None])
+
+        if edge_features.ndim == 1:
+            edge_features = edge_features.unsqueeze(-1)
+
+        return self.normalize(edge_features)
 
     def aggregate(self, edge_features: torch.Tensor) -> torch.Tensor:
         return edge_features
