@@ -4,7 +4,7 @@ import numpy as np
 import torch
 from sklearn.neighbors import NearestNeighbors
 
-from anemoi.graphs.generate.transforms import latlon_rad_to_cartesian_torch
+from anemoi.graphs.generate.transforms import latlon_rad_to_cartesian
 
 
 def get_nearest_neighbour(coords_rad: torch.Tensor, mask: torch.Tensor | None = None) -> NearestNeighbors:
@@ -51,7 +51,7 @@ def get_grid_reference_distance(coords_rad: torch.Tensor, mask: torch.Tensor | N
     float
         The reference distance of the grid.
     """
-    xyz = latlon_rad_to_cartesian_torch(coords_rad)
+    xyz = latlon_rad_to_cartesian(coords_rad)
     nearest_neighbours = get_nearest_neighbour(xyz, mask)
     dists, _ = nearest_neighbours.kneighbors(xyz, n_neighbors=2, return_distance=True)
     return dists[dists > 0].max()
@@ -114,7 +114,7 @@ def get_index_in_outer_join(vector: torch.Tensor, tensor: torch.Tensor) -> int:
     return -1
 
 
-def haversine_distance_torch(source_coords: torch.Tensor, target_coords: torch.Tensor) -> torch.Tensor:
+def haversine_distance(source_coords: torch.Tensor, target_coords: torch.Tensor) -> torch.Tensor:
     """Haversine distance.
 
     Parameters

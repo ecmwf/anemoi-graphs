@@ -9,7 +9,7 @@ from torch_geometric.typing import PairTensor
 from torch_geometric.typing import Size
 
 from anemoi.graphs.edges.directional import compute_directions
-from anemoi.graphs.utils import haversine_distance_torch
+from anemoi.graphs.utils import haversine_distance
 
 LOGGER = logging.getLogger(__name__)
 
@@ -75,7 +75,7 @@ class EdgeLength(BaseEdgeAttributeBuilder):
     """Computes edge length for bipartite graphs."""
 
     def compute(self, x_i: torch.Tensor, x_j: torch.Tensor) -> torch.Tensor:
-        edge_length = haversine_distance_torch(x_i, x_j)
+        edge_length = haversine_distance(x_i, x_j)
         return edge_length
 
 

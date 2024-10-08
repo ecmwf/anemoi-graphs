@@ -19,7 +19,7 @@ from torch_geometric.nn import radius
 from anemoi.graphs import EARTH_RADIUS
 from anemoi.graphs.generate import hex_icosahedron
 from anemoi.graphs.generate import tri_icosahedron
-from anemoi.graphs.generate.transforms import latlon_rad_to_cartesian_torch
+from anemoi.graphs.generate.transforms import latlon_rad_to_cartesian
 from anemoi.graphs.nodes.builders.from_refined_icosahedron import HexNodes
 from anemoi.graphs.nodes.builders.from_refined_icosahedron import LimitedAreaHexNodes
 from anemoi.graphs.nodes.builders.from_refined_icosahedron import LimitedAreaTriNodes
@@ -95,8 +95,8 @@ class BaseEdgeBuilder(ABC):
         """
         for attr_name, attr_config in config.items():
             edge_index = graph[self.name].edge_index
-            source_coords = graph[self.name[0]].x[edge_index[0]]
-            target_coords = graph[self.name[2]].x[edge_index[1]]
+            source_coords = graph[self.name[0]].x
+            target_coords = graph[self.name[2]].x
             edge_builder = instantiate(attr_config)
             graph[self.name][attr_name] = edge_builder(x=(source_coords, target_coords), edge_index=edge_index)
         return graph
@@ -116,13 +116,19 @@ class BaseEdgeBuilder(ABC):
         HeteroData
             The graph with the edges.
         """
+        if torch.cuda.is_available():
+            graph = graph.to("cuda")
+
         t0 = time.time()
         graph = self.register_edges(graph)
         t1 = time.time()
         LOGGER.info("Time to register edge indices (%s): %.2f s", self.__class__.__name__, t1 - t0)
 
         if attrs_config is not None:
+            t0 = time.time()
             graph = self.register_attributes(graph, attrs_config)
+            t1 = time.time()
+            LOGGER.info("Time to register edge attribute (%s): %.2f s", self.__class__.__name__, t1 - t0)
 
         return graph
 
@@ -224,8 +230,8 @@ class KNNEdges(BaseEdgeBuilder, NodeMaskingMixin):
             self.target_name,
         )
         edge_idx = knn(
-            latlon_rad_to_cartesian_torch(source_nodes.x),
-            latlon_rad_to_cartesian_torch(target_nodes.x),
+            latlon_rad_to_cartesian(source_nodes.x),
+            latlon_rad_to_cartesian(target_nodes.x),
             k=self.num_nearest_neighbours,
         )
         edge_idx = torch.flip(edge_idx, [0])
@@ -332,8 +338,8 @@ class CutOffEdges(BaseEdgeBuilder, NodeMaskingMixin):
         )
 
         edge_idx = radius(
-            latlon_rad_to_cartesian_torch(source_nodes.x),
-            latlon_rad_to_cartesian_torch(target_nodes.x),
+            latlon_rad_to_cartesian(source_nodes.x),
+            latlon_rad_to_cartesian(target_nodes.x),
             r=self.radius,
             max_num_neighbors=self.max_num_neighbours,
         )

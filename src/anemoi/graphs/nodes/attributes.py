@@ -129,9 +129,8 @@ class AreaWeights(BaseWeights):
         np.ndarray
             Weights.
         """
-        latitudes, longitudes = nodes.x[:, 0], nodes.x[:, 1]
-        points = latlon_rad_to_cartesian((np.asarray(latitudes), np.asarray(longitudes)))
-        sv = SphericalVoronoi(points, self.radius, self.centre)
+        points = latlon_rad_to_cartesian(nodes.x)
+        sv = SphericalVoronoi(points.cpu().numpy(), self.radius, self.centre)
         area_weights = sv.calculate_areas()
         LOGGER.debug(
             "There are %d of weights, which (unscaled) add up a total weight of %.2f.",

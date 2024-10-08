@@ -73,16 +73,16 @@ def compute_directions(source_coords: torch.Tensor, target_coords: torch.Tensor)
     target_coords_xyz = latlon_rad_to_cartesian(target_coords, 1.0)
 
     # Compute the unit direction vector & the angle theta between target coords and the north pole.
-    v_unit = direction_vec(target_coords_xyz, NORTH_POLE)
+    v_unit = direction_vec(target_coords_xyz, NORTH_POLE.to(source_coords.device))
     theta = torch.acos(
-        torch.clamp(torch.sum(target_coords_xyz * NORTH_POLE, dim=1), -1.0, 1.0)
+        torch.clamp(torch.sum(target_coords_xyz * NORTH_POLE.to(source_coords.device), dim=1), -1.0, 1.0)
     )  # Clamp for numerical stability
 
     # Rotate source coords by angle theta around v_unit axis.
     rotated_source_coords_xyz = rotate_vectors(source_coords_xyz, v_unit, theta)
 
     # Compute the direction from the rotated vector to the north pole.
-    direction = direction_vec(rotated_source_coords_xyz, NORTH_POLE)
+    direction = direction_vec(rotated_source_coords_xyz, NORTH_POLE.to(source_coords.device))
     normed_direction = direction / torch.norm(direction, dim=1).unsqueeze(-1)
 
     # All 3rd components should be 0s
