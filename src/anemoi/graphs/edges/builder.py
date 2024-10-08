@@ -122,13 +122,13 @@ class BaseEdgeBuilder(ABC):
         t0 = time.time()
         graph = self.register_edges(graph)
         t1 = time.time()
-        LOGGER.info("Time to register edge indices (%s): %.2f s", self.__class__.__name__, t1 - t0)
+        LOGGER.debug("Time to register edge indices (%s): %.2f s", self.__class__.__name__, t1 - t0)
 
         if attrs_config is not None:
             t0 = time.time()
             graph = self.register_attributes(graph, attrs_config)
             t1 = time.time()
-            LOGGER.info("Time to register edge attribute (%s): %.2f s", self.__class__.__name__, t1 - t0)
+            LOGGER.debug("Time to register edge attribute (%s): %.2f s", self.__class__.__name__, t1 - t0)
 
         return graph
 

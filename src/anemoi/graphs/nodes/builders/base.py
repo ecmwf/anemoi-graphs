@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+import logging
+import time
 from abc import ABC
 from abc import abstractmethod
 
@@ -10,6 +12,8 @@ from hydra.utils import instantiate
 from torch_geometric.data import HeteroData
 
 from anemoi.graphs.utils import get_grid_reference_distance
+
+LOGGER = logging.getLogger(__name__)
 
 
 class BaseNodeBuilder(ABC):
@@ -104,11 +108,17 @@ class BaseNodeBuilder(ABC):
         HeteroData
             The graph with new nodes included.
         """
+        t0 = time.time()
         graph = self.register_nodes(graph)
+        t1 = time.time()
+        LOGGER.debug("Time to register node coordinates (%s): %.2f s", self.__class__.__name__, t1 - t0)
 
         if attr_config is None:
             return graph
 
+        t0 = time.time()
         graph = self.register_attributes(graph, attr_config)
+        t1 = time.time()
+        LOGGER.debug("Time to register node coordinates (%s): %.2f s", self.__class__.__name__, t1 - t0)
 
         return graph
