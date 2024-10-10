@@ -135,7 +135,7 @@ of the *Anemoi* packages.
 -  :ref:`anemoi-training <anemoi-training:index-page>`
 -  :ref:`anemoi-inference <anemoi-inference:index-page>`
 -  :ref:`anemoi-registry <anemoi-registry:index-page>`
-  
+
 *********
  License
 *********
