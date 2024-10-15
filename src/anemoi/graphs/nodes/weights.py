@@ -9,7 +9,7 @@ from scipy.spatial import SphericalVoronoi
 from torch_geometric.data.storage import NodeStorage
 
 from anemoi.graphs.generate.transforms import to_sphere_xyz
-from anemoi.graphs.normalizer import NormalizerMixin
+from anemoi.graphs.normalize import NormalizerMixin
 
 logger = logging.getLogger(__name__)
 

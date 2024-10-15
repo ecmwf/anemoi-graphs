@@ -8,7 +8,7 @@ import torch
 from torch_geometric.data import HeteroData
 
 from anemoi.graphs.edges.directional import directional_edge_features
-from anemoi.graphs.normalizer import NormalizerMixin
+from anemoi.graphs.normalize import NormalizerMixin
 from anemoi.graphs.utils import haversine_distance
 
 

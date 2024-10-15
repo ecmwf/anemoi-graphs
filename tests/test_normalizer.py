@@ -1,7 +1,7 @@
 import numpy as np
 import pytest
 
-from anemoi.graphs.normalizer import NormalizerMixin
+from anemoi.graphs.normalize import NormalizerMixin
 
 
 @pytest.mark.parametrize("norm", ["l1", "l2", "unit-max", "unit-std"])
