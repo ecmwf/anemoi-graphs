@@ -5,6 +5,6 @@ nodes:
       dataset: /path/to/dataset.zarr
     attributes:
       weights:
-        _target_: anemoi.graphs.nodes.weights.Area
+        _target_: anemoi.graphs.nodes.attributes.AreaWeights # options: AreaWeights, UniformWeights
         norm: unit-max
   hidden: ...

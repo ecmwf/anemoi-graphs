@@ -17,7 +17,7 @@ edges:
     target_name: data
     edge_builder:
       _target_: anemoi.graphs.edges.KNNEdges
-      nearest_neighbours: 3
+      num_nearest_neighbours: 3
     attributes:
       edge_length:
         _target_: anemoi.graphs.edges.attributes.EdgeLength
