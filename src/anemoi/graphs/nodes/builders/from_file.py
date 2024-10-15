@@ -7,6 +7,7 @@ import numpy as np
 import torch
 from anemoi.datasets import open_dataset
 from anemoi.utils.config import DotDict
+from omegaconf import OmegaConf
 from torch_geometric.data import HeteroData
 
 from anemoi.graphs.generate.masks import KNNAreaMaskBuilder
@@ -56,16 +57,12 @@ class CutOutZarrDatasetNodes(ZarrDatasetNodes):
 
     Attributes
     ----------
-    lam_dataset : str
-        The limited area dataset.
-    forcing_dataset : str
-        The forcing dataset.
-    thinning : int, optional
-        The thinning factor. Defaults to 1, which means no thinning.
-    forcing_area : list[float], optional
-        The area of the forcing dataset. Specify the longitude and
-        latitudes boundaries as (north, west, south, east). Defaults
-        to None, which means the forcing dataset is not cropped.
+    dataset : DotDict
+        The limited area dataset. Its schema is:
+        {
+            "cutout": [lam_dataset_config, forcing_dataset_config],
+            "adjust": ...,
+        }
 
     Methods
     -------
@@ -79,26 +76,11 @@ class CutOutZarrDatasetNodes(ZarrDatasetNodes):
         Update the graph with new nodes and attributes.
     """
 
-    def __init__(
-        self,
-        name: str,
-        lam_dataset: str,
-        forcing_dataset: str,
-        thinning: int = 1,
-        forcing_area: list[float] | None = None,
-        adjust: str = "all",
-    ) -> None:
-        lam_config = {"dataset": lam_dataset, "thinning": thinning}
-        forcing_config = {"dataset": forcing_dataset}
-
-        # Add area argument to crop the boundary forcing
-        if forcing_area is not None:
-            forcing_config["area"] = tuple(forcing_area)
-            assert len(forcing_area) == 4, "The forcing area must be a list of 4 elements (north, west, south, east)."
-            LOGGER.info("Forcing dataset is cropped to area: %s", forcing_area)
-
-        dataset_config = {"cutout": [lam_config, forcing_config], "adjust": adjust}
-        super().__init__(dataset_config, name)
+    def __init__(self, dataset: DotDict, name: str) -> None:
+        assert (
+            "cutout" in dataset
+        ), f"The 'cutout' key must be present in the dataset configuration for {self.__class__}."
+        super().__init__(OmegaConf.to_container(dataset), name)
         self.n_cutout, self.n_other = self.dataset.grids
 
     def register_attributes(self, graph: HeteroData, config: DotDict) -> None:
