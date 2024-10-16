@@ -23,7 +23,7 @@ Keep it human-readable, your future self will thank you!
 
 ### Changed
 - ci: small fixes and updates pre-commit, downsteam-ci (#49)
-- feat: New argument 'forcing_area' in the CutOutZarDatasetNodes class. (#52)
+- feat: Refactored CutOutZarDatasetNodes class. It now supports area and min_distance_km arguments. (#52)
 - Update CODEOWNERS
 
 ## [0.3.0 Anemoi-graphs, minor release](https://github.com/ecmwf/anemoi-graphs/compare/0.2.1...0.3.0) - 2024-09-03
