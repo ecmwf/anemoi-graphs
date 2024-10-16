@@ -11,7 +11,7 @@ from torch_geometric.data import HeteroData
 from torch_geometric.data.storage import NodeStorage
 
 from anemoi.graphs.generate.transforms import latlon_rad_to_cartesian
-from anemoi.graphs.normalizer import NormalizerMixin
+from anemoi.graphs.normalize import NormalizerMixin
 
 LOGGER = logging.getLogger(__name__)
 
