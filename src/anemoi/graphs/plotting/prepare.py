@@ -1,16 +1,10 @@
 from typing import Optional
 
+import matplotlib.colors as mcolors
 import numpy as np
+import plotly.graph_objs as go
 import torch
 from torch_geometric.data import HeteroData
-
-import plotly.graph_objs as go
-import matplotlib.colors as mcolors
-import torch
-import plotly.graph_objs as go
-import plotly.io as pio
-import numpy as np
-from tqdm import tqdm
 
 from anemoi.graphs.generate.transforms import latlon_rad_to_cartesian
 
@@ -198,20 +192,22 @@ def get_edge_attribute_dims(graph: HeteroData) -> dict[str, int]:
     return attr_dims
 
 
-def convert_and_plot_nodes(G, coords, filter_limit=0, scale=1.0, color='skyblue'):
-    """
-    Filters coordinates of nodes in a graph, scales and plots them.
-    """
+def convert_and_plot_nodes(G, coords, filter_limit=0, scale=1.0, color="skyblue"):
+    """Filters coordinates of nodes in a graph, scales and plots them."""
 
     lat = coords[:, 0].numpy()  # Latitude
-    lon = coords[:, 1].numpy() # Longitude
-    
+    lon = coords[:, 1].numpy()  # Longitude
+
     # Convert lat/lon to Cartesian coordinates for the filtered nodes
     x_nodes, y_nodes, z_nodes = latlon_rad_to_cartesian((lat, lon)).T
 
     # Filter nodes for the first quadrant
-    if filter_limit>0:
-        first_quadrant_nodes = [i for i, (x, y, z) in enumerate(zip(x_nodes, y_nodes, z_nodes)) if x > filter_limit and y > filter_limit and z > filter_limit]
+    if filter_limit > 0:
+        first_quadrant_nodes = [
+            i
+            for i, (x, y, z) in enumerate(zip(x_nodes, y_nodes, z_nodes))
+            if x > filter_limit and y > filter_limit and z > filter_limit
+        ]
 
         if not first_quadrant_nodes:
             print("No nodes found in the first quadrant.")
@@ -221,7 +217,7 @@ def convert_and_plot_nodes(G, coords, filter_limit=0, scale=1.0, color='skyblue'
 
     else:
         graph = G
-        
+
     # Extract node positions for Plotly
     x_nodes_filtered = [x_nodes[node] * scale for node in graph.nodes()]
     y_nodes_filtered = [y_nodes[node] * scale for node in graph.nodes()]
@@ -229,37 +225,39 @@ def convert_and_plot_nodes(G, coords, filter_limit=0, scale=1.0, color='skyblue'
 
     # Create traces for nodes
     node_trace = go.Scatter3d(
-        x=x_nodes_filtered, y=y_nodes_filtered, z=z_nodes_filtered,
-        mode='markers',
+        x=x_nodes_filtered,
+        y=y_nodes_filtered,
+        z=z_nodes_filtered,
+        mode="markers",
         marker=dict(size=3, color=color, opacity=0.8),
         text=list(graph.nodes()),
-        hoverinfo='text'
+        hoverinfo="text",
     )
 
-    return  node_trace, graph, (x_nodes, y_nodes, z_nodes)
+    return node_trace, graph, (x_nodes, y_nodes, z_nodes)
 
 
-def get_edge_trace(g1, g2, n1, n2, scale_1, scale_2, color='blue', filter_limit=0.5):
-    """
-    Gets all edges between g1 and g2 (two separate graphs, hierarchical graph setting).
-    """
+def get_edge_trace(g1, g2, n1, n2, scale_1, scale_2, color="blue", filter_limit=0.5):
+    """Gets all edges between g1 and g2 (two separate graphs, hierarchical graph setting)."""
     edge_traces = []
     for edge in g1.edges():
         # Convert edge nodes to their new indices
         idx0, idx1 = edge[0], edge[1]
 
         if idx0 in g1.nodes and idx1 in g2.nodes:
-            if n1[0][idx0] > filter_limit and n2[0][idx1] > filter_limit and \
-               n1[1][idx0] > filter_limit and n2[1][idx1] > filter_limit and \
-               n1[2][idx0] > filter_limit and n2[2][idx1] > filter_limit:
+            if (
+                n1[0][idx0] > filter_limit
+                and n2[0][idx1] > filter_limit
+                and n1[1][idx0] > filter_limit
+                and n2[1][idx1] > filter_limit
+                and n1[2][idx0] > filter_limit
+                and n2[2][idx1] > filter_limit
+            ):
                 x_edge = [n1[0][idx0] * scale_1, n2[0][idx1] * scale_2, None]
                 y_edge = [n1[1][idx0] * scale_1, n2[1][idx1] * scale_2, None]
                 z_edge = [n1[2][idx0] * scale_1, n2[2][idx1] * scale_2, None]
                 edge_trace = go.Scatter3d(
-                    x=x_edge, y=y_edge, z=z_edge,
-                    mode='lines',
-                    line=dict(width=2, color=color),
-                    showlegend=False
+                    x=x_edge, y=y_edge, z=z_edge, mode="lines", line=dict(width=2, color=color), showlegend=False
                 )
                 edge_traces.append(edge_trace)
     return edge_traces
@@ -269,11 +267,11 @@ def make_layout(title):
     # Create a layout for the plot
     layout = go.Layout(
         title={
-        'text': f'<br><sup>{title}</sup>',
-        'x': 0.5,  # Center the title horizontally
-        'xanchor': 'center',  # Anchor the title to the center of the plot area
-        'y': 0.95,  # Position the title vertically
-        'yanchor': 'top'  # Anchor the title to the top of the plot area
+            "text": f"<br><sup>{title}</sup>",
+            "x": 0.5,  # Center the title horizontally
+            "xanchor": "center",  # Anchor the title to the center of the plot area
+            "y": 0.95,  # Position the title vertically
+            "yanchor": "top",  # Anchor the title to the top of the plot area
         },
         scene=dict(
             xaxis=dict(showbackground=False, visible=False),
@@ -293,20 +291,18 @@ def generate_shades(color_name, num_shades):
 
     if num_shades == 1:
         return [base_color]
-    
+
     if not base_color:
         raise ValueError(f"Color '{color_name}' is not recognized.")
-    
+
     # Convert the base color to RGB
     base_rgb = mcolors.hex2color(base_color)
-    
+
     # Create a colormap that transitions from the base color to a darker version of the base color
     dark_color = tuple([x * 0.6 for x in base_rgb])  # Darker shade of the base color
-    cmap = mcolors.LinearSegmentedColormap.from_list(
-        'custom_cmap', [base_rgb, dark_color], N=num_shades
-    )
-    
+    cmap = mcolors.LinearSegmentedColormap.from_list("custom_cmap", [base_rgb, dark_color], N=num_shades)
+
     # Generate the shades
     shades = [mcolors.to_hex(cmap(i / (num_shades - 1))) for i in range(num_shades)]
-    
+
     return shades

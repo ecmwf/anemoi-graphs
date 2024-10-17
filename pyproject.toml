@@ -52,12 +52,10 @@ dependencies = [
   "torch>=2.2",
   "torch-geometric>=2.3.1,<2.5",
   "trimesh>=4.1",
-  "nbformat>=5.10.4"
 ]
 
 optional-dependencies.all = [  ]
 optional-dependencies.dev = [ "anemoi-graphs[docs,tests]" ]
-
 optional-dependencies.docs = [
   "nbsphinx",
   "pandoc",
@@ -69,6 +67,7 @@ optional-dependencies.docs = [
   "tomli",
 ]
 
+optional-dependencies.notebooks = [ "nbformat>=5.10.4" ]
 optional-dependencies.tests = [ "pytest", "pytest-mock" ]
 
 urls.Documentation = "https://anemoi-graphs.readthedocs.io/"
