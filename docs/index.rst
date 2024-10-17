@@ -122,6 +122,7 @@ of the *Anemoi* packages.
    :caption: Usage
 
    usage/getting_started
+   usage/limited_area
 
 *****************
  Anemoi packages

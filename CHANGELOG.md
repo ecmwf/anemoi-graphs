@@ -21,6 +21,8 @@ Keep it human-readable, your future self will thank you!
 - feat: New node builder classes, LimitedAreaXXXXXNodes, to create nodes within an Area of Interest (AOI). (#30)
 - feat: Expanded MultiScaleEdges to support multi-scale connections in limited area graphs. (#30)
 
+- Create package documentation.
+
 ### Changed
 - ci: small fixes and updates pre-commit, downsteam-ci (#49)
 - Update CODEOWNERS
