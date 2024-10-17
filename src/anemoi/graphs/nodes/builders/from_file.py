@@ -7,6 +7,8 @@ import numpy as np
 import torch
 from anemoi.datasets import open_dataset
 from anemoi.utils.config import DotDict
+from omegaconf import DictConfig
+from omegaconf import OmegaConf
 from torch_geometric.data import HeteroData
 
 from anemoi.graphs.generate.masks import KNNAreaMaskBuilder
@@ -52,16 +54,34 @@ class ZarrDatasetNodes(BaseNodeBuilder):
 
 
 class CutOutZarrDatasetNodes(ZarrDatasetNodes):
-    """Nodes from Zarr dataset."""
+    """Nodes from Zarr dataset.
 
-    def __init__(
-        self, name: str, lam_dataset: str, forcing_dataset: str, thinning: int = 1, adjust: str = "all"
-    ) -> None:
-        dataset_config = {
-            "cutout": [{"dataset": lam_dataset, "thinning": thinning}, {"dataset": forcing_dataset}],
-            "adjust": adjust,
+    Attributes
+    ----------
+    dataset : DictConfig
+        The limited area dataset. Its schema is:
+        {
+            "cutout": [lam_dataset_config, forcing_dataset_config],
+            "adjust": ...,
         }
-        super().__init__(dataset_config, name)
+
+    Methods
+    -------
+    get_coordinates()
+        Get the lat-lon coordinates of the nodes.
+    register_nodes(graph, name)
+        Register the nodes in the graph.
+    register_attributes(graph, name, config)
+        Register the attributes in the nodes of the graph specified.
+    update_graph(graph, name, attr_config)
+        Update the graph with new nodes and attributes.
+    """
+
+    def __init__(self, dataset: DictConfig, name: str) -> None:
+        assert (
+            "cutout" in dataset
+        ), f"The 'cutout' key must be present in the dataset configuration for {self.__class__}."
+        super().__init__(OmegaConf.to_container(dataset), name)
         self.n_cutout, self.n_other = self.dataset.grids
 
     def register_attributes(self, graph: HeteroData, config: DotDict) -> None:
