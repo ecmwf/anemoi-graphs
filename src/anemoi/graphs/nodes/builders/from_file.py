@@ -7,6 +7,7 @@ import numpy as np
 import torch
 from anemoi.datasets import open_dataset
 from anemoi.utils.config import DotDict
+from omegaconf import DictConfig
 from omegaconf import OmegaConf
 from torch_geometric.data import HeteroData
 
@@ -57,7 +58,7 @@ class CutOutZarrDatasetNodes(ZarrDatasetNodes):
 
     Attributes
     ----------
-    dataset : DotDict
+    dataset : DictConfig
         The limited area dataset. Its schema is:
         {
             "cutout": [lam_dataset_config, forcing_dataset_config],
@@ -76,7 +77,7 @@ class CutOutZarrDatasetNodes(ZarrDatasetNodes):
         Update the graph with new nodes and attributes.
     """
 
-    def __init__(self, dataset: DotDict, name: str) -> None:
+    def __init__(self, dataset: DictConfig, name: str) -> None:
         assert (
             "cutout" in dataset
         ), f"The 'cutout' key must be present in the dataset configuration for {self.__class__}."
