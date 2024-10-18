@@ -24,6 +24,8 @@ class NormalizerMixin:
             return values / values.norm(2)
         elif self.norm == "unit-max":
             return values / values.abs().max()
+        elif self.norm == "unit-range":
+            return (values - values.min()) / (values.max() - values.min())
         elif self.norm == "unit-std":
             return values / values.std()
 
