@@ -12,6 +12,10 @@ Keep it human-readable, your future self will thank you!
 
 ### Added
 
+- fix: bug in color when plotting isolated nodes
+
+### Added
+
 - Add anemoi-transform link to documentation
 
 ### Added
@@ -21,9 +25,12 @@ Keep it human-readable, your future self will thank you!
 - feat: New node builder classes, LimitedAreaXXXXXNodes, to create nodes within an Area of Interest (AOI). (#30)
 - feat: Expanded MultiScaleEdges to support multi-scale connections in limited area graphs. (#30)
 - feat: New method update_graph(graph) in the GraphCreator class. (#60)
+- feat: New class StretchedTriNodes to create a stretched mesh. (#51)
+- feat: Expanded MultiScaleEdges to support multi-scale connections in stretched graphs. (#51)
 
 ### Changed
 - ci: small fixes and updates pre-commit, downsteam-ci (#49)
+- Update CODEOWNERS
 
 ## [0.3.0 Anemoi-graphs, minor release](https://github.com/ecmwf/anemoi-graphs/compare/0.2.1...0.3.0) - 2024-09-03
 
