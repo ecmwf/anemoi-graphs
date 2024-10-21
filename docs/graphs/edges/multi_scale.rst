@@ -1,11 +1,11 @@
-################################################
- Multi-scale connections at refined icosahedron
-################################################
+####################################################
+ Multi-scale connections at refinemened icosahedron
+####################################################
 
 The multi-scale connections can only be defined with the same source and
 target nodes. Edges of different scales are defined based on the
 refinement level of an icosahedron. The higher the refinement level, the
-shorter the length of the edges. By default, all possible refinements
+shorther the length of the edges. By default, all possible refinements
 levels are considered.
 
 To use this method to build your connections, you can use the following
@@ -28,8 +28,12 @@ refinement level to be considered neighbours, and then connected.
    This method is used by data-driven weather models like GraphCast to
    process the latent/hidden state.
 
+.. csv-table:: Triangular refinements specifications (x_hops=1)
+   :file: ./tri_refined_edges.csv
+   :header-rows: 1
+
 .. warning::
 
-   This connection method is only supported for building the connections
+   This connection method is only support for building the connections
    within a set of nodes defined with the ``TriNodes`` or ``HexNodes``
    classes.
