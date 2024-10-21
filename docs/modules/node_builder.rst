@@ -4,8 +4,8 @@
  Node builder
 ##############
 
-.. automodule:: anemoi.graphs.nodes.builder
+.. automodule:: anemoi.graphs.nodes.builders
    :members:
-   :exclude-members: BaseNodeBuilder,IcosahedralNodes
+   :exclude-members: BaseNodeBuilder,IcosahedralNodes,LimitedAreaIcosahedralNodes,StretchedIcosahedronNodes
    :no-undoc-members:
    :show-inheritance:

@@ -57,7 +57,7 @@ class EdgeDirection(BaseEdgeAttribute):
     Attributes
     ----------
     norm : Optional[str]
-        Normalization method.
+        Normalization method. Options: None, "l1", "l2", "unit-max", "unit-range", "unit-std".
     luse_rotated_features : bool
         Whether to use rotated features.
 
@@ -100,10 +100,10 @@ class EdgeLength(BaseEdgeAttribute):
 
     Attributes
     ----------
-    norm : str
-        Normalization method.
+    norm : Optional[str]
+        Normalization method. Options: None, "l1", "l2", "unit-max", "unit-range", "unit-std".
     invert : bool
-        Whether to invert the edge lengths, i.e. 1 - edge_length.
+        Whether to invert the edge lengths, i.e. 1 - edge_length. Defaults to False.
 
     Methods
     -------
