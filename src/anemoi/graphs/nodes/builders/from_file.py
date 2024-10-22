@@ -37,8 +37,10 @@ class ZarrDatasetNodes(BaseNodeBuilder):
 
     def __init__(self, dataset: DotDict, name: str) -> None:
         LOGGER.info("Reading the dataset from %s.", dataset)
-        self.dataset = open_dataset(dataset)
+        self.dataset = dataset
+        self.ds = open_dataset(dataset)
         super().__init__(name)
+        self.hidden_attributes = BaseNodeBuilder.hidden_attributes | {"dataset"}
 
     def get_coordinates(self) -> torch.Tensor:
         """Get the coordinates of the nodes.
@@ -48,7 +50,7 @@ class ZarrDatasetNodes(BaseNodeBuilder):
         torch.Tensor of shape (num_nodes, 2)
             A 2D tensor with the coordinates, in radians.
         """
-        return self.reshape_coords(self.dataset.latitudes, self.dataset.longitudes)
+        return self.reshape_coords(self.ds.latitudes, self.ds.longitudes)
 
 
 class CutOutZarrDatasetNodes(ZarrDatasetNodes):
@@ -62,7 +64,7 @@ class CutOutZarrDatasetNodes(ZarrDatasetNodes):
             "adjust": adjust,
         }
         super().__init__(dataset_config, name)
-        self.n_cutout, self.n_other = self.dataset.grids
+        self.n_cutout, self.n_other = self.ds.grids
 
     def register_attributes(self, graph: HeteroData, config: DotDict) -> None:
         # this is a mask to cutout the LAM area

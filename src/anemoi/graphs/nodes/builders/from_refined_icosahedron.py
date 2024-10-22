@@ -7,7 +7,6 @@ from abc import abstractmethod
 import networkx as nx
 import numpy as np
 import torch
-from anemoi.utils.config import DotDict
 from torch_geometric.data import HeteroData
 
 from anemoi.graphs.generate.hex_icosahedron import create_hex_nodes
@@ -40,6 +39,12 @@ class IcosahedralNodes(BaseNodeBuilder, ABC):
             self.resolutions = resolution
 
         super().__init__(name)
+        self.hidden_attributes = BaseNodeBuilder.hidden_attributes | {
+            "resolutions",
+            "nx_graph",
+            "node_ordering",
+            "aoi_mask_builder",
+        }
 
     def get_coordinates(self) -> torch.Tensor:
         """Get the coordinates of the nodes.
@@ -54,13 +59,6 @@ class IcosahedralNodes(BaseNodeBuilder, ABC):
 
     @abstractmethod
     def create_nodes(self) -> tuple[nx.DiGraph, np.ndarray, list[int]]: ...
-
-    def register_attributes(self, graph: HeteroData, config: DotDict) -> HeteroData:
-        graph[self.name]["_resolutions"] = self.resolutions
-        graph[self.name]["_nx_graph"] = self.nx_graph
-        graph[self.name]["_node_ordering"] = self.node_ordering
-        graph[self.name]["_aoi_mask_builder"] = self.aoi_mask_builder
-        return super().register_attributes(graph, config)
 
 
 class LimitedAreaIcosahedralNodes(IcosahedralNodes):

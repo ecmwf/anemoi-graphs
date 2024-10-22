@@ -23,6 +23,8 @@ class BaseNodeBuilder(ABC):
         The area of interest mask builder, if any. Defaults to None.
     """
 
+    hidden_attributes: set[str] = set()
+
     def __init__(self, name: str) -> None:
         self.name = name
         self.aoi_mask_builder = None
@@ -54,6 +56,9 @@ class BaseNodeBuilder(ABC):
         HeteroData
             The graph with the registered attributes.
         """
+        for hidden_attr in self.hidden_attributes:
+            graph[self.name][f"_{hidden_attr}"] = getattr(self, hidden_attr)
+
         for attr_name, attr_config in config.items():
             graph[self.name][attr_name] = instantiate(attr_config).compute(graph, self.name)
 
