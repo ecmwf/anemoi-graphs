@@ -143,8 +143,10 @@ class AreaWeights(BaseNodeAttribute):
         return area_weights
 
 
-class ZarrDatasetAttribute(BaseNodeAttribute):
-    """Read the attribute from a Zarr dataset variable.
+class MissingZarrVariable(BaseNodeAttribute):
+    """Mask of missing values of a Zarr dataset variable.
+
+    It reads a variable from a Zarr dataset and returns a boolean mask of missing values in the first timestep.
 
     Attributes
     ----------
@@ -159,23 +161,45 @@ class ZarrDatasetAttribute(BaseNodeAttribute):
         Compute the attribute for each node.
     """
 
-    def __init__(self, variable: str, invert: bool = False, norm: str | None = None, dtype: str = "bool") -> None:
-        super().__init__(norm, dtype)
+    def __init__(self, variable: str, norm: str | None = None) -> None:
+        super().__init__(norm, "bool")
         self.variable = variable
-        self.invert = invert
 
     def get_raw_values(self, nodes: NodeStorage, **kwargs) -> np.ndarray:
-        ds = open_dataset(nodes["_dataset"], select=self.variable)[0]
-        return ds.squeeze().astype(self.dtype)
+        assert (
+            nodes["node_type"] == "ZarrDatasetNodes"
+        ), f"{self.__class__.__name__} can only be used with ZarrDatasetNodes."
+        ds = open_dataset(nodes["_dataset"], select=self.variable)[0].squeeze()
+        return np.isnan(ds)
 
-    def post_process(self, values: np.ndarray) -> torch.Tensor:
-        """Post-process the values."""
-        if values.ndim == 1:
-            values = values[:, np.newaxis]
 
-        norm_values = self.normalize(values)
+class NotMissingZarrVariable(MissingZarrVariable):
+    """Mask of valid (not missing) values of a Zarr dataset variable.
 
-        if self.invert:
-            norm_values = 1 - norm_values
+    It reads a variable from a Zarr dataset and returns a boolean mask of missing values in the first timestep.
 
-        return torch.tensor(norm_values.astype(self.dtype))
+    Attributes
+    ----------
+    variable : str
+        Variable to read from the Zarr dataset.
+    norm : str
+        Normalization of the weights.
+
+    Methods
+    -------
+    compute(self, graph, nodes_name)
+        Compute the attribute for each node.
+    """
+
+    def get_raw_values(self, nodes: NodeStorage, **kwargs) -> np.ndarray:
+        return ~super().get_raw_values(nodes, **kwargs)
+
+
+class CutOutMask(BaseNodeAttribute):
+    """Cut out mask."""
+
+    def get_raw_values(self, nodes: NodeStorage, **kwargs) -> np.ndarray:
+        assert isinstance(nodes["_dataset"], dict), "The 'dataset' attribute must be a dictionary."
+        assert "cutout" in nodes["_dataset"], "The 'dataset' attribute must contain a 'cutout' key."
+        n_cutout, n_grids = open_dataset(nodes["_dataset"]).grids
+        return np.array([True] * n_cutout + [False] * n_grids, dtype=bool)
