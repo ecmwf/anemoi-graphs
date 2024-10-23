@@ -12,6 +12,7 @@ from __future__ import annotations
 import logging
 from abc import ABC
 from abc import abstractmethod
+from typing import Type
 
 import numpy as np
 import torch
@@ -152,7 +153,14 @@ class AreaWeights(BaseNodeAttribute):
         return area_weights
 
 
-class MissingZarrVariable(BaseNodeAttribute):
+class BooleanBaseNodeAttribute(BaseNodeAttribute, ABC):
+    """Base class for boolean node attributes."""
+
+    def __init__(self) -> None:
+        super().__init__(norm=None, dtype="bool")
+
+
+class MissingZarrVariable(BooleanBaseNodeAttribute):
     """Mask of missing values of a Zarr dataset variable.
 
     It reads a variable from a Zarr dataset and returns a boolean mask of missing values in the first timestep.
@@ -170,8 +178,8 @@ class MissingZarrVariable(BaseNodeAttribute):
         Compute the attribute for each node.
     """
 
-    def __init__(self, variable: str, norm: str | None = None) -> None:
-        super().__init__(norm, "bool")
+    def __init__(self, variable: str) -> None:
+        super().__init__()
         self.variable = variable
 
     def get_raw_values(self, nodes: NodeStorage, **kwargs) -> np.ndarray:
@@ -204,14 +212,44 @@ class NotMissingZarrVariable(MissingZarrVariable):
         return ~super().get_raw_values(nodes, **kwargs)
 
 
-class CutOutMask(BaseNodeAttribute):
+class CutOutMask(BooleanBaseNodeAttribute):
     """Cut out mask."""
-
-    def __init__(self, norm: str | None = None) -> None:
-        super().__init__(norm, "bool")
 
     def get_raw_values(self, nodes: NodeStorage, **kwargs) -> np.ndarray:
         assert isinstance(nodes["_dataset"], dict), "The 'dataset' attribute must be a dictionary."
         assert "cutout" in nodes["_dataset"], "The 'dataset' attribute must contain a 'cutout' key."
         n_cutout, n_grids = open_dataset(nodes["_dataset"]).grids
         return np.array([True] * n_cutout + [False] * n_grids, dtype=bool)
+
+
+class BooleanOperation(BooleanBaseNodeAttribute, ABC):
+    """Base class for boolean operations."""
+
+    def __init__(self, masks: list[str | Type[BooleanBaseNodeAttribute]]) -> None:
+        super().__init__()
+        self.masks = masks
+
+    @staticmethod
+    def get_mask_values(mask: str | Type[BaseNodeAttribute], nodes: NodeStorage, **kwargs) -> np.array:
+        if isinstance(mask, str):
+            attributes = nodes[mask]
+            assert (
+                attributes.dtype == "bool"
+            ), f"The mask attribute '{mask}' must be a boolean but is {attributes.dtype}."
+            return attributes
+
+        return mask.get_raw_values(nodes, **kwargs)
+
+
+class BooleanAndMask(BooleanOperation):
+    """Boolean AND mask."""
+
+    def get_raw_values(self, nodes: NodeStorage, **kwargs) -> np.ndarray:
+        return np.logical_and.reduce([BooleanOperation.get_mask_values(mask, nodes, **kwargs) for mask in self.masks])
+
+
+class BooleanOrMask(BooleanOperation):
+    """Boolean OR mask."""
+
+    def get_raw_values(self, nodes: NodeStorage, **kwargs) -> np.ndarray:
+        return np.logical_or.reduce([BooleanOperation.get_mask_values(mask, nodes, **kwargs) for mask in self.masks])
