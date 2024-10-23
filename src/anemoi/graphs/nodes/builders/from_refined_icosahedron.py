@@ -42,7 +42,7 @@ class IcosahedralNodes(BaseNodeBuilder, ABC):
             "resolutions",
             "nx_graph",
             "node_ordering",
-            "aoi_mask_builder",
+            "area_mask_builder",
         }
 
     def get_coordinates(self) -> torch.Tensor:

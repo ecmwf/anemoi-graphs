@@ -198,6 +198,9 @@ class NotMissingZarrVariable(MissingZarrVariable):
 class CutOutMask(BaseNodeAttribute):
     """Cut out mask."""
 
+    def __init__(self, norm: str | None = None) -> None:
+        super().__init__(norm, "bool")
+
     def get_raw_values(self, nodes: NodeStorage, **kwargs) -> np.ndarray:
         assert isinstance(nodes["_dataset"], dict), "The 'dataset' attribute must be a dictionary."
         assert "cutout" in nodes["_dataset"], "The 'dataset' attribute must contain a 'cutout' key."

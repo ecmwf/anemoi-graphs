@@ -19,7 +19,7 @@ class BaseNodeBuilder(ABC):
     ----------
     name : str
         name of the nodes, key for the nodes in the HeteroData graph object.
-    aoi_mask_builder : KNNAreaMaskBuilder
+    area_mask_builder : KNNAreaMaskBuilder
         The area of interest mask builder, if any. Defaults to None.
     """
 
