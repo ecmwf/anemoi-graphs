@@ -1,0 +1,14 @@
+nodes:
+  data:
+    node_builder:
+      _target_: anemoi.graphs.nodes.CutOutZarrDatasetNodes
+      dataset: /path/to/regional-dataset.zarr
+    attributes: ...
+  hidden:
+    node_builder:
+      _target_: anemoi.graphs.nodes.LimitedAreaTriNodes
+      resolution: 5
+      reference_node_name: data
+    attributes: ...
+
+edges: ...
