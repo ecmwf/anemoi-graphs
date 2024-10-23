@@ -12,12 +12,12 @@ from torch_geometric.data import HeteroData
 from torch_geometric.data.storage import NodeStorage
 
 from anemoi.graphs.generate.transforms import latlon_rad_to_cartesian
-from anemoi.graphs.normalizer import NormalizerMixin
+from anemoi.graphs.normalise import NormaliserMixin
 
 LOGGER = logging.getLogger(__name__)
 
 
-class BaseNodeAttribute(ABC, NormalizerMixin):
+class BaseNodeAttribute(ABC, NormaliserMixin):
     """Base class for the weights of the nodes."""
 
     def __init__(self, norm: str | None = None, dtype: str = "float32") -> None:
@@ -32,7 +32,7 @@ class BaseNodeAttribute(ABC, NormalizerMixin):
         if values.ndim == 1:
             values = values[:, np.newaxis]
 
-        norm_values = self.normalize(values)
+        norm_values = self.normalise(values)
 
         return torch.tensor(norm_values.astype(self.dtype))
 
@@ -91,7 +91,7 @@ class AreaWeights(BaseNodeAttribute):
     Attributes
     ----------
     norm : str
-        Normalization of the weights.
+        Normalisation of the weights.
     radius : float
         Radius of the sphere.
     centre : np.ndarray

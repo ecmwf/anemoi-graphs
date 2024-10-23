@@ -11,6 +11,7 @@ from torch_geometric.data import HeteroData
 
 from anemoi.graphs.generate.hex_icosahedron import create_hex_nodes
 from anemoi.graphs.generate.masks import KNNAreaMaskBuilder
+from anemoi.graphs.generate.tri_icosahedron import create_stretched_tri_nodes
 from anemoi.graphs.generate.tri_icosahedron import create_tri_nodes
 from anemoi.graphs.nodes.builders.base import BaseNodeBuilder
 
@@ -24,8 +25,6 @@ class IcosahedralNodes(BaseNodeBuilder, ABC):
     ----------
     resolution : list[int] | int
         Refinement level of the mesh.
-    name : str
-        Name of the nodes.
     """
 
     def __init__(
@@ -66,7 +65,7 @@ class LimitedAreaIcosahedralNodes(IcosahedralNodes):
 
     Attributes
     ----------
-    aoi_mask_builder : KNNAreaMaskBuilder
+    area_mask_builder : KNNAreaMaskBuilder
         The area of interest mask builder.
     """
 
@@ -81,10 +80,10 @@ class LimitedAreaIcosahedralNodes(IcosahedralNodes):
 
         super().__init__(resolution, name)
 
-        self.aoi_mask_builder = KNNAreaMaskBuilder(reference_node_name, margin_radius_km, mask_attr_name)
+        self.area_mask_builder = KNNAreaMaskBuilder(reference_node_name, margin_radius_km, mask_attr_name)
 
     def register_nodes(self, graph: HeteroData) -> None:
-        self.aoi_mask_builder.fit(graph)
+        self.area_mask_builder.fit(graph)
         return super().register_nodes(graph)
 
 
@@ -115,12 +114,12 @@ class LimitedAreaTriNodes(LimitedAreaIcosahedralNodes):
 
     Parameters
     ----------
-    aoi_mask_builder: KNNAreaMaskBuilder
+    area_mask_builder: KNNAreaMaskBuilder
         The area of interest mask builder.
     """
 
     def create_nodes(self) -> tuple[nx.Graph, np.ndarray, list[int]]:
-        return create_tri_nodes(resolution=max(self.resolutions), aoi_mask_builder=self.aoi_mask_builder)
+        return create_tri_nodes(resolution=max(self.resolutions), area_mask_builder=self.area_mask_builder)
 
 
 class LimitedAreaHexNodes(LimitedAreaIcosahedralNodes):
@@ -130,9 +129,54 @@ class LimitedAreaHexNodes(LimitedAreaIcosahedralNodes):
 
     Parameters
     ----------
-    aoi_mask_builder: KNNAreaMaskBuilder
+    area_mask_builder: KNNAreaMaskBuilder
         The area of interest mask builder.
     """
 
     def create_nodes(self) -> tuple[nx.Graph, np.ndarray, list[int]]:
-        return create_hex_nodes(resolution=max(self.resolutions), aoi_mask_builder=self.aoi_mask_builder)
+        return create_hex_nodes(resolution=max(self.resolutions), area_mask_builder=self.area_mask_builder)
+
+
+class StretchedIcosahedronNodes(IcosahedralNodes):
+    """Nodes based on iterative refinements of an icosahedron with 2
+    different resolutions.
+
+    Attributes
+    ----------
+    area_mask_builder : KNNAreaMaskBuilder
+        The area of interest mask builder.
+    """
+
+    def __init__(
+        self,
+        global_resolution: int,
+        lam_resolution: int,
+        name: str,
+        reference_node_name: str,
+        mask_attr_name: str,
+        margin_radius_km: float = 100.0,
+    ) -> None:
+
+        super().__init__(lam_resolution, name)
+        self.global_resolution = global_resolution
+
+        self.area_mask_builder = KNNAreaMaskBuilder(reference_node_name, margin_radius_km, mask_attr_name)
+
+    def register_nodes(self, graph: HeteroData) -> None:
+        self.area_mask_builder.fit(graph)
+        return super().register_nodes(graph)
+
+
+class StretchedTriNodes(StretchedIcosahedronNodes):
+    """Nodes based on iterative refinements of an icosahedron with 2
+    different resolutions.
+
+    It depends on the trimesh Python library.
+    """
+
+    def create_nodes(self) -> tuple[nx.Graph, np.ndarray, list[int]]:
+        return create_stretched_tri_nodes(
+            base_resolution=self.global_resolution,
+            lam_resolution=max(self.resolutions),
+            area_mask_builder=self.area_mask_builder,
+        )
