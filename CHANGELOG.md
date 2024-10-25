@@ -33,6 +33,11 @@ Keep it human-readable, your future self will thank you!
 
 ### Removed
 - Remove `CutOutZarrDatasetNodes` class. (#68)
+- Update CODEOWNERS
+- Fix pre-commit regex
+- ci: extened python versions to include 3.11 and 3.12
+- Update copyright notice
+- Fix `__version__` import in init
 
 ## [0.3.0 Anemoi-graphs, minor release](https://github.com/ecmwf/anemoi-graphs/compare/0.2.1...0.3.0) - 2024-09-03
 
