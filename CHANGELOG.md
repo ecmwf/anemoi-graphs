@@ -27,6 +27,7 @@ Keep it human-readable, your future self will thank you!
 - feat: New method update_graph(graph) in the GraphCreator class. (#60)
 - feat: New class StretchedTriNodes to create a stretched mesh. (#51)
 - feat: Expanded MultiScaleEdges to support multi-scale connections in stretched graphs. (#51)
+- feat: Support for multiple edge builders between two sets of nodes (#70)
 
 ### Changed
 - ci: small fixes and updates pre-commit, downsteam-ci (#49)
@@ -35,6 +36,8 @@ Keep it human-readable, your future self will thank you!
 - ci: extened python versions to include 3.11 and 3.12
 - Update copyright notice
 - Fix `__version__` import in init
+- The `edge_builder` field in the recipe is renamed to `edge_builders`. It now receives a list of edge builders. (#70)
+- The `{source|target}_mask_attr_name` field is moved to inside the edge builder definition. (#70)
 
 ## [0.3.0 Anemoi-graphs, minor release](https://github.com/ecmwf/anemoi-graphs/compare/0.2.1...0.3.0) - 2024-09-03
 
