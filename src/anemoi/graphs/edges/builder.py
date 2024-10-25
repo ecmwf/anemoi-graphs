@@ -24,6 +24,7 @@ from torch_geometric.data import HeteroData
 from torch_geometric.data.storage import NodeStorage
 
 from anemoi.graphs import EARTH_RADIUS
+from anemoi.graphs.edges.process import concat_edges
 from anemoi.graphs.generate import hex_icosahedron
 from anemoi.graphs.generate import tri_icosahedron
 from anemoi.graphs.generate.masks import KNNAreaMaskBuilder
@@ -99,8 +100,19 @@ class BaseEdgeBuilder(ABC):
         HeteroData
             The graph with the registered edges.
         """
-        graph[self.name].edge_index = self.get_edge_index(graph)
-        graph[self.name].edge_type = type(self).__name__
+        edge_index = self.get_edge_index(graph)
+        edge_type = type(self).__name__
+
+        if "edge_index" in graph[self.name]:
+            # Expand current edge indices
+            graph[self.name].edge_index = concat_edges(graph[self.name].edge_index, edge_index)
+            if edge_type not in graph[self.name].edge_type:
+                graph[self.name].edge_type = graph[self.name].edge_type + "," + edge_type
+            return graph
+
+        # Register new edge indices
+        graph[self.name].edge_index = edge_index
+        graph[self.name].edge_type = edge_type
         return graph
 
     def register_attributes(self, graph: HeteroData, config: DotDict) -> HeteroData:
@@ -389,7 +401,6 @@ class MultiScaleEdges(BaseEdgeBuilder):
         assert isinstance(x_hops, int), "Number of x_hops must be an integer"
         assert x_hops > 0, "Number of x_hops must be positive"
         self.x_hops = x_hops
-        self.node_type = None
 
     def add_edges_from_tri_nodes(self, nodes: NodeStorage) -> NodeStorage:
         nodes["_nx_graph"] = tri_icosahedron.add_edges_to_nx_graph(
@@ -423,24 +434,22 @@ class MultiScaleEdges(BaseEdgeBuilder):
         return nodes
 
     def get_adjacency_matrix(self, source_nodes: NodeStorage, target_nodes: NodeStorage):
-        if self.node_type in [TriNodes.__name__, LimitedAreaTriNodes.__name__]:
+        if source_nodes.node_type in [TriNodes.__name__, LimitedAreaTriNodes.__name__]:
             source_nodes = self.add_edges_from_tri_nodes(source_nodes)
-        elif self.node_type in [HexNodes.__name__, LimitedAreaHexNodes.__name__]:
+        elif source_nodes.node_type in [HexNodes.__name__, LimitedAreaHexNodes.__name__]:
             source_nodes = self.add_edges_from_hex_nodes(source_nodes)
-        elif self.node_type == StretchedTriNodes.__name__:
+        elif source_nodes.node_type == StretchedTriNodes.__name__:
             source_nodes = self.add_edges_from_stretched_tri_nodes(source_nodes)
         else:
-            raise ValueError(f"Invalid node type {self.node_type}")
+            raise ValueError(f"Invalid node type {source_nodes.node_type}")
 
         adjmat = nx.to_scipy_sparse_array(source_nodes["_nx_graph"], format="coo")
 
         return adjmat
 
     def update_graph(self, graph: HeteroData, attrs_config: DotDict | None = None) -> HeteroData:
-        self.node_type = graph[self.source_name].node_type
+        node_type = graph[self.source_name].node_type
         valid_node_names = [n.__name__ for n in self.VALID_NODES]
-        assert (
-            self.node_type in valid_node_names
-        ), f"{self.__class__.__name__} requires {','.join(valid_node_names)} nodes."
+        assert node_type in valid_node_names, f"{self.__class__.__name__} requires {','.join(valid_node_names)} nodes."
 
         return super().update_graph(graph, attrs_config)

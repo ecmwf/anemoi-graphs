@@ -55,13 +55,11 @@ class GraphCreator:
             )
 
         for edges_cfg in self.config.get("edges", {}):
-            graph = instantiate(
-                edges_cfg.edge_builder,
-                edges_cfg.source_name,
-                edges_cfg.target_name,
-                source_mask_attr_name=edges_cfg.get("source_mask_attr_name", None),
-                target_mask_attr_name=edges_cfg.get("target_mask_attr_name", None),
-            ).update_graph(graph, edges_cfg.get("attributes", {}))
+            for edge_builder_cfg in edges_cfg.edge_builders:
+                edge_builder = instantiate(edge_builder_cfg, edges_cfg.source_name, edges_cfg.target_name)
+                graph = edge_builder.register_edges(graph)
+
+            graph = edge_builder.register_attributes(graph, edges_cfg.get("attributes", {}))
 
         return graph
 
