@@ -160,10 +160,10 @@ class BooleanBaseNodeAttribute(BaseNodeAttribute, ABC):
         super().__init__(norm=None, dtype="bool")
 
 
-class MissingZarrVariable(BooleanBaseNodeAttribute):
-    """Mask of missing values of a Zarr dataset variable.
+class NonmissingZarrVariable(BooleanBaseNodeAttribute):
+    """Mask of valid (not missing) values of a Zarr dataset variable.
 
-    It reads a variable from a Zarr dataset and returns a boolean mask of missing values in the first timestep.
+    It reads a variable from a Zarr dataset and returns a boolean mask of nonmissing values in the first timestep.
 
     Attributes
     ----------
@@ -187,29 +187,7 @@ class MissingZarrVariable(BooleanBaseNodeAttribute):
             nodes["node_type"] == "ZarrDatasetNodes"
         ), f"{self.__class__.__name__} can only be used with ZarrDatasetNodes."
         ds = open_dataset(nodes["_dataset"], select=self.variable)[0].squeeze()
-        return np.isnan(ds)
-
-
-class NotMissingZarrVariable(MissingZarrVariable):
-    """Mask of valid (not missing) values of a Zarr dataset variable.
-
-    It reads a variable from a Zarr dataset and returns a boolean mask of missing values in the first timestep.
-
-    Attributes
-    ----------
-    variable : str
-        Variable to read from the Zarr dataset.
-    norm : str
-        Normalization of the weights.
-
-    Methods
-    -------
-    compute(self, graph, nodes_name)
-        Compute the attribute for each node.
-    """
-
-    def get_raw_values(self, nodes: NodeStorage, **kwargs) -> np.ndarray:
-        return ~super().get_raw_values(nodes, **kwargs)
+        return ~np.isnan(ds)
 
 
 class CutOutMask(BooleanBaseNodeAttribute):
