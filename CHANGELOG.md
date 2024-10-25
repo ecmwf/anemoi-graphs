@@ -27,6 +27,8 @@ Keep it human-readable, your future self will thank you!
 - feat: New method update_graph(graph) in the GraphCreator class. (#60)
 - feat: New class StretchedTriNodes to create a stretched mesh. (#51)
 - feat: Expanded MultiScaleEdges to support multi-scale connections in stretched graphs. (#51)
+- feat: Add support for `post_processors` in the recipe. (#71)
+- feat: Add `RemoveUnconnectedNodes` post processor to clean unconnected nodes in LAM. (#71)
 
 ### Changed
 - ci: small fixes and updates pre-commit, downsteam-ci (#49)
