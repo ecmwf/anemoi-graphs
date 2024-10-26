@@ -24,7 +24,30 @@ class PostProcessor(ABC):
 
 
 class RemoveUnconnectedNodes(PostProcessor):
-    """Remove unconnected nodes in the graph."""
+    """Remove unconnected nodes in the graph.
+
+    Attributes
+    ----------
+    nodes_name: str
+        Name of the unconnected nodes to remove.
+    ignore: str, optional
+        Name of an attribute to ignore when removing nodes. Nodes with
+        this attribute set to True will not be removed.
+    save_mask_indices_to_attr: str, optional
+        Name of the attribute to save the mask indices. If provided,
+        the indices of the kept nodes will be saved in this attribute.
+
+    Methods
+    -------
+    compute_mask(graph)
+        Compute the mask of the connected nodes.
+    prune_graph(graph, mask)
+        Prune the nodes with the specified mask.
+    add_attribute(graph, mask)
+        Add an attribute to the graph with the indices of the mask.
+    update_graph(graph)
+        Post-process the graph.
+    """
 
     def __init__(
         self,
@@ -39,6 +62,10 @@ class RemoveUnconnectedNodes(PostProcessor):
     def compute_mask(self, graph: HeteroData) -> torch.Tensor:
         nodes = graph[self.nodes_name]
         connected_mask = torch.zeros(nodes.num_nodes, dtype=torch.bool)
+
+        if self.ignore is not None:
+            LOGGER.info(f"The nodes with {self.ignore}=True will not be removed.")
+            connected_mask[nodes[self.ignore].bool().squeeze()] = True
 
         for (source_name, _, target_name), edges in graph.edge_items():
             if source_name == self.nodes_name:
@@ -87,8 +114,19 @@ class RemoveUnconnectedNodes(PostProcessor):
         return graph
 
     def update_graph(self, graph: HeteroData) -> HeteroData:
+        """Update graph.
+
+        Parameters
+        ----------
+        graph: HeteroData
+            The graph to post-process.
+
+        Returns
+        -------
+        HeteroData
+            The post-processed graph.
+        """
         connected_mask = self.compute_mask(graph)
         graph = self.prune_graph(graph, connected_mask)
         graph = self.add_attribute(graph, connected_mask)
-
         return graph
