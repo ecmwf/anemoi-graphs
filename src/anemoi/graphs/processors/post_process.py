@@ -47,7 +47,7 @@ class RemoveUnconnectedNodes(PostProcessor):
     prune_graph(graph, mask)
         Prune the nodes with the specified mask.
     add_attribute(graph, mask)
-        Add an attribute to the graph with the indices of the mask.
+        Add an attribute of the mask indices as node attribute.
     update_graph(graph)
         Post-process the graph.
     """
@@ -99,7 +99,7 @@ class RemoveUnconnectedNodes(PostProcessor):
         return graph
 
     def prune_graph(self, graph: HeteroData, mask: torch.Tensor) -> HeteroData:
-        """Prune the nodes of the graph."""
+        """Prune the nodes with the specified mask."""
         LOGGER.info(f"Removing {(~mask).sum()} nodes from {self.nodes_name}.")
 
         # Pruning nodes
@@ -122,7 +122,7 @@ class RemoveUnconnectedNodes(PostProcessor):
         return graph
 
     def update_graph(self, graph: HeteroData) -> HeteroData:
-        """Update graph.
+        """Post-process the graph.
 
         Parameters
         ----------
