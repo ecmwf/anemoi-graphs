@@ -15,7 +15,7 @@ from pathlib import Path
 import numpy as np
 import torch
 from anemoi.datasets import open_dataset
-from anemoi.utils.config import DotDict
+from omegaconf import DictConfig
 from omegaconf import OmegaConf
 from torch_geometric.data import HeteroData
 
@@ -30,7 +30,7 @@ class ZarrDatasetNodes(BaseNodeBuilder):
 
     Attributes
     ----------
-    dataset : zarr.core.Array
+    dataset : str | DictConfig
         The dataset.
 
     Methods
@@ -45,10 +45,9 @@ class ZarrDatasetNodes(BaseNodeBuilder):
         Update the graph with new nodes and attributes.
     """
 
-    def __init__(self, dataset: DotDict, name: str) -> None:
+    def __init__(self, dataset: DictConfig, name: str) -> None:
         LOGGER.info("Reading the dataset from %s.", dataset)
         self.dataset = dataset if isinstance(dataset, str) else OmegaConf.to_container(dataset)
-        self.ds = open_dataset(self.dataset)
         super().__init__(name)
         self.hidden_attributes = BaseNodeBuilder.hidden_attributes | {"dataset"}
 
@@ -60,7 +59,8 @@ class ZarrDatasetNodes(BaseNodeBuilder):
         torch.Tensor of shape (num_nodes, 2)
             A 2D tensor with the coordinates, in radians.
         """
-        return self.reshape_coords(self.ds.latitudes, self.ds.longitudes)
+        dataset = open_dataset(self.dataset)
+        return self.reshape_coords(dataset.latitudes, dataset.longitudes)
 
 
 class NPZFileNodes(BaseNodeBuilder):
