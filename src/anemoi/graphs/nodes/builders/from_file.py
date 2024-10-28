@@ -63,14 +63,8 @@ class ZarrDatasetNodes(BaseNodeBuilder):
 class CutOutZarrDatasetNodes(ZarrDatasetNodes):
     """Nodes from Zarr dataset."""
 
-    def __init__(
-        self, name: str, lam_dataset: str, forcing_dataset: str, thinning: int = 1, adjust: str = "all"
-    ) -> None:
-        dataset_config = {
-            "cutout": [{"dataset": lam_dataset, "thinning": thinning}, {"dataset": forcing_dataset}],
-            "adjust": adjust,
-        }
-        super().__init__(dataset_config, name)
+    def __init__(self, dataset: DotDict, name: str) -> None:
+        super().__init__(dataset, name)
         self.n_cutout, self.n_other = self.dataset.grids
 
     def register_attributes(self, graph: HeteroData, config: DotDict) -> None:
