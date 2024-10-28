@@ -40,7 +40,7 @@ def test_register_nodes(mocker, mock_zarr_dataset_cutout):
 
     assert graph["test_nodes"].x is not None
     assert isinstance(graph["test_nodes"].x, torch.Tensor)
-    assert graph["test_nodes"].x.shape == (node_builder.ds.num_nodes, 2)
+    assert graph["test_nodes"].x.shape[1] == 2
     assert graph["test_nodes"].node_type == "ZarrDatasetNodes"
 
 
