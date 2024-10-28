@@ -28,6 +28,7 @@ Keep it human-readable, your future self will thank you!
 - feat: New class StretchedTriNodes to create a stretched mesh. (#51)
 - feat: Expanded MultiScaleEdges to support multi-scale connections in stretched graphs. (#51)
 - feat: Support for multiple edge builders between two sets of nodes (#70)
+- feat: Add CONTRIBUTORS.md file. (#72)
 
 ### Changed
 - ci: small fixes and updates pre-commit, downsteam-ci (#49)
