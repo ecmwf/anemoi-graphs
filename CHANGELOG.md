@@ -29,6 +29,7 @@ Keep it human-readable, your future self will thank you!
 - feat: Expanded MultiScaleEdges to support multi-scale connections in stretched graphs. (#51)
 - feat: Add support for `post_processors` in the recipe. (#71)
 - feat: Add `RemoveUnconnectedNodes` post processor to clean unconnected nodes in LAM. (#71)
+- feat: Add CONTRIBUTORS.md file. (#72)
 
 ### Changed
 - ci: small fixes and updates pre-commit, downsteam-ci (#49)
