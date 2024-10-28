@@ -27,14 +27,17 @@ Keep it human-readable, your future self will thank you!
 - feat: New method update_graph(graph) in the GraphCreator class. (#60)
 - feat: New class StretchedTriNodes to create a stretched mesh. (#51)
 - feat: Expanded MultiScaleEdges to support multi-scale connections in stretched graphs. (#51)
+- feat: Add CONTRIBUTORS.md file. (#72)
 
 - Create package documentation.
 
 ### Changed
 - ci: small fixes and updates pre-commit, downsteam-ci (#49)
 - Update CODEOWNERS
+- Fix pre-commit regex
 - ci: extened python versions to include 3.11 and 3.12
 - Update copyright notice
+- Fix `__version__` import in init
 
 ## [0.3.0 Anemoi-graphs, minor release](https://github.com/ecmwf/anemoi-graphs/compare/0.2.1...0.3.0) - 2024-09-03
 
