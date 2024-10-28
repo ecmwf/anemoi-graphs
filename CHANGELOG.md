@@ -24,6 +24,7 @@ Keep it human-readable, your future self will thank you!
 - Add anemoi-transform link to documentation (#59)
 - Added `CutOutMask` class to create a mask for a cutout. (#68)
 - Added `MissingZarrVariable` and `NotMissingZarrVariable` classes to create a mask for missing zarr variables. (#68)
+- feat: Add CONTRIBUTORS.md file. (#72)
 
 ### Changed
 - ci: small fixes and updates pre-commit, downsteam-ci (#49)
