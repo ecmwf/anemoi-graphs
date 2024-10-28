@@ -11,6 +11,7 @@ from __future__ import annotations
 
 import logging
 from abc import ABC
+from abc import abstractmethod
 
 import torch
 from torch_geometric.data import HeteroData
@@ -19,6 +20,8 @@ LOGGER = logging.getLogger(__name__)
 
 
 class PostProcessor(ABC):
+
+    @abstractmethod
     def update_graph(self, graph: HeteroData) -> HeteroData:
         raise NotImplementedError(f"The {self.__class__.__name__} class does not implement the method update_graph().")
 
@@ -60,6 +63,7 @@ class RemoveUnconnectedNodes(PostProcessor):
         self.save_mask_indices_to_attr = save_mask_indices_to_attr
 
     def compute_mask(self, graph: HeteroData) -> torch.Tensor:
+        """Compute the mask of connected nodes."""
         nodes = graph[self.nodes_name]
         connected_mask = torch.zeros(nodes.num_nodes, dtype=torch.bool)
 
@@ -77,12 +81,14 @@ class RemoveUnconnectedNodes(PostProcessor):
         return connected_mask
 
     def removing_nodes(self, graph: HeteroData, mask: torch.Tensor) -> HeteroData:
+        """Remove nodes based on the mask passed."""
         for attr_name in graph[self.nodes_name].node_attrs():
             graph[self.nodes_name][attr_name] = graph[self.nodes_name][attr_name][mask]
 
         return graph
 
     def update_edge_indices(self, graph: HeteroData, idx_mapping: dict[int, int]) -> HeteroData:
+        """Update the edge indices to the new position of the nodes."""
         for edges_name in graph.edge_types:
             if edges_name[0] == self.nodes_name:
                 graph[edges_name].edge_index[0] = graph[edges_name].edge_index[0].apply_(idx_mapping.get)
@@ -93,6 +99,7 @@ class RemoveUnconnectedNodes(PostProcessor):
         return graph
 
     def prune_graph(self, graph: HeteroData, mask: torch.Tensor) -> HeteroData:
+        """Prune the nodes of the graph."""
         LOGGER.info(f"Removing {(~mask).sum()} nodes from {self.nodes_name}.")
 
         # Pruning nodes
@@ -105,6 +112,7 @@ class RemoveUnconnectedNodes(PostProcessor):
         return graph
 
     def add_attribute(self, graph: HeteroData, mask: torch.Tensor) -> HeteroData:
+        """Add an attribute of the mask indices as node attribute."""
         if self.save_mask_indices_to_attr is not None:
             LOGGER.info(
                 f"An attribute {self.save_mask_indices_to_attr} has been added with the indices to mask the nodes from the original graph."
