@@ -1,3 +1,12 @@
+# (C) Copyright 2024 Anemoi contributors.
+#
+# This software is licensed under the terms of the Apache Licence Version 2.0
+# which can be obtained at http://www.apache.org/licenses/LICENSE-2.0.
+#
+# In applying this licence, ECMWF does not waive the privileges and immunities
+# granted to it by virtue of its status as an intergovernmental organisation
+# nor does it submit to any jurisdiction.
+
 from __future__ import annotations
 
 import logging
@@ -73,12 +82,12 @@ class LimitedAreaHEALPixNodes(HEALPixNodes):
         margin_radius_km: float = 100.0,
     ) -> None:
 
-        self.aoi_mask_builder = KNNAreaMaskBuilder(reference_node_name, margin_radius_km, mask_attr_name)
+        self.area_mask_builder = KNNAreaMaskBuilder(reference_node_name, margin_radius_km, mask_attr_name)
 
         super().__init__(resolution, name)
 
     def register_nodes(self, graph: HeteroData) -> None:
-        self.aoi_mask_builder.fit(graph)
+        self.area_mask_builder.fit(graph)
         return super().register_nodes(graph)
 
     def get_coordinates(self) -> np.ndarray:
@@ -87,11 +96,11 @@ class LimitedAreaHEALPixNodes(HEALPixNodes):
         LOGGER.info(
             'Limiting the "%s" nodes to a radius of %.2f km from the nodes of interest.',
             self.name,
-            self.aoi_mask_builder.margin_radius_km,
+            self.area_mask_builder.margin_radius_km,
         )
-        aoi_mask = self.aoi_mask_builder.get_mask(coords)
+        area_mask = self.area_mask_builder.get_mask(coords)
 
-        LOGGER.info('Masking out %d nodes from "%s".', len(aoi_mask) - aoi_mask.sum(), self.name)
-        coords = coords[aoi_mask]
+        LOGGER.info('Masking out %d nodes from "%s".', len(area_mask) - area_mask.sum(), self.name)
+        coords = coords[area_mask]
 
         return coords

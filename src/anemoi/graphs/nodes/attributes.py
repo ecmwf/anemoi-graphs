@@ -1,3 +1,12 @@
+# (C) Copyright 2024 Anemoi contributors.
+#
+# This software is licensed under the terms of the Apache Licence Version 2.0
+# which can be obtained at http://www.apache.org/licenses/LICENSE-2.0.
+#
+# In applying this licence, ECMWF does not waive the privileges and immunities
+# granted to it by virtue of its status as an intergovernmental organisation
+# nor does it submit to any jurisdiction.
+
 from __future__ import annotations
 
 import logging
@@ -11,12 +20,12 @@ from torch_geometric.data import HeteroData
 from torch_geometric.data.storage import NodeStorage
 
 from anemoi.graphs.generate.transforms import latlon_rad_to_cartesian
-from anemoi.graphs.normalizer import NormalizerMixin
+from anemoi.graphs.normalise import NormaliserMixin
 
 LOGGER = logging.getLogger(__name__)
 
 
-class BaseWeights(ABC, NormalizerMixin):
+class BaseWeights(ABC, NormaliserMixin):
     """Base class for the weights of the nodes."""
 
     def __init__(self, norm: str | None = None) -> None:
@@ -30,7 +39,7 @@ class BaseWeights(ABC, NormalizerMixin):
         if values.ndim == 1:
             values = values[:, np.newaxis]
 
-        norm_values = self.normalize(values)
+        norm_values = self.normalise(values)
 
         return torch.tensor(norm_values, dtype=torch.float32)
 
@@ -93,7 +102,7 @@ class AreaWeights(BaseWeights):
     Attributes
     ----------
     norm : str
-        Normalization of the weights.
+        Normalisation of the weights.
     radius : float
         Radius of the sphere.
     centre : np.ndarray
