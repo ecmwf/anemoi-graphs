@@ -22,6 +22,10 @@ import torch_geometric
 from typeguard import typechecked
 from typing_extensions import Self
 
+from anemoi.graphs.generate.utils import convert_adjacency_matrix_to_list
+from anemoi.graphs.generate.utils import convert_list_to_adjacency_matrix
+from anemoi.graphs.generate.utils import selection_matrix
+
 LOGGER = logging.getLogger(__name__)
 
 
@@ -75,7 +79,10 @@ class EdgeID:
     def __add__(self, other: Self):
         """Concatenates two edge ID datasets."""
         assert self.num_classes == other.num_classes
-        return EdgeID(edge_id=np.concatenate((self.edge_id, other.edge_id)), num_classes=self.num_classes)
+        return EdgeID(
+            edge_id=np.concatenate((self.edge_id, other.edge_id)),
+            num_classes=self.num_classes,
+        )
 
 
 @typechecked
@@ -122,7 +129,12 @@ class BipartiteGraph:
     edge_vertices: np.ndarray  # vertex indices for each edge, shape [:,2]
     edge_id: np.ndarray  # additional ID for each edge (markers for heterogeneous input)
 
-    def __init__(self, nodeset: tuple[NodeSet, NodeSet], edge_vertices: np.ndarray, edge_id: Optional[EdgeID] = None):
+    def __init__(
+        self,
+        nodeset: tuple[NodeSet, NodeSet],
+        edge_vertices: np.ndarray,
+        edge_id: Optional[EdgeID] = None,
+    ):
         self.nodeset = nodeset
         self.edge_vertices = edge_vertices
         self.edge_id = edge_id
@@ -147,7 +159,8 @@ class BipartiteGraph:
 
         # one-hot-encoded categorical data (`edge_id`)
         one_hot = torch_geometric.utils.one_hot(
-            index=torch.tensor(self.edge_id.edge_id), num_classes=self.edge_id.num_classes
+            index=torch.tensor(self.edge_id.edge_id),
+            num_classes=self.edge_id.num_classes,
         )
         return torch.concatenate((one_hot, edge_feature_arr), dim=1)
 
@@ -177,7 +190,12 @@ class BipartiteGraphProximity(BipartiteGraph):
     in Cartesian coordinates).
     """
 
-    def __init__(self, nodeset: tuple[NodeSet, NodeSet], radius: float, edge_id: Optional[EdgeID] = None):
+    def __init__(
+        self,
+        nodeset: tuple[NodeSet, NodeSet],
+        radius: float,
+        edge_id: Optional[EdgeID] = None,
+    ):
 
         src, tgt = nodeset
         point_tree = scipy.spatial.KDTree(tgt.cc_vertices)
@@ -228,7 +246,11 @@ class ICONMultiMesh(GeneralGraph):
         # restrict edge-vertex list to multi_mesh level "max_level":
         if self.max_level < len(edge_vertices):
             (self.edge_vertices, self.cell_vertices, vlon, vlat) = self._restrict_multi_mesh_level(
-                edge_vertices, cell_vertices, reflvl_vertex=reflvl_vertex, vlon=vlon, vlat=vlat
+                edge_vertices,
+                cell_vertices,
+                reflvl_vertex=reflvl_vertex,
+                vlon=vlon,
+                vlat=vlat,
             )
         # store vertices as a `NodeSet`:
         self.nodeset = NodeSet(vlon, vlat)
@@ -352,7 +374,11 @@ class ICONMultiMesh(GeneralGraph):
         cell_vertices = convert_adjacency_matrix_to_list(cell2vertex_matrix, remove_duplicates=False, ncols_per_row=3)
 
         # finally, translate non-existent vertices into "-1" indices:
-        cell_vertices = np.where(cell_vertices >= nvmax, -np.ones(cell_vertices.shape, dtype=np.int32), cell_vertices)
+        cell_vertices = np.where(
+            cell_vertices >= nvmax,
+            -np.ones(cell_vertices.shape, dtype=np.int32),
+            cell_vertices,
+        )
 
         return (edge_vertices, cell_vertices)
 
@@ -459,7 +485,11 @@ def get_edge_attributes(
     # rotation matrix:
     rotation = scipy.spatial.transform.Rotation.from_euler(seq="YZ", angles=theta_phi)
     edge_length = np.array([arc_length(cc_recv, cc_send)])
-    distance = rotation.apply(cc_send) - [1.0, 0.0, 0.0]  # subtract the rotated position of sender
+    distance = rotation.apply(cc_send) - [
+        1.0,
+        0.0,
+        0.0,
+    ]  # subtract the rotated position of sender
     return np.concatenate((edge_length.transpose(), distance), axis=1)
 
 
@@ -479,77 +509,3 @@ def read_coordinate_array(ncfile, arrname: str, dimname: str) -> np.ndarray:
     # -> convert to regular arrays
     assert not arr.mask.any(), f"There are missing values in {arrname}"
     return arr.data
-
-
-@typechecked
-def convert_list_to_adjacency_matrix(list_matrix: np.ndarray, ncols: int = 0) -> scipy.sparse.csr_matrix:
-    """Convert an edge list into an adjacency matrix.
-
-    Parameters
-    ----------
-    list_matrix : np.ndarray
-        boolean matrix given by list of column indices for each row.
-    ncols : int
-        number of columns in result matrix.
-
-    Returns
-    -------
-    scipy.sparse.csr_matrix
-        sparse matrix [nrows, ncols]
-    """
-    nrows, ncols_per_row = list_matrix.shape
-    indptr = np.arange(ncols_per_row * (nrows + 1), step=ncols_per_row)
-    indices = list_matrix.ravel()
-    return scipy.sparse.csr_matrix((np.ones(nrows * ncols_per_row), indices, indptr), dtype=bool, shape=(nrows, ncols))
-
-
-@typechecked
-def convert_adjacency_matrix_to_list(
-    adj_matrix: scipy.sparse.csr_matrix,
-    ncols_per_row: int,
-    remove_duplicates: bool = True,
-) -> np.ndarray:
-    """Convert an adjacency matrix into an edge list.
-
-    Parameters
-    ----------
-    adj_matrix : scipy.sparse.csr_matrix
-        sparse (boolean) adjacency matrix
-    ncols_per_row : int
-        number of nonzero entries per row
-    remove_duplicates : bool
-        logical flag: remove duplicate rows.
-
-    Returns
-    -------
-    np.ndarray
-        boolean matrix given by list of column indices for each row.
-    """
-    if remove_duplicates:
-        # The edges-vertex adjacency matrix may have duplicate rows, remove
-        # them by selecting the rows that are unique:
-        nrows = int(adj_matrix.nnz // ncols_per_row)
-        mat = adj_matrix.indices.reshape((nrows, ncols_per_row))
-        return np.unique(mat, axis=0)
-
-    nrows = adj_matrix.shape[0]
-    return adj_matrix.indices.reshape((nrows, ncols_per_row))
-
-
-@typechecked
-def selection_matrix(idx: np.ndarray, num_diagonals: int) -> scipy.sparse.csr_matrix:
-    """Create a diagonal selection matrix.
-
-    Parameters
-    ----------
-    idx : np.ndarray
-        integer array of indices
-    num_diagonals : int
-        size of (square) selection matrix
-
-    Returns
-    -------
-    scipy.sparse.csr_matrix
-        diagonal matrix with ones at selected indices (idx,idx).
-    """
-    return scipy.sparse.csr_matrix((np.ones((len(idx))), (idx, idx)), dtype=bool, shape=(num_diagonals, num_diagonals))
