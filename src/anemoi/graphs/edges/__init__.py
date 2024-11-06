@@ -5,4 +5,11 @@ from .builder import ICONTopologicalProcessorEdges
 from .builder import KNNEdges
 from .builder import MultiScaleEdges
 
-__all__ = ["KNNEdges", "CutOffEdges", "MultiScaleEdges", "ICONTopologicalDecoderEdges"]
+__all__ = [
+    "KNNEdges",
+    "CutOffEdges",
+    "MultiScaleEdges",
+    "ICONTopologicalProcessorEdges",
+    "ICONTopologicalEncoderEdges",
+    "ICONTopologicalDecoderEdges",
+]
