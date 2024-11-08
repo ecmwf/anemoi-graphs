@@ -10,6 +10,10 @@ Keep it human-readable, your future self will thank you!
 
 ## [Unreleased](https://github.com/ecmwf/anemoi-graphs/compare/0.4.0...HEAD)
 
+### Added
+- feat: Add support for `post_processors` in the recipe. (#71)
+- feat: Add `RemoveUnconnectedNodes` post processor to clean unconnected nodes in LAM. (#71)
+
 ## [0.4.0 - LAM and stretched graphs](https://github.com/ecmwf/anemoi-graphs/compare/0.3.0...0.4.0) - 2024-11-08
 
 ### Added
@@ -22,8 +26,6 @@ Keep it human-readable, your future self will thank you!
 - feat: New method update_graph(graph) in the GraphCreator class. (#60)
 - feat: New class StretchedTriNodes to create a stretched mesh. (#51)
 - feat: Expanded MultiScaleEdges to support multi-scale connections in stretched graphs. (#51)
-- feat: Add support for `post_processors` in the recipe. (#71)
-- feat: Add `RemoveUnconnectedNodes` post processor to clean unconnected nodes in LAM. (#71)
 - fix: bug in color when plotting isolated nodes (#63)
 - Add anemoi-transform link to documentation (#59)
 - Added `CutOutMask` class to create a mask for a cutout. (#68)
