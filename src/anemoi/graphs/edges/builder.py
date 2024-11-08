@@ -380,7 +380,13 @@ class MultiScaleEdges(BaseEdgeBuilder):
         Update the graph with the edges.
     """
 
-    VALID_NODES = [TriNodes, HexNodes, LimitedAreaTriNodes, LimitedAreaHexNodes, StretchedTriNodes]
+    VALID_NODES = [
+        TriNodes,
+        HexNodes,
+        LimitedAreaTriNodes,
+        LimitedAreaHexNodes,
+        StretchedTriNodes,
+    ]
 
     def __init__(self, source_name: str, target_name: str, x_hops: int, **kwargs):
         super().__init__(source_name, target_name)
@@ -458,12 +464,20 @@ class ICONTopologicalBaseEdgeBuilder(BaseEdgeBuilder):
         The name of the ICON mesh (defines both the processor mesh and the data)
     """
 
-    def __init__(self, source_name: str, target_name: str, icon_mesh: str):
+    def __init__(
+        self,
+        source_name: str,
+        target_name: str,
+        icon_mesh: str,
+        source_mask_attr_name: str | None = None,
+        target_mask_attr_name: str | None = None,
+    ):
         self.icon_mesh = icon_mesh
-        super().__init__(source_name, target_name)
+        super().__init__(source_name, target_name, source_mask_attr_name, target_mask_attr_name)
 
     def update_graph(self, graph: HeteroData, attrs_config: DotDict = None) -> HeteroData:
         """Update the graph with the edges."""
+        assert self.icon_mesh is not None, f"{self.__class__.__name__} requires initialized icon_mesh."
         self.icon_sub_graph = graph[self.icon_mesh][self.sub_graph_address]
         return super().update_graph(graph, attrs_config)
 
@@ -494,10 +508,23 @@ class ICONTopologicalProcessorEdges(ICONTopologicalBaseEdgeBuilder):
     from ICON grid vertices.
     """
 
-    def __init__(self, source_name: str, target_name: str, icon_mesh: str):
+    def __init__(
+        self,
+        source_name: str,
+        target_name: str,
+        icon_mesh: str,
+        source_mask_attr_name: str | None = None,
+        target_mask_attr_name: str | None = None,
+    ):
         self.sub_graph_address = "_multi_mesh"
         self.vertex_index = (1, 0)
-        super().__init__(source_name, target_name, icon_mesh)
+        super().__init__(
+            source_name,
+            target_name,
+            icon_mesh,
+            source_mask_attr_name,
+            target_mask_attr_name,
+        )
 
 
 class ICONTopologicalEncoderEdges(ICONTopologicalBaseEdgeBuilder):
@@ -506,10 +533,23 @@ class ICONTopologicalEncoderEdges(ICONTopologicalBaseEdgeBuilder):
     vertices.
     """
 
-    def __init__(self, source_name: str, target_name: str, icon_mesh: str):
+    def __init__(
+        self,
+        source_name: str,
+        target_name: str,
+        icon_mesh: str,
+        source_mask_attr_name: str | None = None,
+        target_mask_attr_name: str | None = None,
+    ):
         self.sub_graph_address = "_cell_grid"
         self.vertex_index = (1, 0)
-        super().__init__(source_name, target_name, icon_mesh)
+        super().__init__(
+            source_name,
+            target_name,
+            icon_mesh,
+            source_mask_attr_name,
+            target_mask_attr_name,
+        )
 
 
 class ICONTopologicalDecoderEdges(ICONTopologicalBaseEdgeBuilder):
@@ -518,7 +558,20 @@ class ICONTopologicalDecoderEdges(ICONTopologicalBaseEdgeBuilder):
     circumcenters.
     """
 
-    def __init__(self, source_name: str, target_name: str, icon_mesh: str):
+    def __init__(
+        self,
+        source_name: str,
+        target_name: str,
+        icon_mesh: str,
+        source_mask_attr_name: str | None = None,
+        target_mask_attr_name: str | None = None,
+    ):
         self.sub_graph_address = "_cell_grid"
         self.vertex_index = (0, 1)
-        super().__init__(source_name, target_name, icon_mesh)
+        super().__init__(
+            source_name,
+            target_name,
+            icon_mesh,
+            source_mask_attr_name,
+            target_mask_attr_name,
+        )
