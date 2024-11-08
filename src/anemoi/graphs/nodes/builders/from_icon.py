@@ -12,7 +12,8 @@ import torch
 from anemoi.utils.config import DotDict
 from torch_geometric.data import HeteroData
 
-from anemoi.graphs.generate.icon_mesh import get_icon_mesh_and_grid
+from anemoi.graphs.generate.icon_mesh import ICONCellDataGrid
+from anemoi.graphs.generate.icon_mesh import ICONMultiMesh
 from anemoi.graphs.nodes.builders.base import BaseNodeBuilder
 
 
@@ -21,11 +22,10 @@ class ICONNodes(BaseNodeBuilder):
 
     def __init__(self, name: str, grid_filename: str, max_level_multimesh: int, max_level_dataset: int) -> None:
         self.grid_filename = grid_filename
-        self.multi_mesh, self.cell_grid = get_icon_mesh_and_grid(
-            grid_file=self.grid_filename,
-            max_level_multimesh=max_level_multimesh,
-            max_level_dataset=max_level_dataset,
-        )
+
+        self.multi_mesh = ICONMultiMesh(self.grid_filename, max_level=max_level_multimesh)
+        self.cell_grid = ICONCellDataGrid(self.grid_filename, self.multi_mesh, max_level=max_level_dataset)
+
         super().__init__(name)
 
     def get_coordinates(self) -> torch.Tensor:

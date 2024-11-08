@@ -17,8 +17,6 @@ from typing import Optional
 import netCDF4
 import numpy as np
 import scipy
-import torch
-import torch_geometric
 from typeguard import typechecked
 from typing_extensions import Self
 
@@ -87,7 +85,7 @@ class EdgeID:
 
 @typechecked
 class GeneralGraph:
-    """Stores edges for a given node set, calculates edge features."""
+    """Stores edges for a given node set."""
 
     nodeset: NodeSet  # graph nodes
     edge_vertices: np.ndarray  # vertex indices for each edge, shape [:,2]
@@ -107,18 +105,6 @@ class GeneralGraph:
     @property
     def num_edges(self) -> int:
         return self.edge_vertices.shape[0]
-
-    @cached_property
-    def edge_features(self) -> torch.tensor:
-        return torch.tensor(
-            get_edge_attributes(
-                self.nodeset.gc_vertices[self.edge_vertices[:, 1]],
-                self.nodeset.cc_vertices[self.edge_vertices[:, 1]],
-                self.nodeset.gc_vertices[self.edge_vertices[:, 0]],
-                self.nodeset.cc_vertices[self.edge_vertices[:, 0]],
-            ),
-            dtype=torch.float32,
-        )
 
 
 @typechecked
@@ -143,27 +129,6 @@ class BipartiteGraph:
     def num_edges(self) -> int:
         return self.edge_vertices.shape[0]
 
-    @cached_property
-    def edge_features(self) -> torch.tensor:
-        edge_feature_arr = torch.tensor(
-            get_edge_attributes(
-                self.nodeset[0].gc_vertices[self.edge_vertices[:, 0]],
-                self.nodeset[0].cc_vertices[self.edge_vertices[:, 0]],
-                self.nodeset[1].gc_vertices[self.edge_vertices[:, 1]],
-                self.nodeset[1].cc_vertices[self.edge_vertices[:, 1]],
-            ),
-            dtype=torch.float32,
-        )
-        if self.edge_id is None:
-            return edge_feature_arr
-
-        # one-hot-encoded categorical data (`edge_id`)
-        one_hot = torch_geometric.utils.one_hot(
-            index=torch.tensor(self.edge_id.edge_id),
-            num_classes=self.edge_id.num_classes,
-        )
-        return torch.concatenate((one_hot, edge_feature_arr), dim=1)
-
     def __add__(self, other: "BipartiteGraph"):
         """Concatenates two bipartite graphs that share a common target node set.
         Shifts the node indices of the second bipartite graph.
@@ -181,29 +146,6 @@ class BipartiteGraph:
             edge_vertices=np.concatenate((self.edge_vertices, shifted_edge_vertices)),
             edge_id=edge_id,
         )
-
-
-@typechecked
-class BipartiteGraphProximity(BipartiteGraph):
-    """Graph defined on a pair of NodeSets, where the definition of the
-    graph edges is based on geographical proximity (Euclidean distance
-    in Cartesian coordinates).
-    """
-
-    def __init__(
-        self,
-        nodeset: tuple[NodeSet, NodeSet],
-        radius: float,
-        edge_id: Optional[EdgeID] = None,
-    ):
-
-        src, tgt = nodeset
-        point_tree = scipy.spatial.KDTree(tgt.cc_vertices)
-        neighbor_list = point_tree.query_ball_point(src.cc_vertices, r=radius)
-        # turn `neighbor_list` into a list of pairs:
-        nb_list = [(idx, x) for idx, x in enumerate(neighbor_list)]
-        nb_list = np.asarray([(x, k) for x, y in nb_list for k in y])
-        super().__init__(nodeset=nodeset, edge_id=edge_id, edge_vertices=nb_list)
 
 
 @typechecked
@@ -439,64 +381,6 @@ class ICONCellDataGrid(BipartiteGraph):
 
 
 # -------------------------------------------------------------
-
-
-@typechecked
-def get_icon_mesh_and_grid(
-    grid_file: str, max_level_multimesh: int, max_level_dataset: int
-) -> tuple[ICONMultiMesh, ICONCellDataGrid]:
-    """Factory function, creating an ICON multi-mesh and an ICON cell-grid."""
-    return (
-        multi_mesh := ICONMultiMesh(grid_file, max_level=max_level_multimesh),
-        ICONCellDataGrid(grid_file, multi_mesh, max_level=max_level_dataset),
-    )
-
-
-@typechecked
-def get_edge_attributes(
-    gc_send: np.ndarray, cc_send: np.ndarray, gc_recv: np.ndarray, cc_recv: np.ndarray
-) -> np.ndarray:
-    """Build edge features using the position on the unit sphere of the mesh
-    nodes.
-
-    The features are (4 input features in total):
-
-    - length of the edge
-    - vector difference between the 3d positions of the sender node and the
-      receiver node computed in a local coordinate system of the receiver.
-
-    The local coordinate system of the receiver is computed by applying two elemental
-    rotations:
-
-    - the first rotation changes the azimuthal angle until that receiver
-      node lies at longitude 0,
-    - the second rotation changes the polar angle until that receiver
-      node lies at latitude 0.
-
-    Literature: Appdx. A2.4 in
-       Lam, R. et al. (2022). GraphCast: Learning skillful medium-range
-       global weather forecasting. 10.48550/arXiv.2212.12794.
-
-    """
-
-    phi_theta = gc_recv  # precession and nutation angle
-    theta_phi = np.fliplr(phi_theta)
-    theta_phi[:, 1] *= -1.0  # angles = [theta, -phi]
-    # rotation matrix:
-    rotation = scipy.spatial.transform.Rotation.from_euler(seq="YZ", angles=theta_phi)
-    edge_length = np.array([arc_length(cc_recv, cc_send)])
-    distance = rotation.apply(cc_send) - [
-        1.0,
-        0.0,
-        0.0,
-    ]  # subtract the rotated position of sender
-    return np.concatenate((edge_length.transpose(), distance), axis=1)
-
-
-@typechecked
-def arc_length(v1: np.ndarray, v2: np.ndarray) -> np.ndarray:
-    """Calculate length of great circle arc on the unit sphere."""
-    return np.arccos(np.clip(np.einsum("ij,ij->i", v1, v2), a_min=0.0, a_max=1.0))
 
 
 @typechecked
