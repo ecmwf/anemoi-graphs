@@ -10,6 +10,12 @@ Keep it human-readable, your future self will thank you!
 
 ## [Unreleased](https://github.com/ecmwf/anemoi-graphs/compare/0.4.0...HEAD)
 
+### Added
+
+### Changed
+
+- fix: missing copyrights (#73)
+
 ## [0.4.0 - LAM and stretched graphs](https://github.com/ecmwf/anemoi-graphs/compare/0.3.0...0.4.0) - 2024-11-08
 
 ### Added
@@ -27,7 +33,6 @@ Keep it human-readable, your future self will thank you!
 - Added `CutOutMask` class to create a mask for a cutout. (#68)
 - Added `MissingZarrVariable` and `NotMissingZarrVariable` classes to create a mask for missing zarr variables. (#68)
 - feat: Add CONTRIBUTORS.md file. (#72)
-- fix: missing copyrights (#73)
 
 ### Changed
 
