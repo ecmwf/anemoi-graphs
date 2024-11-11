@@ -10,12 +10,6 @@ Keep it human-readable, your future self will thank you!
 
 ## [Unreleased](https://github.com/ecmwf/anemoi-graphs/compare/0.4.0...HEAD)
 
-### Added
-
-### Changed
-
-- fix: missing copyrights (#73)
-
 ## [0.4.0 - LAM and stretched graphs](https://github.com/ecmwf/anemoi-graphs/compare/0.3.0...0.4.0) - 2024-11-08
 
 ### Added
