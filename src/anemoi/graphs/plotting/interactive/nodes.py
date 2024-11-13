@@ -6,18 +6,11 @@ from typing import Union
 import matplotlib.pyplot as plt
 import numpy as np
 import plotly.graph_objects as go
-from torch_geometric.data import HeteroData
 import torch_geometric
+from torch_geometric.data import HeteroData
 from torch_geometric.utils.convert import to_networkx
 
 from anemoi.graphs.plotting.prepare import compute_isolated_nodes
-from anemoi.graphs.plotting.prepare import compute_node_adjacencies
-from anemoi.graphs.plotting.prepare import edge_list
-from anemoi.graphs.plotting.prepare import node_list
-from anemoi.graphs.plotting.prepare import generate_shades
-from anemoi.graphs.plotting.prepare import make_layout
-from anemoi.graphs.plotting.prepare import convert_and_plot_nodes
-from anemoi.graphs.plotting.prepare import get_edge_trace
 from anemoi.graphs.plotting.style import *
 
 LOGGER = logging.getLogger(__name__)

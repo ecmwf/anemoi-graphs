@@ -1,28 +1,30 @@
-import logging
-from pathlib import Path
-from typing import Optional
-from typing import Union
 from typing import List
 from typing import Tuple
 
-import matplotlib.pyplot as plt
-import numpy as np
 import plotly.graph_objects as go
-from torch_geometric.data import HeteroData
 import torch_geometric
+from torch_geometric.data import HeteroData
 from torch_geometric.utils.convert import to_networkx
 
-from anemoi.graphs.plotting.prepare import compute_isolated_nodes
-from anemoi.graphs.plotting.prepare import compute_node_adjacencies
-from anemoi.graphs.plotting.prepare import edge_list
-from anemoi.graphs.plotting.prepare import node_list
-from anemoi.graphs.plotting.prepare import generate_shades
-from anemoi.graphs.plotting.prepare import make_layout
 from anemoi.graphs.plotting.prepare import convert_and_plot_nodes
+from anemoi.graphs.plotting.prepare import generate_shades
 from anemoi.graphs.plotting.prepare import get_edge_trace
+from anemoi.graphs.plotting.prepare import make_layout
 
-def plot_downscale(data_nodes, hidden_nodes, data_to_hidden_edges, downscale_edges, title=None, color='red', num_hidden=1, filter_limit=0.4):
-    """Plot all downscaling layers of a graph. Plots the encoder and the processor's downscaling layers if present. 
+
+def plot_downscale(
+    data_nodes,
+    hidden_nodes,
+    data_to_hidden_edges,
+    downscale_edges,
+    title=None,
+    color="red",
+    num_hidden=1,
+    x_range=[-1, 1],
+    y_range=[-1, 1],
+    z_range=[-1, 1],
+):
+    """Plot all downscaling layers of a graph. Plots the encoder and the processor's downscaling layers if present.
 
     This method creates an interactive visualization of a set of nodes and edges.
 
@@ -32,9 +34,9 @@ def plot_downscale(data_nodes, hidden_nodes, data_to_hidden_edges, downscale_edg
         List of nodes from the data lat lon mesh.
     hidden_nodes : tuple[list, list]
         List of nodes from the hidden mesh.
-    data_to_hidden_edges :  
+    data_to_hidden_edges :
         Edges from the lat lon mesh to the hidden mesh
-    downscale_edges : 
+    downscale_edges :
         Downscaling edges of the processor.
     title : str, optional
         Name of the plot. Default is None.
@@ -42,19 +44,21 @@ def plot_downscale(data_nodes, hidden_nodes, data_to_hidden_edges, downscale_edg
         Color of the plot
     num_hidden : int, optional
         Number of hidden layers of the graph. Default is 1.
-    filter_limit : float, optional
-        Percentage of first quadrant nodes to be shown. Decrease for memory issues. Default is 0.4.
+    x_range : tuple[list, list], optional
+        Range of the x coordinates for nodes to be shown. Decrease for memory issues. default = [-1, 1]
+    y_range : tuple[list, list], optional
+        Range of the y coordinates for nodes to be shown. Decrease for memory issues. default = [-1, 1]
+    z_range : tuple[list, list], optional
+        Range of the z coordinates for nodes to be shown. Decrease for memory issues. default = [-1, 1]
     """
     colorscale = generate_shades(color, num_hidden)
     layout = make_layout(title)
-    scale_increment = 1/(num_hidden+1)
+    scale_increment = 1 / (num_hidden + 1)
 
     # Data
     g_data = to_networkx(
-                torch_geometric.data.Data(x=data_nodes, edge_index=data_to_hidden_edges),
-                node_attrs=['x'],
-                edge_attrs=[]
-            )
+        torch_geometric.data.Data(x=data_nodes, edge_index=data_to_hidden_edges), node_attrs=["x"], edge_attrs=[]
+    )
 
     # Hidden
     graphs = []
@@ -62,46 +66,62 @@ def plot_downscale(data_nodes, hidden_nodes, data_to_hidden_edges, downscale_edg
         graphs.append(
             to_networkx(
                 torch_geometric.data.Data(x=hidden_nodes[i], edge_index=downscale_edges[i]),
-                node_attrs=['x'],
-                edge_attrs=[]
+                node_attrs=["x"],
+                edge_attrs=[],
             )
         )
 
     # Node trace
-    node_trace_data, graph_data, coords_data = convert_and_plot_nodes(g_data, data_nodes, filter_limit=filter_limit, scale=1.0, color='darkgrey')
+    node_trace_data, graph_data, coords_data = convert_and_plot_nodes(
+        g_data, data_nodes, x_range, y_range, z_range, scale=1.0, color="darkgrey"
+    )
     node_trace_hidden = [node_trace_data]
     graph_processed = []
     coords_hidden = []
-    
+
     for i in range(max(num_hidden, 1)):
-        trace, g, tmp_coords = convert_and_plot_nodes(graphs[i], hidden_nodes[i], filter_limit=filter_limit, scale=1.0-(scale_increment*(i+1)), color='skyblue')
+        trace, g, tmp_coords = convert_and_plot_nodes(
+            graphs[i],
+            hidden_nodes[i],
+            x_range,
+            y_range,
+            z_range,
+            scale=1.0 - (scale_increment * (i + 1)),
+            color="skyblue",
+        )
         node_trace_hidden.append(trace)
         graph_processed.append(g)
         coords_hidden.append(tmp_coords)
     node_trace_hidden = sum([node_trace_hidden], [])
-    
+
     # Edge traces
     edge_traces = [
         get_edge_trace(
-            g_data, 
-            graphs[0], 
-            coords_data, 
-            coords_hidden[0], 
-            1.0, 1.0-scale_increment, 
-            'yellowgreen', 
-            filter_limit=filter_limit
-            )
+            g_data,
+            graphs[0],
+            coords_data,
+            coords_hidden[0],
+            1.0,
+            1.0 - scale_increment,
+            "yellowgreen",
+            x_range,
+            y_range,
+            z_range,
+        )
     ]
-    for i in range(0, num_hidden-1):
+    for i in range(0, num_hidden - 1):
         edge_traces.append(
             get_edge_trace(
-                graphs[i], 
-                graphs[i+1], 
-                coords_hidden[i], 
-                coords_hidden[i+1], 
-                1.0-(scale_increment*(i+1)), 1.0-(scale_increment*(i+2)), 
-                colorscale[i], 
-                filter_limit=filter_limit
+                graphs[i],
+                graphs[i + 1],
+                coords_hidden[i],
+                coords_hidden[i + 1],
+                1.0 - (scale_increment * (i + 1)),
+                1.0 - (scale_increment * (i + 2)),
+                colorscale[i],
+                x_range,
+                y_range,
+                z_range,
             )
         )
 
@@ -112,8 +132,19 @@ def plot_downscale(data_nodes, hidden_nodes, data_to_hidden_edges, downscale_edg
     return fig
 
 
-def plot_upscale(data_nodes, hidden_nodes, data_to_hidden_edges, upscale_edges, title=None,  color='red', num_hidden=1, filter_limit=0.4):
-    """Plot all upscaling layers of a graph. Plots the decoder and the processor's upscaling layers if present. 
+def plot_upscale(
+    data_nodes,
+    hidden_nodes,
+    data_to_hidden_edges,
+    upscale_edges,
+    title=None,
+    color="red",
+    num_hidden=1,
+    x_range=[-1, 1],
+    y_range=[-1, 1],
+    z_range=[-1, 1],
+):
+    """Plot all upscaling layers of a graph. Plots the decoder and the processor's upscaling layers if present.
 
     This method creates an interactive visualization of a set of nodes and edges.
 
@@ -123,9 +154,9 @@ def plot_upscale(data_nodes, hidden_nodes, data_to_hidden_edges, upscale_edges, 
         List of nodes from the data lat lon mesh.
     hidden_nodes : tuple[list, list]
         List of nodes from the hidden mesh.
-    data_to_hidden_edges :  
+    data_to_hidden_edges :
         Edges from the lat lon mesh to the hidden mesh
-    hidden_edges : 
+    hidden_edges :
         Edges connecting the hidden mesh nodes.
     title : str, optional
         Name of the plot. Default is None.
@@ -133,70 +164,87 @@ def plot_upscale(data_nodes, hidden_nodes, data_to_hidden_edges, upscale_edges, 
         Color of the plot
     num_hidden : int, optional
         Number of hidden layers of the graph. Default is 1.
-    filter_limit : float, optional
-        Percentage of first quadrant nodes to be shown. Decrease for memory issues. Default is 0.4.
+    x_range : tuple[list, list], optional
+        Range of the x coordinates for nodes to be shown. Decrease for memory issues. default = [-1, 1]
+    y_range : tuple[list, list], optional
+        Range of the y coordinates for nodes to be shown. Decrease for memory issues. default = [-1, 1]
+    z_range : tuple[list, list], optional
+        Range of the z coordinates for nodes to be shown. Decrease for memory issues. default = [-1, 1]
     """
     colorscale = generate_shades(color, num_hidden)
     layout = make_layout(title)
-    scale_increment = 1/(num_hidden+1)
+    scale_increment = 1 / (num_hidden + 1)
 
     # Hidden
     graphs = []
     for i in range(0, len(upscale_edges)):
         graphs.append(
             to_networkx(
-                torch_geometric.data.Data(x=hidden_nodes[len(upscale_edges)-1-i], edge_index=upscale_edges[i]),
-                node_attrs=['x'],
-                edge_attrs=[]
+                torch_geometric.data.Data(x=hidden_nodes[len(upscale_edges) - 1 - i], edge_index=upscale_edges[i]),
+                node_attrs=["x"],
+                edge_attrs=[],
             )
         )
-    
+
     # Data
     g_data = to_networkx(
-                torch_geometric.data.Data(x=data_nodes, edge_index=data_to_hidden_edges),
-                node_attrs=['x'],
-                edge_attrs=[]
-            )
+        torch_geometric.data.Data(x=data_nodes, edge_index=data_to_hidden_edges), node_attrs=["x"], edge_attrs=[]
+    )
 
     # Node trace
-    node_trace_data, graph_data, coords_data = convert_and_plot_nodes(g_data, data_nodes, filter_limit=filter_limit, scale=1.0, color='darkgrey')
+    node_trace_data, graph_data, coords_data = convert_and_plot_nodes(
+        g_data, data_nodes, x_range, y_range, z_range, scale=1.0, color="darkgrey"
+    )
     node_trace_hidden = [node_trace_data]
     graph_processed = []
     coords_hidden = []
     for i in range(num_hidden):
-        trace, g, tmp_coords = convert_and_plot_nodes(graphs[i], hidden_nodes[len(upscale_edges)-1-i], filter_limit=filter_limit, scale=1-((num_hidden)*scale_increment) + (scale_increment*(i)), color='skyblue')
+        trace, g, tmp_coords = convert_and_plot_nodes(
+            graphs[i],
+            hidden_nodes[len(upscale_edges) - 1 - i],
+            x_range,
+            y_range,
+            z_range,
+            scale=1 - ((num_hidden) * scale_increment) + (scale_increment * (i)),
+            color="skyblue",
+        )
         node_trace_hidden.append(trace)
         graph_processed.append(g)
         coords_hidden.append(tmp_coords)
     node_trace_hidden = sum([node_trace_hidden], [])
-    
+
     # Edge traces
     edge_traces = []
-    for i in range(0, len(graphs)-1):
+    for i in range(0, len(graphs) - 1):
         edge_traces.append(
             get_edge_trace(
-                graphs[i], 
-                graphs[i+1], 
-                coords_hidden[i], 
-                coords_hidden[i+1], 
-                1-((len(graphs)-i)*scale_increment), 1-((len(graphs)-i-1)*scale_increment),
-                colorscale[-1-i],
-                filter_limit=filter_limit
+                graphs[i],
+                graphs[i + 1],
+                coords_hidden[i],
+                coords_hidden[i + 1],
+                1 - ((len(graphs) - i) * scale_increment),
+                1 - ((len(graphs) - i - 1) * scale_increment),
+                colorscale[-1 - i],
+                x_range,
+                y_range,
+                z_range,
             )
         )
 
     edge_traces.append(
         get_edge_trace(
-            graphs[-1], 
-            g_data, 
-            coords_hidden[-1], 
-            coords_data, 
-            1-scale_increment, 1.0, 
-            'yellowgreen',
-            filter_limit=filter_limit
-            )
+            graphs[-1],
+            g_data,
+            coords_hidden[-1],
+            coords_data,
+            1 - scale_increment,
+            1.0,
+            "yellowgreen",
+            x_range,
+            y_range,
+            z_range,
+        )
     )
- 
 
     edge_traces = sum(edge_traces, [])
     # Combine traces and layout into a figure
@@ -204,7 +252,18 @@ def plot_upscale(data_nodes, hidden_nodes, data_to_hidden_edges, upscale_edges, 
     return fig
 
 
-def plot_level(data_nodes, hidden_nodes, data_to_hidden_edges, hidden_edges, title=None, color='red', num_hidden=1, filter_limit=0.4):
+def plot_level(
+    data_nodes,
+    hidden_nodes,
+    data_to_hidden_edges,
+    hidden_edges,
+    title=None,
+    color="red",
+    num_hidden=1,
+    x_range=[-1, 1],
+    y_range=[-1, 1],
+    z_range=[-1, 1],
+):
     """Plot all hidden layers of a graph and the internal connections between its nodes.
 
     This method creates an interactive visualization of a set of nodes and edges.
@@ -215,9 +274,9 @@ def plot_level(data_nodes, hidden_nodes, data_to_hidden_edges, hidden_edges, tit
         List of nodes from the data lat lon mesh.
     hidden_nodes : tuple[list, list]
         List of nodes from the hidden mesh.
-    data_to_hidden_edges :  
+    data_to_hidden_edges :
         Edges from the lat lon mesh to the hidden mesh
-    hidden_edges : 
+    hidden_edges :
         Edges connecting the hidden mesh nodes.
     title : str, optional
         Name of the plot. Default is None.
@@ -225,20 +284,21 @@ def plot_level(data_nodes, hidden_nodes, data_to_hidden_edges, hidden_edges, tit
         Color of the plot
     num_hidden : int, optional
         Number of hidden layers of the graph. Default is 1.
-    filter_limit : float, optional
-        Percentage of first quadrant nodes to be shown. Decrease for memory issues. Default is 0.4.
+    x_range : tuple[list, list], optional
+        Range of the x coordinates for nodes to be shown. Decrease for memory issues. default = [-1, 1]
+    y_range : tuple[list, list], optional
+        Range of the y coordinates for nodes to be shown. Decrease for memory issues. default = [-1, 1]
+    z_range : tuple[list, list], optional
+        Range of the z coordinates for nodes to be shown. Decrease for memory issues. default = [-1, 1]
     """
     colorscale = generate_shades(color, num_hidden)
     layout = make_layout(title)
-    scale_increment = 1/(num_hidden+1)
-
+    scale_increment = 1 / (num_hidden + 1)
 
     # Data
     g_data = to_networkx(
-                torch_geometric.data.Data(x=data_nodes, edge_index=data_to_hidden_edges),
-                node_attrs=['x'],
-                edge_attrs=[]
-            )
+        torch_geometric.data.Data(x=data_nodes, edge_index=data_to_hidden_edges), node_attrs=["x"], edge_attrs=[]
+    )
 
     # Hidden
     graphs = []
@@ -246,46 +306,60 @@ def plot_level(data_nodes, hidden_nodes, data_to_hidden_edges, hidden_edges, tit
         graphs.append(
             to_networkx(
                 torch_geometric.data.Data(x=hidden_nodes[i], edge_index=hidden_edges[i]),
-                node_attrs=['x'],
-                edge_attrs=[]
+                node_attrs=["x"],
+                edge_attrs=[],
             )
         )
-    
 
     # Node trace
-    node_trace_data, graph_data, coords_data = convert_and_plot_nodes(g_data, data_nodes, filter_limit=filter_limit, scale=1.0, color='darkgrey')
+    node_trace_data, graph_data, coords_data = convert_and_plot_nodes(
+        g_data, data_nodes, x_range, y_range, z_range, scale=1.0, color="darkgrey"
+    )
     node_trace_hidden = [node_trace_data]
     graph_processed = []
     coords_hidden = []
     for i in range(num_hidden):
-        trace, g, tmp_coords = convert_and_plot_nodes(graphs[i], hidden_nodes[i], filter_limit=filter_limit, scale=1.0-(scale_increment*(i+1)), color='skyblue')
+        trace, g, tmp_coords = convert_and_plot_nodes(
+            graphs[i],
+            hidden_nodes[i],
+            x_range,
+            y_range,
+            z_range,
+            scale=1.0 - (scale_increment * (i + 1)),
+            color="skyblue",
+        )
         node_trace_hidden.append(trace)
         graph_processed.append(g)
         coords_hidden.append(tmp_coords)
     node_trace_hidden = sum([node_trace_hidden], [])
-    
+
     # Edge traces
     edge_traces = []
     for i in range(0, len(graphs)):
         edge_traces.append(
             get_edge_trace(
-                graphs[i], 
-                graphs[i], 
-                coords_hidden[i], 
-                coords_hidden[i], 
-                1.0-(scale_increment*(i+1)),  1.0-(scale_increment*(i+1)), 
-                colorscale[i], 
-                filter_limit=filter_limit
+                graphs[i],
+                graphs[i],
+                coords_hidden[i],
+                coords_hidden[i],
+                1.0 - (scale_increment * (i + 1)),
+                1.0 - (scale_increment * (i + 1)),
+                colorscale[i],
+                x_range,
+                y_range,
+                z_range,
             )
         )
- 
+
     edge_traces = sum(edge_traces, [])
     # Combine traces and layout into a figure
     fig = go.Figure(data=node_trace_hidden + edge_traces, layout=layout)
+    
     return fig
 
-
-def plot_3d_graph(graph: HeteroData, nodes_coord: Tuple[List[float], List[float]], title: str = None, show_edges: bool = True):
+def plot_3d_graph(
+    graph: HeteroData, nodes_coord: Tuple[List[float], List[float]], title: str = None, show_edges: bool = True
+):
     """Plot a graph with his nodes and edges.
     This method creates an interactive visualization of a set of nodes and edges.
     Parameters
@@ -305,7 +379,7 @@ def plot_3d_graph(graph: HeteroData, nodes_coord: Tuple[List[float], List[float]
 
     # Assuming the node features contain latitude and longitude
     latitudes = nodes_coord[:, 0].numpy()  # Latitude
-    longitudes = nodes_coord[:, 1].numpy() # Longitude
+    longitudes = nodes_coord[:, 1].numpy()  # Longitude
 
     # Plot points
     node_trace, G, x_nodes, y_nodes, z_nodes = convert_and_plot_nodes(graph, latitudes, longitudes)
@@ -323,10 +397,13 @@ def plot_3d_graph(graph: HeteroData, nodes_coord: Tuple[List[float], List[float]
                 y_edge = [y_nodes[idx0], y_nodes[idx1], None]
                 z_edge = [z_nodes[idx0], z_nodes[idx1], None]
                 edge_trace = go.Scatter3d(
-                    x=x_edge, y=y_edge, z=z_edge,
-                    mode='lines',
-                    line=dict(width=2, color='red'),
-                    showlegend=False
+                    x=x_edge,
+                    y=y_edge,
+                    z=z_edge,
+                    mode="lines",
+                    line=dict(width=2, color="red"),
+                    showlegend=False,
+                    hoverinfo="none",
                 )
                 edge_traces.append(edge_trace)
 

@@ -131,7 +131,9 @@ class GraphInspector:
                 title="Downscaling",
                 color="red",
                 num_hidden=self.num_hidden_layers,
-                filter_limit=0.4,
+                x_range=[0, 0.4],
+                y_range=[0, 0.4],
+                z_range=[0, 0.4],
             )
             encoder_fig.write_html(ofile)
 
@@ -145,7 +147,9 @@ class GraphInspector:
                 title="Level Processing",
                 color="green",
                 num_hidden=self.num_hidden_layers,
-                filter_limit=0.4,
+                x_range=[0, 0.4],
+                y_range=[0, 0.4],
+                z_range=[0, 0.4],
             )
             level_fig.write_html(ofile)
 
@@ -159,6 +163,8 @@ class GraphInspector:
                 title="Upscaling",
                 color="blue",
                 num_hidden=self.num_hidden_layers,
-                filter_limit=0.4,
+                x_range=[0, 0.4],
+                y_range=[0, 0.4],
+                z_range=[0, 0.4],
             )
             decoder_fig.write_html(ofile)

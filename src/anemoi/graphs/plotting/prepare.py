@@ -18,6 +18,10 @@ from torch_geometric.data import HeteroData
 from anemoi.graphs.generate.transforms import latlon_rad_to_cartesian
 
 
+def is_in_range(val, rng):
+    return val >= rng[0] and val <= rng[1]
+
+
 def node_list(graph: HeteroData, nodes_name: str, mask: Optional[list[bool]] = None) -> tuple[list[float], list[float]]:
     """Get the latitude and longitude of the nodes.
 
@@ -201,7 +205,9 @@ def get_edge_attribute_dims(graph: HeteroData) -> dict[str, int]:
     return attr_dims
 
 
-def convert_and_plot_nodes(G, coords, filter_limit=0, scale=1.0, color="skyblue"):
+def convert_and_plot_nodes(
+    G, coords, x_range=range(-1, 1), y_range=[-1, 1], z_range=[-1, 1], scale=1.0, color="skyblue"
+):
     """Filters coordinates of nodes in a graph, scales and plots them."""
 
     lat = coords[:, 0].numpy()  # Latitude
@@ -210,22 +216,18 @@ def convert_and_plot_nodes(G, coords, filter_limit=0, scale=1.0, color="skyblue"
     # Convert lat/lon to Cartesian coordinates for the filtered nodes
     x_nodes, y_nodes, z_nodes = latlon_rad_to_cartesian((lat, lon)).T
 
-    # Filter nodes for the first quadrant
-    if filter_limit > 0:
-        first_quadrant_nodes = [
-            i
-            for i, (x, y, z) in enumerate(zip(x_nodes, y_nodes, z_nodes))
-            if x > filter_limit and y > filter_limit and z > filter_limit
-        ]
+    # Filter nodes
+    filtered_nodes = [
+        i
+        for i, (x, y, z) in enumerate(zip(x_nodes, y_nodes, z_nodes))
+        if is_in_range(x, x_range) and is_in_range(y, y_range) and is_in_range(z, z_range)
+    ]
 
-        if not first_quadrant_nodes:
-            print("No nodes found in the first quadrant.")
-            return
+    if not filtered_nodes:
+        print("No nodes found in the given range.")
+        return
 
-        graph = G.subgraph(first_quadrant_nodes).copy()
-
-    else:
-        graph = G
+    graph = G.subgraph(filtered_nodes).copy()
 
     # Extract node positions for Plotly
     x_nodes_filtered = [x_nodes[node] * scale for node in graph.nodes()]
@@ -240,13 +242,13 @@ def convert_and_plot_nodes(G, coords, filter_limit=0, scale=1.0, color="skyblue"
         mode="markers",
         marker=dict(size=3, color=color, opacity=0.8),
         text=list(graph.nodes()),
-        hoverinfo="text",
+        hoverinfo="none",
     )
 
     return node_trace, graph, (x_nodes, y_nodes, z_nodes)
 
 
-def get_edge_trace(g1, g2, n1, n2, scale_1, scale_2, color="blue", filter_limit=0.5):
+def get_edge_trace(g1, g2, n1, n2, scale_1, scale_2, color="blue", x_range=[-1, 1], y_range=[-1, 1], z_range=[-1, 1]):
     """Gets all edges between g1 and g2 (two separate graphs, hierarchical graph setting)."""
     edge_traces = []
     for edge in g1.edges():
@@ -255,24 +257,30 @@ def get_edge_trace(g1, g2, n1, n2, scale_1, scale_2, color="blue", filter_limit=
 
         if idx0 in g1.nodes and idx1 in g2.nodes:
             if (
-                n1[0][idx0] > filter_limit
-                and n2[0][idx1] > filter_limit
-                and n1[1][idx0] > filter_limit
-                and n2[1][idx1] > filter_limit
-                and n1[2][idx0] > filter_limit
-                and n2[2][idx1] > filter_limit
+                is_in_range(n1[0][idx0], x_range)
+                and is_in_range(n2[0][idx1], x_range)
+                and is_in_range(n1[1][idx0], y_range)
+                and is_in_range(n2[1][idx1], y_range)
+                and is_in_range(n1[2][idx0], z_range)
+                and is_in_range(n2[2][idx1], z_range)
             ):
                 x_edge = [n1[0][idx0] * scale_1, n2[0][idx1] * scale_2, None]
                 y_edge = [n1[1][idx0] * scale_1, n2[1][idx1] * scale_2, None]
                 z_edge = [n1[2][idx0] * scale_1, n2[2][idx1] * scale_2, None]
                 edge_trace = go.Scatter3d(
-                    x=x_edge, y=y_edge, z=z_edge, mode="lines", line=dict(width=2, color=color), showlegend=False
+                    x=x_edge,
+                    y=y_edge,
+                    z=z_edge,
+                    mode="lines",
+                    line=dict(width=2, color=color),
+                    showlegend=False,
+                    hoverinfo="none",
                 )
                 edge_traces.append(edge_trace)
     return edge_traces
 
 
-def make_layout(title):
+def make_layout(title, showbackground=True, axis_visible=True):
     # Create a layout for the plot
     layout = go.Layout(
         title={
@@ -283,10 +291,13 @@ def make_layout(title):
             "yanchor": "top",  # Anchor the title to the top of the plot area
         },
         scene=dict(
-            xaxis=dict(showbackground=False, visible=False),
-            yaxis=dict(showbackground=False, visible=False),
-            zaxis=dict(showbackground=False, visible=False),
+            xaxis=dict(showbackground=showbackground, visible=axis_visible, showgrid=axis_visible, range=(-1, 1)),
+            yaxis=dict(showbackground=showbackground, visible=axis_visible, showgrid=axis_visible, range=(-1, 1)),
+            zaxis=dict(showbackground=showbackground, visible=axis_visible, showgrid=axis_visible, range=(-1, 1)),
+            aspectmode="manual",  # Manually set aspect ratios
+            aspectratio=dict(x=2, y=2, z=2),  # Fixed aspect ratio
         ),
+        autosize=False,  # Prevent autosizing based on data
         width=900,  # Increase width
         height=600,  # Increase height
         showlegend=False,
