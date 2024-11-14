@@ -1,11 +1,20 @@
-from typing import Optional
+# (C) Copyright 2024 Anemoi contributors.
+#
+# This software is licensed under the terms of the Apache Licence Version 2.0
+# which can be obtained at http://www.apache.org/licenses/LICENSE-2.0.
+#
+# In applying this licence, ECMWF does not waive the privileges and immunities
+# granted to it by virtue of its status as an intergovernmental organisation
+# nor does it submit to any jurisdiction.
+
+from __future__ import annotations
 
 import numpy as np
 import torch
 from sklearn.neighbors import NearestNeighbors
 
 
-def get_nearest_neighbour(coords_rad: torch.Tensor, mask: Optional[torch.Tensor] = None) -> NearestNeighbors:
+def get_nearest_neighbour(coords_rad: torch.Tensor, mask: torch.Tensor | None = None) -> NearestNeighbors:
     """Get NearestNeighbour object fitted to coordinates.
 
     Parameters
@@ -32,7 +41,7 @@ def get_nearest_neighbour(coords_rad: torch.Tensor, mask: Optional[torch.Tensor]
     return nearest_neighbour
 
 
-def get_grid_reference_distance(coords_rad: torch.Tensor, mask: Optional[torch.Tensor] = None) -> float:
+def get_grid_reference_distance(coords_rad: torch.Tensor, mask: torch.Tensor | None = None) -> float:
     """Get the reference distance of the grid.
 
     It is the maximum distance of a node in the mesh with respect to its nearest neighbour.

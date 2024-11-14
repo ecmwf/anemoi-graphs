@@ -1,7 +1,16 @@
-import logging
+# (C) Copyright 2024 Anemoi contributors.
+#
+# This software is licensed under the terms of the Apache Licence Version 2.0
+# which can be obtained at http://www.apache.org/licenses/LICENSE-2.0.
+#
+# In applying this licence, ECMWF does not waive the privileges and immunities
+# granted to it by virtue of its status as an intergovernmental organisation
+# nor does it submit to any jurisdiction.
+
+from __future__ import annotations
+
 from abc import ABC
 from abc import abstractmethod
-from typing import Optional
 
 import numpy as np
 import torch
@@ -9,16 +18,14 @@ from torch_geometric.data import HeteroData
 
 from anemoi.graphs.edges.attributes_geom import EdgeFeatureBuilder
 from anemoi.graphs.edges.directional import directional_edge_features
-from anemoi.graphs.normalizer import NormalizerMixin
+from anemoi.graphs.normalise import NormaliserMixin
 from anemoi.graphs.utils import haversine_distance
 
-LOGGER = logging.getLogger(__name__)
 
-
-class BaseEdgeAttribute(ABC, NormalizerMixin):
+class BaseEdgeAttribute(ABC, NormaliserMixin):
     """Base class for edge attributes."""
 
-    def __init__(self, norm: Optional[str] = None) -> None:
+    def __init__(self, norm: str | None = None) -> None:
         self.norm = norm
 
     @abstractmethod
@@ -29,7 +36,7 @@ class BaseEdgeAttribute(ABC, NormalizerMixin):
         if values.ndim == 1:
             values = values[:, np.newaxis]
 
-        normed_values = self.normalize(values)
+        normed_values = self.normalise(values)
 
         return torch.tensor(normed_values, dtype=torch.float32)
 
@@ -50,27 +57,27 @@ class BaseEdgeAttribute(ABC, NormalizerMixin):
 class EdgeDirection(BaseEdgeAttribute):
     """Edge direction feature.
 
-    If using the rotated features, the direction of the edge is computed
-    rotating the target nodes to the north pole. If not, it is computed
-    as the diference in latitude and longitude between the source and
-    target nodes.
+    This class calculates the direction of an edge using either:
+    1. Rotated features: The target nodes are rotated to the north pole to compute the edge direction.
+    2. Non-rotated features: The direction is computed as the difference in latitude and longitude between the source
+    and target nodes.
+
+    The resulting direction is represented as a unit vector starting at (0, 0), with X and Y components.
 
     Attributes
     ----------
     norm : Optional[str]
-        Normalization method.
+        Normalisation method.
     luse_rotated_features : bool
         Whether to use rotated features.
 
     Methods
     -------
-    get_raw_values(graph, source_name, target_name)
-        Compute directions between nodes connected by edges.
     compute(graph, source_name, target_name)
-        Compute directional attributes.
+        Compute direction of all edges.
     """
 
-    def __init__(self, norm: Optional[str] = None, luse_rotated_features: bool = True) -> None:
+    def __init__(self, norm: str | None = None, luse_rotated_features: bool = True) -> None:
         super().__init__(norm)
         self.luse_rotated_features = luse_rotated_features
 
@@ -104,19 +111,17 @@ class EdgeLength(BaseEdgeAttribute):
     Attributes
     ----------
     norm : str
-        Normalization method.
+        Normalisation method.
     invert : bool
         Whether to invert the edge lengths, i.e. 1 - edge_length.
 
     Methods
     -------
-    get_raw_values(graph, source_name, target_name)
-        Compute haversine distance between nodes connected by edges.
     compute(graph, source_name, target_name)
         Compute edge lengths attributes.
     """
 
-    def __init__(self, norm: Optional[str] = None, invert: bool = False) -> None:
+    def __init__(self, norm: str | None = None, invert: bool = False) -> None:
         super().__init__(norm)
         self.invert = invert
 
@@ -145,9 +150,12 @@ class EdgeLength(BaseEdgeAttribute):
 
     def post_process(self, values: np.ndarray) -> torch.Tensor:
         """Post-process edge lengths."""
+        values = super().post_process(values)
+
         if self.invert:
             values = 1 - values
-        return super().post_process(values)
+
+        return values
 
 
 class EdgeFeaturesTorch(BaseEdgeAttribute):
@@ -168,7 +176,7 @@ class EdgeFeaturesTorch(BaseEdgeAttribute):
         Compute edge lengths attributes.
     """
 
-    def __init__(self, norm: Optional[str] = None, invert: bool = False) -> None:
+    def __init__(self, norm: str | None = None, invert: bool = False) -> None:
         super().__init__(norm)
         self.invert = invert
 
@@ -199,4 +207,5 @@ class EdgeFeaturesTorch(BaseEdgeAttribute):
         """Post-process edge lengths."""
         if self.invert:
             values = 1 - values
+
         return super().post_process(values)

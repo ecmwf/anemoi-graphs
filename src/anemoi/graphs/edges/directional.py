@@ -1,4 +1,13 @@
-from typing import Optional
+# (C) Copyright 2024 Anemoi contributors.
+#
+# This software is licensed under the terms of the Apache Licence Version 2.0
+# which can be obtained at http://www.apache.org/licenses/LICENSE-2.0.
+#
+# In applying this licence, ECMWF does not waive the privileges and immunities
+# granted to it by virtue of its status as an intergovernmental organisation
+# nor does it submit to any jurisdiction.
+
+from __future__ import annotations
 
 import numpy as np
 from scipy.spatial.transform import Rotation
@@ -28,7 +37,7 @@ def get_rotation_from_unit_vecs(points: np.ndarray, reference: np.ndarray) -> Ro
     return Rotation.from_rotvec(np.transpose(v_unit * theta))
 
 
-def compute_directions(loc1: np.ndarray, loc2: np.ndarray, pole_vec: Optional[np.ndarray] = None) -> np.ndarray:
+def compute_directions(loc1: np.ndarray, loc2: np.ndarray, pole_vec: np.ndarray | None = None) -> np.ndarray:
     """Compute the direction of the edge joining the nodes considered.
 
     Parameters
