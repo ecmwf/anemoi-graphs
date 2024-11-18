@@ -155,11 +155,29 @@ class LimitedAreaNPZFileNodes(NPZFileNodes):
 class TensorNodes(BaseNodeBuilder):
     """Tensor nodes"""
 
-    def __init__(self, tensor: torch.Tensor, name: str, lat_idx: tuple[int, int], lon_idx: tuple[int, int]) -> None:
+    def __init__(
+        self,
+        tensor: torch.Tensor,
+        name: str,
+        lat_idx: tuple[int, int],  # idx of sin(lat) & cos(lat)
+        lon_idx: tuple[int, int],  # idx of sin(lon) & cos(lon)
+        channel_dim: int = -1,
+    ) -> None:
         self.data = tensor
         self.lat_idx = lat_idx
         self.lon_idx = lon_idx
+        self.channel_dim = channel_dim
         super().__init__(name)
+
+    def undo_sincos(self) -> tuple[torch.Tensor, torch.Tensor]:
+        sin_lat = self.data.select(self.channel_dim, self.lat_idx[0])
+        cos_lat = self.data.select(self.channel_dim, self.lat_idx[1])
+        sin_lon = self.data.select(self.channel_dim, self.lon_idx[0])
+        cos_lon = self.data.select(self.channel_dim, self.lon_idx[1])
+
+        latitudes = np.arctan2(sin_lat, cos_lat)
+        longitudes = np.arctan2(sin_lon, cos_lon)
+        return latitudes, longitudes
 
     def get_coordinates(self) -> torch.Tensor:
         """Get the coordinates of the nodes.
@@ -169,8 +187,7 @@ class TensorNodes(BaseNodeBuilder):
         torch.Tensor of shape (num_nodes, 2)
             A 2D tensor with the coordinates, in radians.
         """
-        latitudes = np.arctan2(self.data[self.lat_idx[0]], self.data[self.lat_idx[1]])  # sin and cos(latitude)
-        longitudes = np.arctan2(self.data[self.lon_idx[0]], self.data[self.lon_idx[1]])  # sin and cos(longitude)
+        latitudes, longitudes = self.undo_sincos()
         return self.reshape_coords(latitudes, longitudes)
 
     # def register_attributes(self, graph: HeteroData, config: Optional[DotDict] = None) -> HeteroData:
