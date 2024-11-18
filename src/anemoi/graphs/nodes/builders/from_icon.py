@@ -32,7 +32,7 @@ class ICONBaseNodeBuilder(BaseNodeBuilder, ABC):
         return torch.from_numpy(self.icon_sub_graph.nodeset.gc_vertices.astype(np.float32)).fliplr()
 
 
-class ICONMultimeshNodes(BaseNodeBuilder):
+class ICONMultimeshNodes(ICONBaseNodeBuilder):
     """Processor mesh based on an ICON grid."""
 
     def __init__(self, name: str, grid_filename: str, max_level: int) -> None:
@@ -40,7 +40,7 @@ class ICONMultimeshNodes(BaseNodeBuilder):
         self.icon_sub_graph = ICONMultiMesh(self.grid_filename, max_level=self.max_level)
 
 
-class ICONCellGridNodes(BaseNodeBuilder):
+class ICONCellGridNodes(ICONBaseNodeBuilder):
     """Data mesh based on an ICON grid."""
 
     def __init__(self, name: str, grid_filename: str, max_level: int) -> None:
