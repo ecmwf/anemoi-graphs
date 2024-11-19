@@ -33,6 +33,7 @@ classifiers = [
   "Programming Language :: Python :: 3.10",
   "Programming Language :: Python :: 3.11",
   "Programming Language :: Python :: 3.12",
+  "Programming Language :: Python :: 3.13",
   "Programming Language :: Python :: Implementation :: CPython",
   "Programming Language :: Python :: Implementation :: PyPy",
 ]
@@ -48,6 +49,7 @@ dependencies = [
   "netcdf4",
   "networkx>=3.1",
   "plotly>=5.19",
+  "scikit-learn",
   "torch>=2.2",
   "torch-geometric>=2.3.1,<2.5",
   "trimesh>=4.1",
