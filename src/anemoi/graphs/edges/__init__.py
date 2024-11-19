@@ -8,9 +8,8 @@
 # nor does it submit to any jurisdiction.
 
 from .builder import CutOffEdges
-from .builder import ICONTopologicalDecoderEdges
-from .builder import ICONTopologicalEncoderEdges
-from .builder import ICONTopologicalProcessorEdges
+from .builder import ICONBidirectionalGrid2MeshEdges
+from .builder import ICONMultiMeshEdges
 from .builder import KNNEdges
 from .builder import MultiScaleEdges
 
@@ -18,7 +17,6 @@ __all__ = [
     "KNNEdges",
     "CutOffEdges",
     "MultiScaleEdges",
-    "ICONTopologicalProcessorEdges",
-    "ICONTopologicalEncoderEdges",
-    "ICONTopologicalDecoderEdges",
+    "ICONBidirectionalGrid2MeshEdges",
+    "ICONMultiMeshEdges",
 ]

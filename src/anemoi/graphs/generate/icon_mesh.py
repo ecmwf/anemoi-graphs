@@ -10,7 +10,6 @@
 import itertools
 import logging
 import uuid
-from dataclasses import dataclass
 from functools import cached_property
 from typing import Optional
 
@@ -67,89 +66,7 @@ class NodeSet:
 
 
 @typechecked
-@dataclass
-class EdgeID:
-    """Stores additional categorical data for each edge (IDs for heterogeneous input)."""
-
-    edge_id: np.ndarray
-    num_classes: int
-
-    def __add__(self, other: Self):
-        """Concatenates two edge ID datasets."""
-        assert self.num_classes == other.num_classes
-        return EdgeID(
-            edge_id=np.concatenate((self.edge_id, other.edge_id)),
-            num_classes=self.num_classes,
-        )
-
-
-@typechecked
-class GeneralGraph:
-    """Stores edges for a given node set."""
-
-    nodeset: NodeSet  # graph nodes
-    edge_vertices: np.ndarray  # vertex indices for each edge, shape [:,2]
-
-    def __init__(self, nodeset: NodeSet, bidirectional: bool, edge_vertices: np.ndarray):
-        self.nodeset = nodeset
-        # (optional) duplicate edges (bi-directional):
-        if bidirectional:
-            self.edge_vertices = np.concatenate([edge_vertices, np.fliplr(edge_vertices)])
-        else:
-            self.edge_vertices = edge_vertices
-
-    @property
-    def num_vertices(self) -> int:
-        return self.nodeset.num_vertices
-
-    @property
-    def num_edges(self) -> int:
-        return self.edge_vertices.shape[0]
-
-
-@typechecked
-class BipartiteGraph:
-    """Graph defined on a pair of NodeSets."""
-
-    nodeset: tuple[NodeSet, NodeSet]  # source and target node set
-    edge_vertices: np.ndarray  # vertex indices for each edge, shape [:,2]
-    edge_id: np.ndarray  # additional ID for each edge (markers for heterogeneous input)
-
-    def __init__(
-        self,
-        nodeset: tuple[NodeSet, NodeSet],
-        edge_vertices: np.ndarray,
-        edge_id: Optional[EdgeID] = None,
-    ):
-        self.nodeset = nodeset
-        self.edge_vertices = edge_vertices
-        self.edge_id = edge_id
-
-    @property
-    def num_edges(self) -> int:
-        return self.edge_vertices.shape[0]
-
-    def __add__(self, other: "BipartiteGraph"):
-        """Concatenates two bipartite graphs that share a common target node set.
-        Shifts the node indices of the second bipartite graph.
-        """
-
-        if not self.nodeset[1] == other.nodeset[1]:
-            raise ValueError("Only bipartite graphs with common target node set can be merged.")
-        shifted_edge_vertices = other.edge_vertices
-        shifted_edge_vertices[:, 0] += self.nodeset[0].num_vertices
-        # (Optional:) merge one-hot-encoded categorical data (`edge_id`)
-        edge_id = None if None in (self.edge_id, other.edge_id) else self.edge_id + other.edge_id
-
-        return BipartiteGraph(
-            nodeset=(self.nodeset[0] + other.nodeset[0], self.nodeset[1]),
-            edge_vertices=np.concatenate((self.edge_vertices, shifted_edge_vertices)),
-            edge_id=edge_id,
-        )
-
-
-@typechecked
-class ICONMultiMesh(GeneralGraph):
+class ICONMultiMesh:
     """Reads vertices and topology from an ICON grid file; creates multi-mesh."""
 
     uuidOfHGrid: str
@@ -158,7 +75,6 @@ class ICONMultiMesh(GeneralGraph):
     cell_vertices: np.ndarray
 
     def __init__(self, icon_grid_filename: str, max_level: Optional[int] = None):
-
         # open file, representing the finest level
         LOGGER.debug(f"{type(self).__name__}: read ICON grid file '{icon_grid_filename}'")
         with netCDF4.Dataset(icon_grid_filename, "r") as ncfile:
@@ -166,14 +82,13 @@ class ICONMultiMesh(GeneralGraph):
             vlon = read_coordinate_array(ncfile, "vlon", "vertex")
             vlat = read_coordinate_array(ncfile, "vlat", "vertex")
 
-            edge_vertices_fine = np.asarray(ncfile.variables["edge_vertices"][:] - 1, dtype=np.int64).transpose()
-            assert ncfile.variables["edge_vertices"].dimensions == ("nc", "edge")
-
-            cell_vertices_fine = np.asarray(ncfile.variables["vertex_of_cell"][:] - 1, dtype=np.int64).transpose()
-            assert ncfile.variables["vertex_of_cell"].dimensions == ("nv", "cell")
-
-            reflvl_vertex = ncfile.variables["refinement_level_v"][:]
-            assert ncfile.variables["refinement_level_v"].dimensions == ("vertex",)
+            edge_vertices_fine = np.asarray(
+                get_ncfile_variable(ncfile, "edge_vertices", ("nc", "edge")) - 1, dtype=np.int64
+            ).transpose()
+            cell_vertices_fine = np.asarray(
+                get_ncfile_variable(ncfile, "vertex_of_cell", ("nv", "cell")) - 1, dtype=np.int64
+            ).transpose()
+            reflvl_vertex = get_ncfile_variable(ncfile, "refinement_level_v", expected_dimensions=("vertex",))
 
             self.uuidOfHGrid = ncfile.uuidOfHGrid
 
@@ -186,7 +101,7 @@ class ICONMultiMesh(GeneralGraph):
             reflvl_vertex=reflvl_vertex,
         )
         # restrict edge-vertex list to multi_mesh level "max_level":
-        if self.max_level < len(edge_vertices):
+        if self.max_level <= reflvl_vertex.max():
             (self.edge_vertices, self.cell_vertices, vlon, vlat) = self._restrict_multi_mesh_level(
                 edge_vertices,
                 cell_vertices,
@@ -194,12 +109,11 @@ class ICONMultiMesh(GeneralGraph):
                 vlon=vlon,
                 vlat=vlat,
             )
-        # store vertices as a `NodeSet`:
+
         self.nodeset = NodeSet(vlon, vlat)
-        # concatenate edge-vertex lists (= edges of the multi-level mesh):
-        multi_mesh_edges = np.concatenate([edges for edges in self.edge_vertices], axis=0)
-        # generate multi-mesh graph data structure:
-        super().__init__(nodeset=self.nodeset, bidirectional=True, edge_vertices=multi_mesh_edges)
+
+    def node_coordinates(self):
+        return self.nodeset.gc_vertices.astype(np.float32)
 
     def _restrict_multi_mesh_level(
         self,
@@ -210,7 +124,6 @@ class ICONMultiMesh(GeneralGraph):
         vlat: np.ndarray,
     ) -> tuple[list[np.ndarray], np.ndarray, np.ndarray, np.ndarray]:
         """Creates a new mesh with only the vertices at the desired level."""
-
         num_vertices = reflvl_vertex.shape[0]
         vertex_mask = reflvl_vertex <= self.max_level
         vertex_glb2loc = np.zeros(num_vertices, dtype=int)
@@ -326,7 +239,7 @@ class ICONMultiMesh(GeneralGraph):
 
 
 @typechecked
-class ICONCellDataGrid(BipartiteGraph):
+class ICONCellDataGrid:
     """Reads cell locations from an ICON grid file; builds grid-to-mesh edges based on ICON topology."""
 
     uuidOfHGrid: str
@@ -337,50 +250,51 @@ class ICONCellDataGrid(BipartiteGraph):
     def __init__(
         self,
         icon_grid_filename: str,
-        multi_mesh: Optional[ICONMultiMesh] = None,
         max_level: Optional[int] = None,
     ):
-        # open file, representing the finest level
         LOGGER.debug(f"{type(self).__name__}: read ICON grid file '{icon_grid_filename}'")
-        with netCDF4.Dataset(icon_grid_filename, "r") as ncfile:
+        with netCDF4.Dataset(icon_grid_filename, "r") as ncfile:  # open file, representing the finest level
             # read cell circumcenter coordinates
             clon = read_coordinate_array(ncfile, "clon", "cell")
             clat = read_coordinate_array(ncfile, "clat", "cell")
 
-            reflvl_cell = ncfile.variables["refinement_level_c"][:]
-            assert ncfile.variables["refinement_level_c"].dimensions == ("cell",)
-
+            reflvl_cell = get_ncfile_variable(ncfile, "refinement_level_c", expected_dimensions=("cell",))
             self.uuidOfHGrid = ncfile.uuidOfHGrid
 
-        if max_level is not None:
-            self.max_level = max_level
-        else:
-            self.max_level = reflvl_cell.max()
+        self.max_level = max_level if max_level is not None else reflvl_cell.max()
+        self.select_c = np.argwhere(reflvl_cell <= self.max_level)  # restrict to level `max_level`:
+        self.nodeset = NodeSet(clon[self.select_c], clat[self.select_c])  # source nodes
 
-        # restrict to level `max_level`:
-        self.select_c = np.argwhere(reflvl_cell <= self.max_level)
-        # generate source grid node set:
-        self.nodeset = NodeSet(clon[self.select_c], clat[self.select_c])
-
-        if multi_mesh is not None:
-            # generate edges between source grid nodes and multi-mesh nodes:
-            edge_vertices = self._get_grid2mesh_edges(self.select_c, multi_mesh=multi_mesh)
-            super().__init__((self.nodeset, multi_mesh.nodeset), edge_vertices)
-
-    def _get_grid2mesh_edges(self, select_c: np.ndarray, multi_mesh: ICONMultiMesh) -> np.ndarray:
-        """Create "grid-to-mesh" edges, ie. edges from (clat,clon) to the
-        vertices of the multi-mesh.
-        """
-
-        num_cells = select_c.shape[0]
-        num_vertices_per_cell = multi_mesh.cell_vertices.shape[1]
-        src_list = np.kron(np.arange(num_cells), np.ones((1, num_vertices_per_cell), dtype=np.int64)).flatten()
-        dst_list = multi_mesh.cell_vertices[select_c[:, 0], :].flatten()
-        edge_vertices = np.stack((src_list, dst_list), axis=1, dtype=np.int64)
-        return edge_vertices
+    def node_coordinates(self):
+        return self.nodeset.gc_vertices.astype(np.float32)
 
 
-# -------------------------------------------------------------
+def get_multimesh_edges(multi_mesh: ICONMultiMesh, resolutions: list[int]) -> np.ndarray:
+    return np.concatenate([multi_mesh.edge_vertices[res] for res in resolutions], axis=0)
+
+
+def get_grid2mesh_edges(cell_grid: ICONCellDataGrid, multi_mesh: ICONMultiMesh) -> np.ndarray:
+    """Create "grid-to-mesh" edges.
+
+    It creates the edges from (clat,clon) to the vertices of the multi-mesh.
+
+    Parameters
+    ----------
+    cell_grid : ICONCellDataGrid
+        Cell grid
+    multi_mesh : ICONMultimesh
+        Multi mesh
+
+    Returns
+    -------
+    np.ndarray
+        Bipartite graph of the "grid-to-mesh" connections.
+    """
+    num_cells = cell_grid.select_c.shape[0]
+    num_vertices_per_cell = multi_mesh.cell_vertices.shape[1]
+    src_list = np.kron(np.arange(num_cells), np.ones((1, num_vertices_per_cell), dtype=np.int64)).flatten()
+    dst_list = multi_mesh.cell_vertices[cell_grid.select_c[:, 0], :].flatten()
+    return np.stack((src_list, dst_list), axis=1, dtype=np.int64)
 
 
 @typechecked
@@ -393,3 +307,10 @@ def read_coordinate_array(ncfile, arrname: str, dimname: str) -> np.ndarray:
     # -> convert to regular arrays
     assert not arr.mask.any(), f"There are missing values in {arrname}"
     return arr.data
+
+
+@typechecked
+def get_ncfile_variable(ncfile: netCDF4.Dataset, variable: str, expected_dimensions: tuple[str, ...]) -> np.ndarray:
+    var_dims = ncfile.variables[variable].dimensions
+    assert var_dims == expected_dimensions, f"Variable {variable} has dimesnions {var_dims} != {expected_dimensions}."
+    return ncfile.variables[variable][:]

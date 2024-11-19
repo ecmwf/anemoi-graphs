@@ -26,8 +26,11 @@ from torch_geometric.data.storage import NodeStorage
 
 from anemoi.graphs import EARTH_RADIUS
 from anemoi.graphs.generate import hex_icosahedron
+from anemoi.graphs.generate import icon_mesh
 from anemoi.graphs.generate import tri_icosahedron
 from anemoi.graphs.generate.masks import KNNAreaMaskBuilder
+from anemoi.graphs.nodes.builders.from_icon import ICONCellGridNodes
+from anemoi.graphs.nodes.builders.from_icon import ICONMultimeshNodes
 from anemoi.graphs.nodes.builders.from_refined_icosahedron import HexNodes
 from anemoi.graphs.nodes.builders.from_refined_icosahedron import LimitedAreaHexNodes
 from anemoi.graphs.nodes.builders.from_refined_icosahedron import LimitedAreaTriNodes
@@ -40,6 +43,8 @@ LOGGER = logging.getLogger(__name__)
 
 class BaseEdgeBuilder(ABC):
     """Base class for edge builders."""
+
+    VALID_NODES: list = []
 
     def __init__(
         self,
@@ -63,7 +68,28 @@ class BaseEdgeBuilder(ABC):
 
     def prepare_node_data(self, graph: HeteroData) -> tuple[NodeStorage, NodeStorage]:
         """Prepare node information and get source and target nodes."""
-        return graph[self.source_name], graph[self.target_name]
+        source_nodes, target_nodes = graph[self.source_name], graph[self.target_name]
+
+        valid_nodes_names = [n.__name__ for n in self.VALID_NODES]
+        error_msg = (
+            f"{self.__class__.__name__} can only be computed for the following nodes: {', '.join(valid_nodes_names)}."
+        )
+        assert source_nodes["node_type"] in valid_nodes_names, error_msg
+        assert target_nodes["node_type"] in valid_nodes_names, error_msg
+
+        return source_nodes, target_nodes
+
+    @staticmethod
+    def edge_indices_to_adjmat(edge_index: np.ndarray):
+        edge_values = np.ones(len(edge_index))
+        adjmat = scipy.sparse.coo_matrix((edge_values, (edge_index[:, 1], edge_index[:, 0])))
+        return adjmat
+
+    @staticmethod
+    def adjmat_to_edge_indices(adjmat) -> np.ndarray:
+        # Get source & target indices of the edges
+        edge_indices = np.stack([adjmat.col, adjmat.row], axis=0)
+        return torch.from_numpy(edge_indices).to(torch.int32)
 
     def get_edge_index(self, graph: HeteroData) -> torch.Tensor:
         """Get the edge indices of source and target nodes.
@@ -79,11 +105,8 @@ class BaseEdgeBuilder(ABC):
             The edge indices.
         """
         source_nodes, target_nodes = self.prepare_node_data(graph)
-
         adjmat = self.get_adjacency_matrix(source_nodes, target_nodes)
-        # Get source & target indices of the edges
-        edge_index = np.stack([adjmat.col, adjmat.row], axis=0)
-        return torch.from_numpy(edge_index).to(torch.int32)
+        return BaseEdgeBuilder.adjmat_to_edge_indices(adjmat)
 
     def register_edges(self, graph: HeteroData) -> HeteroData:
         """Register edges in the graph.
@@ -441,137 +464,87 @@ class MultiScaleEdges(BaseEdgeBuilder):
 
         return adjmat
 
-    def update_graph(self, graph: HeteroData, attrs_config: DotDict | None = None) -> HeteroData:
-        self.node_type = graph[self.source_name].node_type
-        valid_node_names = [n.__name__ for n in self.VALID_NODES]
-        assert (
-            self.node_type in valid_node_names
-        ), f"{self.__class__.__name__} requires {','.join(valid_node_names)} nodes."
 
-        return super().update_graph(graph, attrs_config)
+class ICONMultiMeshEdges(BaseEdgeBuilder):
+    """ICON multi mesh edges."""
 
-
-class ICONTopologicalBaseEdgeBuilder(BaseEdgeBuilder):
-    """Base class for computing edges based on ICON grid topology.
-
-    Attributes
-    ----------
-    source_name : str
-        The name of the source nodes.
-    target_name : str
-        The name of the target nodes.
-    icon_mesh   : str
-        The name of the ICON mesh (defines both the processor mesh and the data)
-    """
+    VALID_NODES = [ICONMultimeshNodes]
 
     def __init__(
         self,
         source_name: str,
         target_name: str,
-        icon_mesh: str,
+        resolutions: list[int] | None = None,
         source_mask_attr_name: str | None = None,
         target_mask_attr_name: str | None = None,
-    ):
-        self.icon_mesh = icon_mesh
-        super().__init__(source_name, target_name, source_mask_attr_name, target_mask_attr_name)
+    ) -> None:
+        super().__init__(
+            source_name=source_name,
+            target_name=target_name,
+            source_mask_attr_name=source_mask_attr_name,
+            target_mask_attr_name=target_mask_attr_name,
+        )
+        self.resolutions = resolutions
 
-    def update_graph(self, graph: HeteroData, attrs_config: DotDict = None) -> HeteroData:
-        """Update the graph with the edges."""
-        assert self.icon_mesh is not None, f"{self.__class__.__name__} requires initialized icon_mesh."
-        self.icon_sub_graph = graph[self.icon_mesh][self.sub_graph_address]
-        return super().update_graph(graph, attrs_config)
+    def get_adjacency_matrix(self, source_nodes: NodeStorage, target_nodes: NodeStorage) -> np.ndarray:
+        """Get adjacency matrix.
 
-    def get_adjacency_matrix(self, source_nodes: NodeStorage, target_nodes: NodeStorage):
-        """Parameters
+        Parameters
         ----------
         source_nodes : NodeStorage
             The source nodes.
         target_nodes : NodeStorage
             The target nodes.
+
+        Returns
+        -------
+        np.ndarray
+            Adjacency matrix
         """
-        LOGGER.info(f"Using ICON topology {self.source_name}>{self.target_name}")
-        nrows = self.icon_sub_graph.num_edges
-        adj_matrix = scipy.sparse.coo_matrix(
-            (
-                np.ones(nrows),
-                (
-                    self.icon_sub_graph.edge_vertices[:, self.vertex_index[0]],
-                    self.icon_sub_graph.edge_vertices[:, self.vertex_index[1]],
-                ),
-            )
-        )
-        return adj_matrix
+        LOGGER.info(f"Using {self.__class__.__name__}.")
+
+        if self.resolutions is None:
+            self.resolutions = list(range(source_nodes["_max_level"] + 1))
+
+        err_msg = f"{self.__class__.__name__} cannot use resolution levels above the nodes level, {source_nodes['_max_level']}."
+        assert max(self.resolutions) <= source_nodes["_max_level"], err_msg
+        edge_indices = icon_mesh.get_multimesh_edges(source_nodes["_icon_nodes"], self.resolutions)
+        return BaseEdgeBuilder.edge_indices_to_adjmat(edge_indices)
 
 
-class ICONTopologicalProcessorEdges(ICONTopologicalBaseEdgeBuilder):
-    """Computes edges based on ICON grid topology: processor grid built
-    from ICON grid vertices.
+class ICONBidirectionalGrid2MeshEdges(BaseEdgeBuilder):
+    """ICON bidirectional grid-to-mesh edges.
+
+    It computes edges based on ICON grid topology: ICON cell circumcenters for mapped
+    onto processor grid built from ICON grid vertices.
     """
 
-    def __init__(
-        self,
-        source_name: str,
-        target_name: str,
-        icon_mesh: str,
-        source_mask_attr_name: str | None = None,
-        target_mask_attr_name: str | None = None,
-    ):
-        self.sub_graph_address = "_multi_mesh"
-        self.vertex_index = (1, 0)
-        super().__init__(
-            source_name,
-            target_name,
-            icon_mesh,
-            source_mask_attr_name,
-            target_mask_attr_name,
-        )
+    VALID_NODES = [ICONCellGridNodes, ICONMultimeshNodes]
 
+    def get_adjacency_matrix(self, source_nodes: NodeStorage, target_nodes: NodeStorage) -> np.ndarray:
+        """Get adjacency matrix.
 
-class ICONTopologicalEncoderEdges(ICONTopologicalBaseEdgeBuilder):
-    """Computes encoder edges based on ICON grid topology: ICON cell
-    circumcenters for mapped onto processor grid built from ICON grid
-    vertices.
-    """
+        Parameters
+        ----------
+        source_nodes : NodeStorage
+            The source nodes.
+        target_nodes : NodeStorage
+            The target nodes.
 
-    def __init__(
-        self,
-        source_name: str,
-        target_name: str,
-        icon_mesh: str,
-        source_mask_attr_name: str | None = None,
-        target_mask_attr_name: str | None = None,
-    ):
-        self.sub_graph_address = "_cell_grid"
-        self.vertex_index = (1, 0)
-        super().__init__(
-            source_name,
-            target_name,
-            icon_mesh,
-            source_mask_attr_name,
-            target_mask_attr_name,
-        )
+        Returns
+        -------
+        np.ndarray
+            Adjacency matrix
+        """
+        assert target_nodes["node_type"] != source_nodes["node_type"]
 
+        LOGGER.info(f"Using {self.__class__.__name__}.")
+        if target_nodes["node_type"] == "ICONCellGridNodes":
+            # grid -> mesh
+            edge_indices = icon_mesh.get_grid2mesh_edges(target_nodes["_icon_nodes"], source_nodes["_icon_nodes"])
+            edge_indices = np.fliplr(edge_indices)
+        else:
+            # mesh -> grid
+            edge_indices = icon_mesh.get_grid2mesh_edges(source_nodes["_icon_nodes"], target_nodes["_icon_nodes"])
 
-class ICONTopologicalDecoderEdges(ICONTopologicalBaseEdgeBuilder):
-    """Computes encoder edges based on ICON grid topology: mapping from
-    processor grid built from ICON grid vertices onto ICON cell
-    circumcenters.
-    """
-
-    def __init__(
-        self,
-        source_name: str,
-        target_name: str,
-        icon_mesh: str,
-        source_mask_attr_name: str | None = None,
-        target_mask_attr_name: str | None = None,
-    ):
-        self.sub_graph_address = "_cell_grid"
-        self.vertex_index = (0, 1)
-        super().__init__(
-            source_name,
-            target_name,
-            icon_mesh,
-            source_mask_attr_name,
-            target_mask_attr_name,
-        )
+        return BaseEdgeBuilder.edge_indices_to_adjmat(edge_indices)
