@@ -44,7 +44,7 @@ LOGGER = logging.getLogger(__name__)
 class BaseEdgeBuilder(ABC):
     """Base class for edge builders."""
 
-    VALID_NODES: list = []
+    VALID_NODES: list | None = None
 
     def __init__(
         self,
@@ -70,12 +70,11 @@ class BaseEdgeBuilder(ABC):
         """Prepare node information and get source and target nodes."""
         source_nodes, target_nodes = graph[self.source_name], graph[self.target_name]
 
-        valid_nodes_names = [n.__name__ for n in self.VALID_NODES]
-        error_msg = (
-            f"{self.__class__.__name__} can only be computed for the following nodes: {', '.join(valid_nodes_names)}."
-        )
-        assert source_nodes["node_type"] in valid_nodes_names, error_msg
-        assert target_nodes["node_type"] in valid_nodes_names, error_msg
+        if self.VALID_NODES is not None:
+            valid_nodes_names = [n.__name__ for n in self.VALID_NODES]
+            error_msg = f"{self.__class__.__name__} can only be computed for the following nodes: {', '.join(valid_nodes_names)}."
+            assert source_nodes["node_type"] in valid_nodes_names, error_msg
+            assert target_nodes["node_type"] in valid_nodes_names, error_msg
 
         return source_nodes, target_nodes
 

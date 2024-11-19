@@ -19,6 +19,7 @@ import scipy
 from typeguard import typechecked
 from typing_extensions import Self
 
+from anemoi.graphs.generate.transforms import latlon_rad_to_cartesian
 from anemoi.graphs.generate.utils import convert_adjacency_matrix_to_list
 from anemoi.graphs.generate.utils import convert_list_to_adjacency_matrix
 from anemoi.graphs.generate.utils import selection_matrix
@@ -28,41 +29,58 @@ LOGGER = logging.getLogger(__name__)
 
 @typechecked
 class NodeSet:
-    """Stores nodes on the unit sphere."""
+    """Stores nodes on the unit sphere.
 
-    id_iter: int = itertools.count()  # unique ID for each object
-    gc_vertices: np.ndarray  # geographical (lat/lon) coordinates [rad], shape [:,2]
+    Attributes
+    ----------
+    id_iter : int
+        Unique ID for each object.
+    gc_vertices : np.ndarray
+        Geographical (lat/lon) coordinates, in radians. Shape: (num_nodes, 2)
+    ref_level : np.ndarray
+        Reference level of each node. Shape: (num_nodes, )
+    """
 
-    def __init__(self, lon: np.ndarray, lat: np.ndarray):
-        self.gc_vertices = np.column_stack((lon, lat))
+    id_iter: int = itertools.count()
+    gc_vertices: np.ndarray
+    ref_level: np.ndarray
+
+    def __init__(self, lats: np.ndarray, lons: np.ndarray, ref_level: np.ndarray):
+        self.latitudes = lats
+        self.longitudes = lons
+        self.ref_level = ref_level
         self.id = uuid.uuid4()
 
     @property
-    def num_vertices(self) -> int:
+    def num_nodes(self) -> int:
         return self.gc_vertices.shape[0]
+
+    @cached_property
+    def gc_vertices(self):
+        return np.column_stack((self.latitudes, self.longitudes))
 
     @cached_property
     def cc_vertices(self):
         """Cartesian coordinates [rad], shape [:,3]."""
-        return self._gc_to_cartesian()
+        return latlon_rad_to_cartesian(self.gc_vertices.T)
 
     def __add__(self, other: Self) -> Self:
         """concatenates two node sets."""
-        gc_vertices = np.concatenate((self.gc_vertices, other.gc_vertices))
-        return NodeSet(gc_vertices[:, 0], gc_vertices[:, 1])
+        latitudes = np.concatenate([self.latitudes, other.latitudes])
+        longitudes = np.concatenate([self.longitudes, other.longitudes])
+        ref_levels = np.concatenate([self.ref_level, other.ref_level])
+        return NodeSet(latitudes, longitudes, ref_levels)
 
     def __eq__(self, other: Self) -> bool:
         """Compares two node sets."""
         return self.id == other.id
 
-    def _gc_to_cartesian(self, radius: float = 1.0) -> np.ndarray:
-        """Returns Cartesian coordinates of the node set, shape [:,3]."""
-        xyz = (
-            radius * np.cos(lat_rad := self.gc_vertices[:, 1]) * np.cos(lon_rad := self.gc_vertices[:, 0]),
-            radius * np.cos(lat_rad) * np.sin(lon_rad),
-            radius * np.sin(lat_rad),
-        )
-        return np.stack(xyz, axis=-1)
+    def get_mask_level(self, level: int) -> np.ndarray:
+        return self.ref_level <= level
+
+    def restrict_to_level(self, level: int) -> Self:
+        mask = self.get_mask_level(level)
+        return NodeSet(self.latitudes[mask], self.longitudes[mask], self.ref_level[mask])
 
 
 @typechecked
@@ -81,6 +99,8 @@ class ICONMultiMesh:
             # read vertex coordinates
             vlon = read_coordinate_array(ncfile, "vlon", "vertex")
             vlat = read_coordinate_array(ncfile, "vlat", "vertex")
+            vreflevel = get_ncfile_variable(ncfile, "refinement_level_v", expected_dimensions=("vertex",))
+            self.nodeset = NodeSet(vlon, vlat, vreflevel)
 
             edge_vertices_fine = np.asarray(
                 get_ncfile_variable(ncfile, "edge_vertices", ("nc", "edge")) - 1, dtype=np.int64
@@ -88,29 +108,21 @@ class ICONMultiMesh:
             cell_vertices_fine = np.asarray(
                 get_ncfile_variable(ncfile, "vertex_of_cell", ("nv", "cell")) - 1, dtype=np.int64
             ).transpose()
-            reflvl_vertex = get_ncfile_variable(ncfile, "refinement_level_v", expected_dimensions=("vertex",))
 
             self.uuidOfHGrid = ncfile.uuidOfHGrid
 
-        self.max_level = max_level if max_level is not None else reflvl_vertex.max()
+        self.max_level = max_level if max_level is not None else vreflevel.max()
 
         # generate edge-vertex relations for coarser levels:
         (edge_vertices, cell_vertices) = self._get_hierarchy_of_icon_edge_graphs(
             edge_vertices_fine=edge_vertices_fine,
             cell_vertices_fine=cell_vertices_fine,
-            reflvl_vertex=reflvl_vertex,
+            reflvl_vertex=vreflevel,
         )
-        # restrict edge-vertex list to multi_mesh level "max_level":
-        if self.max_level <= reflvl_vertex.max():
-            (self.edge_vertices, self.cell_vertices, vlon, vlat) = self._restrict_multi_mesh_level(
-                edge_vertices,
-                cell_vertices,
-                reflvl_vertex=reflvl_vertex,
-                vlon=vlon,
-                vlat=vlat,
-            )
 
-        self.nodeset = NodeSet(vlon, vlat)
+        if self.max_level <= vreflevel.max():  # restric multi_mesh to "max_level"
+            self.edge_vertices, self.cell_vertices = self._restrict_multi_mesh_level(edge_vertices, cell_vertices)
+            self.nodeset = self.nodeset.restrict_to_level(self.max_level)
 
     def node_coordinates(self):
         return self.nodeset.gc_vertices.astype(np.float32)
@@ -119,22 +131,33 @@ class ICONMultiMesh:
         self,
         edge_vertices: list[np.ndarray],
         cell_vertices: np.ndarray,
-        reflvl_vertex: np.ndarray,
-        vlon: np.ndarray,
-        vlat: np.ndarray,
-    ) -> tuple[list[np.ndarray], np.ndarray, np.ndarray, np.ndarray]:
-        """Creates a new mesh with only the vertices at the desired level."""
-        num_vertices = reflvl_vertex.shape[0]
-        vertex_mask = reflvl_vertex <= self.max_level
-        vertex_glb2loc = np.zeros(num_vertices, dtype=int)
+    ) -> tuple[list[np.ndarray], np.ndarray]:
+        """Creates a new mesh with only the vertices at the desired level.
+
+        Parameters
+        ----------
+        edge_vertices : list[np.ndarray]
+            Edge vertices
+        cell_vertices : np.ndarray
+            Cell vertices
+
+        Returns
+        -------
+        edge_vertices : list[np.ndarray]
+            Updated edge vertices
+        cell_vertices : np.ndarray
+            Updated cell vertices
+        """
+        vertex_mask = self.nodeset.get_mask_level(self.max_level)
+
+        # Mapping vertices index of the edges to the new subset of vertices
+        vertex_glb2loc = np.zeros(self.nodeset.num_nodes, dtype=int)
         vertex_glb2loc[vertex_mask] = np.arange(vertex_mask.sum())
-        return (
-            [vertex_glb2loc[vertices] for vertices in edge_vertices[: self.max_level + 1]],
-            # cell_vertices: preserve negative indices (incomplete cells)
-            np.where(cell_vertices >= 0, vertex_glb2loc[cell_vertices], cell_vertices),
-            vlon[vertex_mask],
-            vlat[vertex_mask],
-        )
+
+        restricted_edge_vertices = [vertex_glb2loc[vertices] for vertices in edge_vertices[: self.max_level + 1]]
+        restricted_cell_vertices = np.where(cell_vertices >= 0, vertex_glb2loc[cell_vertices], cell_vertices)
+        # cell_vertices: preserve negative indices (incomplete cells)
+        return restricted_edge_vertices, restricted_cell_vertices
 
     def _get_hierarchy_of_icon_edge_graphs(
         self,
@@ -257,13 +280,13 @@ class ICONCellDataGrid:
             # read cell circumcenter coordinates
             clon = read_coordinate_array(ncfile, "clon", "cell")
             clat = read_coordinate_array(ncfile, "clat", "cell")
-
-            reflvl_cell = get_ncfile_variable(ncfile, "refinement_level_c", expected_dimensions=("cell",))
+            creflevel = get_ncfile_variable(ncfile, "refinement_level_c", expected_dimensions=("cell",))
+            self.nodeset = NodeSet(clon, clat, creflevel)
             self.uuidOfHGrid = ncfile.uuidOfHGrid
 
-        self.max_level = max_level if max_level is not None else reflvl_cell.max()
-        self.select_c = np.argwhere(reflvl_cell <= self.max_level)  # restrict to level `max_level`:
-        self.nodeset = NodeSet(clon[self.select_c], clat[self.select_c])  # source nodes
+        self.max_level = max_level if max_level is not None else creflevel.max()
+        self.select_c = np.argwhere(creflevel <= self.max_level)  # restrict to level `max_level`:
+        self.nodeset = NodeSet(clon[self.select_c], clat[self.select_c], creflevel)  # source nodes
 
     def node_coordinates(self):
         return self.nodeset.gc_vertices.astype(np.float32)

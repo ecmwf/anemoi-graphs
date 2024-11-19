@@ -58,7 +58,7 @@ def latlon_rad_to_cartesian(loc: tuple[np.ndarray, np.ndarray], radius: float = 
     Parameters
     ----------
     loc : np.ndarray
-        The 2D coordinates of the points, in radians.
+        The 2D coordinates of the points, in radians. Shape: (2, num_points)
     radius : float, optional
         The radius of the sphere containing los points. Defaults to the unit sphere.
 
