@@ -55,6 +55,15 @@ class GraphCreator:
             )
 
         for edges_cfg in self.config.get("edges", {}):
+ 
+            edge_builder_cfg = edges_cfg.get("edge_builder")
+            if edge_builder_cfg is not None:
+                edge_builder_cfg.source_mask_attr_name = edges_cfg.get("source_mask_attr_name")
+                edge_builder_cfg.target_mask_attr_name = edges_cfg.get("target_mask_attr_name")
+                edges_cfg.edge_builders = [edge_builder_cfg]
+
+
+
             for edge_builder_cfg in edges_cfg.edge_builders:
                 edge_builder = instantiate(
                     edge_builder_cfg, source_name=edges_cfg.source_name, target_name=edges_cfg.target_name
