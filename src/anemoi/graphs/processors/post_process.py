@@ -26,7 +26,75 @@ class PostProcessor(ABC):
         raise NotImplementedError(f"The {self.__class__.__name__} class does not implement the method update_graph().")
 
 
-class RemoveUnconnectedNodes(PostProcessor):
+class BaseMaskingProcessor(PostProcessor, ABC):
+    """Base class for mask based processor."""
+
+    def __init__(
+        self,
+        nodes_name: str,
+        save_mask_indices_to_attr: str | None = None,
+    ) -> None:
+        self.nodes_name = nodes_name
+        self.save_mask_indices_to_attr = save_mask_indices_to_attr
+
+    def removing_nodes(self, graph: HeteroData, mask: torch.Tensor) -> HeteroData:
+        """Remove nodes based on the mask passed."""
+        for attr_name in graph[self.nodes_name].node_attrs():
+            graph[self.nodes_name][attr_name] = graph[self.nodes_name][attr_name][mask]
+
+        return graph
+
+    def create_indices_mapper_from_mask(self, mask: torch.Tensor) -> dict[int, int]:
+        return dict(zip(torch.where(mask)[0].tolist(), list(range(mask.sum()))))
+
+    def update_edge_indices(self, graph: HeteroData, mask: torch.Tensor) -> HeteroData:
+        """Update the edge indices to the new position of the nodes."""
+        idx_mapping = self.create_indices_mapper_from_mask(mask)
+        for edges_name in graph.edge_types:
+            if edges_name[0] == self.nodes_name:
+                graph[edges_name].edge_index[0] = graph[edges_name].edge_index[0].apply_(idx_mapping.get)
+
+            if edges_name[2] == self.nodes_name:
+                graph[edges_name].edge_index[1] = graph[edges_name].edge_index[1].apply_(idx_mapping.get)
+
+        return graph
+
+    @abstractmethod
+    def compute_mask(self, graph: HeteroData) -> torch.Tensor: ...
+
+    def add_attribute(self, graph: HeteroData, mask: torch.Tensor) -> HeteroData:
+        """Add an attribute of the mask indices as node attribute."""
+        if self.save_mask_indices_to_attr is not None:
+            LOGGER.info(
+                f"An attribute {self.save_mask_indices_to_attr} has been added with the indices to mask the nodes from the original graph."
+            )
+            mask_indices = torch.where(mask)[0].reshape((graph[self.nodes_name].num_nodes, -1))
+            graph[self.nodes_name][self.save_mask_indices_to_attr] = mask_indices
+
+        return graph
+
+    def update_graph(self, graph: HeteroData) -> HeteroData:
+        """Post-process the graph.
+
+        Parameters
+        ----------
+        graph: HeteroData
+            The graph to post-process.
+
+        Returns
+        -------
+        HeteroData
+            The post-processed graph.
+        """
+        valid_mask = self.compute_mask(graph)
+        LOGGER.info(f"Removing {(~valid_mask).sum()} nodes from {self.nodes_name}.")
+        graph = self.removing_nodes(graph, valid_mask)
+        graph = self.update_edge_indices(graph, valid_mask)
+        graph = self.add_attribute(graph, valid_mask)
+        return graph
+
+
+class RemoveUnconnectedNodes(BaseMaskingProcessor):
     """Remove unconnected nodes in the graph.
 
     Attributes
@@ -55,12 +123,11 @@ class RemoveUnconnectedNodes(PostProcessor):
     def __init__(
         self,
         nodes_name: str,
-        ignore: str | None,
-        save_mask_indices_to_attr: str | None,
+        save_mask_indices_to_attr: str | None = None,
+        ignore: str | None = None,
     ) -> None:
-        self.nodes_name = nodes_name
+        super().__init__(nodes_name, save_mask_indices_to_attr)
         self.ignore = ignore
-        self.save_mask_indices_to_attr = save_mask_indices_to_attr
 
     def compute_mask(self, graph: HeteroData) -> torch.Tensor:
         """Compute the mask of connected nodes."""
@@ -79,63 +146,3 @@ class RemoveUnconnectedNodes(PostProcessor):
                 connected_mask[edges.edge_index[1]] = True
 
         return connected_mask
-
-    def removing_nodes(self, graph: HeteroData, mask: torch.Tensor) -> HeteroData:
-        """Remove nodes based on the mask passed."""
-        for attr_name in graph[self.nodes_name].node_attrs():
-            graph[self.nodes_name][attr_name] = graph[self.nodes_name][attr_name][mask]
-
-        return graph
-
-    def update_edge_indices(self, graph: HeteroData, idx_mapping: dict[int, int]) -> HeteroData:
-        """Update the edge indices to the new position of the nodes."""
-        for edges_name in graph.edge_types:
-            if edges_name[0] == self.nodes_name:
-                graph[edges_name].edge_index[0] = graph[edges_name].edge_index[0].apply_(idx_mapping.get)
-
-            if edges_name[2] == self.nodes_name:
-                graph[edges_name].edge_index[1] = graph[edges_name].edge_index[1].apply_(idx_mapping.get)
-
-        return graph
-
-    def prune_graph(self, graph: HeteroData, mask: torch.Tensor) -> HeteroData:
-        """Prune the nodes with the specified mask."""
-        LOGGER.info(f"Removing {(~mask).sum()} nodes from {self.nodes_name}.")
-
-        # Pruning nodes
-        graph = self.removing_nodes(graph, mask)
-
-        # Updating edge indices
-        idx_mapping = dict(zip(torch.where(mask)[0].tolist(), list(range(mask.sum()))))
-        graph = self.update_edge_indices(graph, idx_mapping)
-
-        return graph
-
-    def add_attribute(self, graph: HeteroData, mask: torch.Tensor) -> HeteroData:
-        """Add an attribute of the mask indices as node attribute."""
-        if self.save_mask_indices_to_attr is not None:
-            LOGGER.info(
-                f"An attribute {self.save_mask_indices_to_attr} has been added with the indices to mask the nodes from the original graph."
-            )
-            mask_indices = torch.where(mask)[0].reshape((graph[self.nodes_name].num_nodes, -1))
-            graph[self.nodes_name][self.save_mask_indices_to_attr] = mask_indices
-
-        return graph
-
-    def update_graph(self, graph: HeteroData) -> HeteroData:
-        """Post-process the graph.
-
-        Parameters
-        ----------
-        graph: HeteroData
-            The graph to post-process.
-
-        Returns
-        -------
-        HeteroData
-            The post-processed graph.
-        """
-        connected_mask = self.compute_mask(graph)
-        graph = self.prune_graph(graph, connected_mask)
-        graph = self.add_attribute(graph, connected_mask)
-        return graph
