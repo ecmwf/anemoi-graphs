@@ -152,7 +152,10 @@ class AreaWeights(BaseNodeAttribute):
         sv.regions = [region for region in sv.regions if region]
         # compute the area weight without empty regions
         area_weights = sv.calculate_areas()
-        # add them back with zero weight
+        if (null_nodes := mask.sum()) > 0:
+            LOGGER.warning(
+                f"{self.__class__.__name__} is filling {null_nodes} ({100*null_nodes/len(mask):.2f}%) nodes with value {self.fill_value}."
+            )
         result = np.ones(points.shape[0]) * self.fill_value
         result[mask] = area_weights
         LOGGER.debug(
