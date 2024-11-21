@@ -35,7 +35,7 @@ def test_remove_unconnected_nodes_with_indices_attr(graph_with_isolated_nodes: H
     assert graph["test_nodes"].num_nodes == 4
     assert torch.equal(graph["test_nodes"].x, torch.tensor([[2], [3], [4], [5]]))
     assert torch.equal(graph["test_nodes", "to", "test_nodes"].edge_index, torch.tensor([[1, 2, 3], [0, 1, 2]]))
-    assert torch.equal(graph["test_nodes"].original_indices, torch.tensor([1, 2, 3, 4]))
+    assert torch.equal(graph["test_nodes"].original_indices, torch.tensor([[1, 2, 3, 4]]))
 
 
 def test_remove_unconnected_nodes_with_ignore(graph_with_isolated_nodes: HeteroData):
@@ -74,5 +74,6 @@ def test_remove_unconnected_nodes_parametrized(
 
     if save_mask_indices_to_attr:
         assert save_mask_indices_to_attr in graph[nodes_name]
+        assert graph[nodes_name][save_mask_indices_to_attr].ndim == 2
     else:
         assert graph[nodes_name].node_attrs() == graph_with_isolated_nodes[nodes_name].node_attrs()
