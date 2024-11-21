@@ -148,8 +148,6 @@ class AreaWeights(BaseNodeAttribute):
         latitudes, longitudes = nodes.x[:, 0], nodes.x[:, 1]
         points = latlon_rad_to_cartesian((np.asarray(latitudes), np.asarray(longitudes)))
         sv = SphericalVoronoi(points, self.radius, self.centre)
-        # np.asarray([]) is dtype float 64
-        # the code expects intp (e.g. int64)
         mask = np.array([bool(i) for i in sv.regions])
         sv.regions = [region for region in sv.regions if region]
         # compute the area weight without empty regions
