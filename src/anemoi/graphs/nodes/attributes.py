@@ -106,6 +106,8 @@ class AreaWeights(BaseNodeAttribute):
         Radius of the sphere.
     centre : np.ndarray
         Centre of the sphere.
+    fill_value : float 
+        Value to fill the empty regions.
 
     Methods
     -------
@@ -118,11 +120,13 @@ class AreaWeights(BaseNodeAttribute):
         norm: str | None = None,
         radius: float = 1.0,
         centre: np.ndarray = np.array([0, 0, 0]),
+        fill_value: float = 0.0,
         dtype: str = "float32",
     ) -> None:
         super().__init__(norm, dtype)
         self.radius = radius
         self.centre = centre
+        self.fill_value = fill_value
 
     def get_raw_values(self, nodes: NodeStorage, **kwargs) -> np.ndarray:
         """Compute the area associated to each node.
@@ -144,17 +148,14 @@ class AreaWeights(BaseNodeAttribute):
         latitudes, longitudes = nodes.x[:, 0], nodes.x[:, 1]
         points = latlon_rad_to_cartesian((np.asarray(latitudes), np.asarray(longitudes)))
         sv = SphericalVoronoi(points, self.radius, self.centre)
-        # SphericalVoronoi expects C int type
-        if sv._simplices.dtype != np.int32:
-            sv._simplices = sv._simplices.astype(np.int32)
         # np.asarray([]) is dtype float 64
         # the code expects intp (e.g. int64)
         mask = np.array([bool(i) for i in sv.regions])
-        sv.regions = [l for l in sv.regions if l]
+        sv.regions = [region for region in sv.regions if region]
         # compute the area weight without empty regions
         area_weights = sv.calculate_areas()
         # add them back with zero weight
-        result = np.zeros(points.shape[0])
+        result = np.ones(points.shape[0]) * self.fill_value
         result[mask] = area_weights
         LOGGER.debug(
             "There are %d of weights, which (unscaled) add up a total weight of %.2f.",
