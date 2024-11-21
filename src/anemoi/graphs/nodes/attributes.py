@@ -13,6 +13,7 @@ import logging
 from abc import ABC
 from abc import abstractmethod
 from typing import Type
+from typing import Union
 
 import numpy as np
 import torch
@@ -26,7 +27,7 @@ from anemoi.graphs.normalise import NormaliserMixin
 
 LOGGER = logging.getLogger(__name__)
 
-MaskAttributeType = str | Type["BooleanBaseNodeAttribute"]
+MaskAttributeType = Union[str, Type["BooleanBaseNodeAttribute"]]
 
 
 class BaseNodeAttribute(ABC, NormaliserMixin):
