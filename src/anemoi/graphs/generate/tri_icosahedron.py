@@ -1,3 +1,12 @@
+# (C) Copyright 2024 Anemoi contributors.
+#
+# This software is licensed under the terms of the Apache Licence Version 2.0
+# which can be obtained at http://www.apache.org/licenses/LICENSE-2.0.
+#
+# In applying this licence, ECMWF does not waive the privileges and immunities
+# granted to it by virtue of its status as an intergovernmental organisation
+# nor does it submit to any jurisdiction.
+
 from __future__ import annotations
 
 from collections.abc import Iterable
@@ -166,8 +175,8 @@ def add_edges_to_nx_graph(
 
         # Limit area of mesh points.
         if area_mask_builder is not None:
-            aoi_mask = area_mask_builder.get_mask(r_vertices_rad)
-            valid_nodes = np.where(aoi_mask)[0]
+            area_mask = area_mask_builder.get_mask(r_vertices_rad)
+            valid_nodes = np.where(area_mask)[0]
         else:
             valid_nodes = None
 

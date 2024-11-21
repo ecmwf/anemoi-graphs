@@ -1,3 +1,12 @@
+# (C) Copyright 2024 Anemoi contributors.
+#
+# This software is licensed under the terms of the Apache Licence Version 2.0
+# which can be obtained at http://www.apache.org/licenses/LICENSE-2.0.
+#
+# In applying this licence, ECMWF does not waive the privileges and immunities
+# granted to it by virtue of its status as an intergovernmental organisation
+# nor does it submit to any jurisdiction.
+
 from __future__ import annotations
 
 import logging
@@ -7,7 +16,6 @@ from abc import abstractmethod
 import networkx as nx
 import numpy as np
 import torch
-from anemoi.utils.config import DotDict
 from torch_geometric.data import HeteroData
 
 from anemoi.graphs.generate.hex_icosahedron import create_hex_nodes
@@ -39,6 +47,12 @@ class IcosahedralNodes(BaseNodeBuilder, ABC):
             self.resolutions = resolution
 
         super().__init__(name)
+        self.hidden_attributes = BaseNodeBuilder.hidden_attributes | {
+            "resolutions",
+            "nx_graph",
+            "node_ordering",
+            "area_mask_builder",
+        }
 
     def get_coordinates(self) -> torch.Tensor:
         """Get the coordinates of the nodes.
@@ -52,14 +66,7 @@ class IcosahedralNodes(BaseNodeBuilder, ABC):
         return torch.tensor(coords_rad[self.node_ordering], dtype=torch.float32)
 
     @abstractmethod
-    def create_nodes(self) -> tuple[nx.Graph, np.ndarray, list[int]]: ...
-
-    def register_attributes(self, graph: HeteroData, config: DotDict) -> HeteroData:
-        graph[self.name]["_resolutions"] = self.resolutions
-        graph[self.name]["_nx_graph"] = self.nx_graph
-        graph[self.name]["_node_ordering"] = self.node_ordering
-        graph[self.name]["_area_mask_builder"] = self.area_mask_builder
-        return super().register_attributes(graph, config)
+    def create_nodes(self) -> tuple[nx.DiGraph, np.ndarray, list[int]]: ...
 
 
 class LimitedAreaIcosahedralNodes(IcosahedralNodes):
