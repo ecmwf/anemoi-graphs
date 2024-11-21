@@ -26,6 +26,8 @@ from anemoi.graphs.normalise import NormaliserMixin
 
 LOGGER = logging.getLogger(__name__)
 
+MaskAttributeType = str | Type["BooleanBaseNodeAttribute"]
+
 
 class BaseNodeAttribute(ABC, NormaliserMixin):
     """Base class for the weights of the nodes."""
@@ -203,12 +205,12 @@ class CutOutMask(BooleanBaseNodeAttribute):
 class BooleanOperation(BooleanBaseNodeAttribute, ABC):
     """Base class for boolean operations."""
 
-    def __init__(self, masks: list[str | Type[BooleanBaseNodeAttribute]]) -> None:
+    def __init__(self, masks: MaskAttributeType | list[MaskAttributeType]) -> None:
         super().__init__()
-        self.masks = masks
+        self.masks = masks if isinstance(masks, list) else [masks]
 
     @staticmethod
-    def get_mask_values(mask: str | Type[BaseNodeAttribute], nodes: NodeStorage, **kwargs) -> np.array:
+    def get_mask_values(mask: MaskAttributeType, nodes: NodeStorage, **kwargs) -> np.array:
         if isinstance(mask, str):
             attributes = nodes[mask]
             assert (
@@ -218,16 +220,31 @@ class BooleanOperation(BooleanBaseNodeAttribute, ABC):
 
         return mask.get_raw_values(nodes, **kwargs)
 
+    @abstractmethod
+    def reduce_op(self, masks: list[np.ndarray]) -> np.ndarray: ...
+
+    def get_raw_values(self, nodes: NodeStorage, **kwargs) -> np.ndarray:
+        mask_values = [BooleanOperation.get_mask_values(mask, nodes, **kwargs) for mask in self.masks]
+        return self.reduce_op(mask_values)
+
+
+class BooleanNot(BooleanOperation):
+    """Boolean NOT mask."""
+
+    def reduce_op(self, masks: list[np.ndarray]) -> np.ndarray:
+        assert len(self.masks) == 1, f"The {self.__class__.__name__} can only be aplied to one mask."
+        return ~masks[0]
+
 
 class BooleanAndMask(BooleanOperation):
     """Boolean AND mask."""
 
-    def get_raw_values(self, nodes: NodeStorage, **kwargs) -> np.ndarray:
-        return np.logical_and.reduce([BooleanOperation.get_mask_values(mask, nodes, **kwargs) for mask in self.masks])
+    def reduce_op(self, masks: list[np.ndarray]) -> np.ndarray:
+        return np.logical_and.reduce(masks)
 
 
 class BooleanOrMask(BooleanOperation):
     """Boolean OR mask."""
 
-    def get_raw_values(self, nodes: NodeStorage, **kwargs) -> np.ndarray:
-        return np.logical_or.reduce([BooleanOperation.get_mask_values(mask, nodes, **kwargs) for mask in self.masks])
+    def reduce_op(self, masks: list[np.ndarray]) -> np.ndarray:
+        return np.logical_or.reduce(masks)
