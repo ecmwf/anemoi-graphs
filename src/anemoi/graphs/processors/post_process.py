@@ -117,7 +117,8 @@ class RemoveUnconnectedNodes(PostProcessor):
             LOGGER.info(
                 f"An attribute {self.save_mask_indices_to_attr} has been added with the indices to mask the nodes from the original graph."
             )
-            graph[self.nodes_name][self.save_mask_indices_to_attr] = torch.where(mask)[0]
+            mask_indices = torch.where(mask)[0].reshape((graph[self.nodes_name].num_nodes, -1))
+            graph[self.nodes_name][self.save_mask_indices_to_attr] = mask_indices
 
         return graph
 
