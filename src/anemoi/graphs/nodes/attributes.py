@@ -106,7 +106,7 @@ class AreaWeights(BaseNodeAttribute):
         Radius of the sphere.
     centre : np.ndarray
         Centre of the sphere.
-    fill_value : float 
+    fill_value : float
         Value to fill the empty regions.
 
     Methods
