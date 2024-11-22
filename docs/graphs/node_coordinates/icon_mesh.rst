@@ -57,6 +57,6 @@ following YAML example:
      # Processor configuration
      - source_name: "hidden"
        target_name: "hidden"
-       edge_builder:
-         _target_: anemoi.graphs.edges.ICONTopologicalProcessorEdges
+       edge_builders:
+       - _target_: anemoi.graphs.edges.ICONTopologicalProcessorEdges
          icon_mesh: "icon_mesh"

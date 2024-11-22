@@ -5,6 +5,6 @@ nodes:
       _target_: anemoi.graphs.nodes.LimitedAreaTriNodes
       resolution: 5
       reference_node_name: data
-      mask_attr_name: cutout
+      mask_attr_name: cutout_mask
 
 edges: ...

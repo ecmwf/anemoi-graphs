@@ -15,8 +15,8 @@ YAML configuration:
    edges:
      -  source_name: source
         target_name: target
-        edge_builder:
-          _target_: anemoi.graphs.edges.KNNEdges
+        edge_builders:
+        - _target_: anemoi.graphs.edges.KNNEdges
           num_nearest_neighbours: 3
 
 .. note::

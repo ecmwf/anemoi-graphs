@@ -39,8 +39,8 @@ YAML configuration:
    edges:
       -  source_name: source
          target_name: destination
-         edge_builder:
-            _target_: anemoi.graphs.edges.CutOffEdges
+         edge_builders:
+         -  _target_: anemoi.graphs.edges.CutOffEdges
             cutoff_factor: 0.6
 
 .. note::

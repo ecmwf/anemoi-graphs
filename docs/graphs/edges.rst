@@ -14,8 +14,8 @@ for each (`source name`, `target name`) pair specified.
    edges:
      - source_name: data
        target_name: hidden
-       edge_builder:
-         _target_: anemoi.graphs.edges.CutOff
+       edge_builders:
+       - _target_: anemoi.graphs.edges.CutOff
          cutoff_factor: 0.7
 
 Below are the available methods for defining the edges:
@@ -38,7 +38,7 @@ should only connect to the nodes in the limited area.
    edges:
      - source_name: hidden
        target_name: data
-       target_mask_attr_name: cutout
-       edge_builder:
-         _target_: anemoi.graphs.edges.KNNEdges
+       edge_builders:
+       - _target_: anemoi.graphs.edges.KNNEdges
          num_nearest_neighbours: 5
+         target_mask_attr_name: cutout

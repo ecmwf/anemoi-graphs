@@ -4,7 +4,7 @@
  Limited Area Modeling (LAM)
 #############################
 
-Anemoi Graphs brings another level of flexibility to the user by
+AnemoI Graphs brings another level of flexibility to the user by
 allowing the definition of limited area graphs.
 
 *****************************************
@@ -23,17 +23,17 @@ region of interest using any of the ``LimitedArea_____Nodes`` classes.
 ************************************************
 
 In this case, the user may want to include boundary forcings to the
-region of interest. Anemoi Graphs allows the user to use 2 datasets to
+region of interest. AnemoI Graphs allows the user to use 2 datasets to
 build the `data` nodes, combining nodes from the LAM dataset and the
-global dataset (as boundary forcings). The class
-``CutOutZarrDatasetNodes`` allows this functionality:
+global dataset (as boundary forcings). The class ``ZarrDatasetNodes``
+allows this functionality:
 
 .. literalinclude:: yaml/cutout_zarr.yaml
    :language: yaml
 
-The ``CutOutZarrDatasetNodes`` supports an optional ``thinning``
-argument which can be used to sampling points from the regional dataset
-to reduce computation during development stage.
+The ``ZarrDatasetNodes`` supports an optional ``thinning`` argument
+which can be used to sampling points from the regional dataset to reduce
+computation during development stage.
 
 In addition, this node builder class will create an additional node
 attribute with a mask showing which node correspond to each of the 2
@@ -47,7 +47,7 @@ datasets.
          x=[40320, 2],
          node_type='ZarrDatasetNodes',
          area_weight=[40320, 1],
-         cutout=[40320, 1],
+         cutout_mask=[40320, 1],
       }
    )
 
@@ -70,7 +70,7 @@ defined by the `data` nodes masked by the ``cutout`` attribute.
          x=[40320, 2],
          node_type='ZarrDatasetNodes',
          area_weight=[40320, 1],
-         cutout=[40320, 1],
+         cutout_mask=[40320, 1],
       },
       hidden={
          x=[10242, 2],

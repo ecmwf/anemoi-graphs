@@ -16,8 +16,8 @@ YAML configuration:
    edges:
      -  source_name: source
         target_name: source
-        edge_builder:
-          _target_: anemoi.graphs.edges.MultiScaleEdges
+        edge_builders:
+        - _target_: anemoi.graphs.edges.MultiScaleEdges
           x_hops: 1
 
 where `x_hops` is the number of hops between two nodes of the same
