@@ -12,6 +12,7 @@ from __future__ import annotations
 import logging
 from itertools import chain
 from pathlib import Path
+from warnings import warn
 
 import torch
 from anemoi.utils.config import DotDict
@@ -55,13 +56,27 @@ class GraphCreator:
             )
 
         for edges_cfg in self.config.get("edges", {}):
-            graph = instantiate(
-                edges_cfg.edge_builder,
-                edges_cfg.source_name,
-                edges_cfg.target_name,
-                source_mask_attr_name=edges_cfg.get("source_mask_attr_name", None),
-                target_mask_attr_name=edges_cfg.get("target_mask_attr_name", None),
-            ).update_graph(graph, edges_cfg.get("attributes", {}))
+
+            if "edge_builder" in edges_cfg:
+                warn(
+                    "This format will be deprecated. The key 'edge_builder' is renamed to 'edge_builders' and takes a list of edge builders. In addition, the source_mask_attr_name & target_mask_attr_name fields are moved under the each edge builder.",
+                    DeprecationWarning,
+                    stacklevel=2,
+                )
+
+                edge_builder_cfg = edges_cfg.get("edge_builder")
+                if edge_builder_cfg is not None:
+                    edge_builder_cfg.source_mask_attr_name = edges_cfg.get("source_mask_attr_name")
+                    edge_builder_cfg.target_mask_attr_name = edges_cfg.get("target_mask_attr_name")
+                    edges_cfg.edge_builders = [edge_builder_cfg]
+
+            for edge_builder_cfg in edges_cfg.edge_builders:
+                edge_builder = instantiate(
+                    edge_builder_cfg, source_name=edges_cfg.source_name, target_name=edges_cfg.target_name
+                )
+                graph = edge_builder.register_edges(graph)
+
+            graph = edge_builder.register_attributes(graph, edges_cfg.get("attributes", {}))
 
         return graph
 
@@ -84,6 +99,32 @@ class GraphCreator:
             for attr_name in attr_names_to_remove:
                 del graph[type_name][attr_name]
                 LOGGER.info(f"{attr_name} deleted from graph.")
+
+        return graph
+
+    def post_process(self, graph: HeteroData) -> HeteroData:
+        """Allow post-processing of the resulting graph.
+
+        This method applies any configured post-processors to the graph,
+        which can modify or enhance the graph structure or attributes.
+
+        Parameters
+        ----------
+        graph : HeteroData
+            The graph to be post-processed.
+
+        Returns
+        -------
+        HeteroData
+            The post-processed graph.
+
+        Notes
+        -----
+        Post-processors are applied in the order they are specified in the configuration.
+        Each post-processor should implement an `update_graph` method that takes and returns a HeteroData object.
+        """
+        for processor in self.config.get("post_processors", []):
+            graph = instantiate(processor).update_graph(graph)
 
         return graph
 
@@ -126,6 +167,7 @@ class GraphCreator:
         graph = HeteroData()
         graph = self.update_graph(graph)
         graph = self.clean(graph)
+        graph = self.post_process(graph)
 
         if save_path is None:
             LOGGER.warning("No output path specified. The graph will not be saved.")
