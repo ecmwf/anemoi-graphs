@@ -151,8 +151,8 @@ class GraphCreator:
         """
         graph = HeteroData()
         graph = self.update_graph(graph)
-        graph = self.post_process(graph)
         graph = self.clean(graph)
+        graph = self.post_process(graph)
 
         if save_path is None:
             LOGGER.warning("No output path specified. The graph will not be saved.")
