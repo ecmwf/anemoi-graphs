@@ -3,7 +3,7 @@
 ################################
 
 This class allows us to define nodes based on iterative refinements of
-an icoshaedron with triangles.
+an icosahedron with triangles.
 
 To define the `node coordinates` based on icosahedral refinements of an
 icosahedron, you can use the following YAML configurations:
@@ -46,7 +46,7 @@ specific area of interest.
        attributes: ...
 
 where `reference_node_name` is the name of the nodes to define the area
-of interest.
+of interest. These nodes must be defined in the recipe beforehand.
 
 *****************
  Stretched graph

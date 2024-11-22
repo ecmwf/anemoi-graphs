@@ -19,8 +19,10 @@ framework it seeks to handle many of the complexities that
 meteorological organisations will share, allowing them to easily train
 models from existing recipes but with their own data.
 
-This package provides a series of utility functions for used by the rest
-of the *Anemoi* packages.
+The `anemoi-graphs` package allows you to design custom graphs for
+training data-driven weather models. The graphs are built using a
+`recipe`, which is a YAML file that specifies the nodes and edges of the
+graph.
 
 -  :doc:`overview`
 
