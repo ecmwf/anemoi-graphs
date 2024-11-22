@@ -12,6 +12,9 @@ Keep it human-readable, your future self will thank you!
 
 ### Added
 - feat: Define node sets and edges based on an ICON icosahedral mesh (#53)
+- feat: Add support for `post_processors` in the recipe. (#71)
+- feat: Add `RemoveUnconnectedNodes` post processor to clean unconnected nodes in LAM. (#71)
+- feat: Define node sets and edges based on an ICON icosahedral mesh (#53)
 - feat: Support for multiple edge builders between two sets of nodes (#70)
 
 ## [0.4.0 - LAM and stretched graphs](https://github.com/ecmwf/anemoi-graphs/compare/0.3.0...0.4.0) - 2024-11-08
