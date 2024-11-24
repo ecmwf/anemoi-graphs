@@ -57,6 +57,7 @@ class GraphCreator:
 
         for edges_cfg in self.config.get("edges", {}):
 
+            # Remove in a future version
             if "edge_builder" in edges_cfg:
                 warn(
                     "This format will be deprecated. The key 'edge_builder' is renamed to 'edge_builders' and takes a list of edge builders. In addition, the source_mask_attr_name & target_mask_attr_name fields are moved under the each edge builder.",
@@ -66,11 +67,14 @@ class GraphCreator:
 
                 edge_builder_cfg = edges_cfg.get("edge_builder")
                 if edge_builder_cfg is not None:
+                    edge_builder_cfg = DotDict(edge_builder_cfg)
                     edge_builder_cfg.source_mask_attr_name = edges_cfg.get("source_mask_attr_name", None)
                     edge_builder_cfg.target_mask_attr_name = edges_cfg.get("target_mask_attr_name", None)
-                    edges_cfg.edge_builders = [edge_builder_cfg]
+                    edge_builders = [edge_builder_cfg]
+            else:
+                edge_builders = edges_cfg.edge_builders
 
-            for edge_builder_cfg in edges_cfg.edge_builders:
+            for edge_builder_cfg in edge_builders:
                 edge_builder = instantiate(
                     edge_builder_cfg, source_name=edges_cfg.source_name, target_name=edges_cfg.target_name
                 )
