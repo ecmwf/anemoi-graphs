@@ -76,7 +76,7 @@ class GraphCreator:
                 )
                 graph = edge_builder.update_graph(graph, attrs_config=None)
 
-            graph = edge_builder.register_attributes(graph, attrs_config=edges_cfg.get("attributes", {}))
+            graph = edge_builder.register_attributes(graph, edges_cfg.get("attributes", {}))
 
         return graph
 
