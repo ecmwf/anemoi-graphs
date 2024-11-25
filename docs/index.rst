@@ -93,8 +93,28 @@ You may also have to install pandoc on MacOS:
 
    brew install pandoc
 
+*****************
+ Other Anemoi packages
+*****************
 
--  :doc:`overview`
+-  :ref:`anemoi-utils <anemoi-utils:index-page>`
+-  :ref:`anemoi-transform <anemoi-transform:index-page>`
+-  :ref:`anemoi-datasets <anemoi-datasets:index-page>`
+-  :ref:`anemoi-models <anemoi-models:index-page>`
+-  :ref:`anemoi-training <anemoi-training:index-page>`
+-  :ref:`anemoi-inference <anemoi-inference:index-page>`
+-  :ref:`anemoi-registry <anemoi-registry:index-page>`
+
+*********
+ License
+*********
+
+*Anemoi* is available under the open source `Apache License`__.
+
+.. __: http://www.apache.org/licenses/LICENSE-2.0.html
+
+.. ..................................................................................
+.. From here defines the TOC in the sidebar, but is not rendered directly on the page.
 
 .. toctree::
    :maxdepth: 1
@@ -102,28 +122,12 @@ You may also have to install pandoc on MacOS:
 
    overview
 
-***********
- Tutorials
-***********
-
--  :doc:`usage/getting_started`
-
 .. toctree::
    :maxdepth: 1
    :hidden:
    :caption: Usage
 
    usage/getting_started
-
-*****************
- Building graphs
-*****************
-
--  :doc:`graphs/introduction`
--  :doc:`graphs/node_coordinates`
--  :doc:`graphs/node_attributes`
--  :doc:`graphs/edges`
--  :doc:`graphs/edge_attributes`
 
 .. toctree::
    :maxdepth: 1
@@ -135,17 +139,6 @@ You may also have to install pandoc on MacOS:
    graphs/node_attributes
    graphs/edges
    graphs/edge_attributes
-
-*********
- Modules
-*********
-
--  :doc:`modules/node_builder`
--  :doc:`modules/edge_builder`
--  :doc:`modules/node_attributes`
--  :doc:`modules/edge_attributes`
--  :doc:`modules/graph_creator`
--  :doc:`modules/graph_inspector`
 
 .. toctree::
    :maxdepth: 1
@@ -159,15 +152,6 @@ You may also have to install pandoc on MacOS:
    modules/graph_creator
    modules/graph_inspector
 
-*******************
- Command line tool
-*******************
-
--  :doc:`cli/introduction`
--  :doc:`cli/create`
--  :doc:`cli/describe`
--  :doc:`cli/inspect`
-
 .. toctree::
    :maxdepth: 1
    :hidden:
@@ -178,14 +162,6 @@ You may also have to install pandoc on MacOS:
    cli/describe
    cli/inspect
 
-**************************
- Developing Anemoi Graphs
-**************************
-
--  :doc:`dev/contributing`
--  :doc:`dev/code_structure`
--  :doc:`dev/testing`
-
 .. toctree::
    :maxdepth: 1
    :hidden:
@@ -195,23 +171,3 @@ You may also have to install pandoc on MacOS:
    dev/code_structure
    dev/testing
 
-*****************
- Anemoi packages
-*****************
-
--  :ref:`anemoi-utils <anemoi-utils:index-page>`
--  :ref:`anemoi-transform <anemoi-transform:index-page>`
--  :ref:`anemoi-datasets <anemoi-datasets:index-page>`
--  :ref:`anemoi-models <anemoi-models:index-page>`
--  :ref:`anemoi-graphs <anemoi-graphs:index-page>`
--  :ref:`anemoi-training <anemoi-training:index-page>`
--  :ref:`anemoi-inference <anemoi-inference:index-page>`
--  :ref:`anemoi-registry <anemoi-registry:index-page>`
-
-*********
- License
-*********
-
-*Anemoi* is available under the open source `Apache License`__.
-
-.. __: http://www.apache.org/licenses/LICENSE-2.0.html
