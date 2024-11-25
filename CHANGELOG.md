@@ -17,6 +17,10 @@ Keep it human-readable, your future self will thank you!
 - feat: Define node sets and edges based on an ICON icosahedral mesh (#53)
 - feat: Support for multiple edge builders between two sets of nodes (#70)
 
+### Changed
+
+- docs: Documentation structure (#84)
+
 ## [0.4.0 - LAM and stretched graphs](https://github.com/ecmwf/anemoi-graphs/compare/0.3.0...0.4.0) - 2024-11-08
 
 ### Added
