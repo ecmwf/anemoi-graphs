@@ -266,3 +266,30 @@ class BooleanOrMask(BooleanOperation):
 
     def reduce_op(self, masks: list[np.ndarray]) -> np.ndarray:
         return np.logical_or.reduce(masks)
+
+
+class Index2DGrid(BaseNodeAttribute):
+    """Indices of a 2D grid."""
+
+    def get_raw_values(self, nodes: NodeStorage, **kwargs) -> np.ndarray:
+        """Compute the indices of the tensor to match a 2D grid.
+
+        Parameters
+        ----------
+        nodes : NodeStorage
+            Nodes to map to a 2D grid.
+        kwargs : dict
+            Optional positional arguments.
+
+        Returns
+        -------
+        np.ndarray of shape (num_nodes, 2)
+            Position of each node in the 2d grid. where 1st value is its position in the X axis and 2nd value in y axis.
+        """
+        assert nodes["node_type"] == "LimitedAreaRectilinearNodes"
+        lon_min, lat_min, lon_max, lat_max = nodes["_bbox"]
+        resolution = nodes["_resolution"]
+        shape = (lat_max - lat_min) / resolution, (lon_max - lon_min) / resolution
+        y_indices, x_indices = np.mgrid[0 : shape[0], 0 : shape[1]]
+        indices = np.stack([x_indices.flatten(), y_indices.flatten()], axis=1)
+        return indices

@@ -10,6 +10,8 @@
 from __future__ import annotations
 
 import logging
+from abc import ABC
+from abc import abstractmethod
 
 import numpy as np
 from sklearn.neighbors import NearestNeighbors
@@ -20,7 +22,56 @@ from anemoi.graphs import EARTH_RADIUS
 LOGGER = logging.getLogger(__name__)
 
 
-class KNNAreaMaskBuilder:
+class BaseAreaMaskBuilder(ABC):
+    """Abstract class for area masking."""
+
+    def __init__(self, reference_node_name: str, margin_radius: float = 100, mask_attr_name: str | None = None):
+        assert isinstance(margin_radius, (int, float)), "The margin radius must be a number."
+        assert margin_radius > 0, "The margin radius must be positive."
+
+        self.margin_radius = margin_radius
+        self.reference_node_name = reference_node_name
+        self.mask_attr_name = mask_attr_name
+
+    def get_reference_coords(self, graph: HeteroData) -> np.ndarray:
+        """Retrive coordinates from the reference nodes."""
+        assert (
+            self.reference_node_name in graph.node_types
+        ), f'Reference node "{self.reference_node_name}" not found in the graph.'
+
+        coords_rad = graph[self.reference_node_name].x.numpy()
+        if self.mask_attr_name is not None:
+            assert (
+                self.mask_attr_name in graph[self.reference_node_name].node_attrs()
+            ), f'Mask attribute "{self.mask_attr_name}" not found in the reference nodes.'
+            mask = graph[self.reference_node_name][self.mask_attr_name].squeeze()
+            coords_rad = coords_rad[mask]
+
+        return coords_rad
+
+    @abstractmethod
+    def fit_coords(self, coords_rad: np.ndarray): ...
+
+    def fit(self, graph: HeteroData):
+        """Fit the KNN model to the nodes of interest."""
+        # Prepare string for logging
+        reference_mask_str = self.reference_node_name
+        if self.mask_attr_name is not None:
+            reference_mask_str += f" ({self.mask_attr_name})"
+
+        # Fit to the reference nodes
+        coords_rad = self.get_reference_coords(graph)
+        self.fit_coords(coords_rad)
+
+        LOGGER.info(
+            'Fitting %s with %d reference nodes from "%s".',
+            self.__class__.__name__,
+            len(coords_rad),
+            reference_mask_str,
+        )
+
+
+class KNNAreaMaskBuilder(BaseAreaMaskBuilder):
     """Class to build a mask based on distance to masked reference nodes using KNN.
 
     Attributes
@@ -44,56 +95,47 @@ class KNNAreaMaskBuilder:
         Get the mask for the nodes based on the distance to the reference nodes.
     """
 
+    reference_node_name: str
+    mask_attr_name: str | None
+    margin_radius_km: float
+    nearest_neighbour: NearestNeighbors
+
     def __init__(self, reference_node_name: str, margin_radius_km: float = 100, mask_attr_name: str | None = None):
-        assert isinstance(margin_radius_km, (int, float)), "The margin radius must be a number."
-        assert margin_radius_km > 0, "The margin radius must be positive."
-
+        super().__init__(reference_node_name, margin_radius_km, mask_attr_name)
         self.nearest_neighbour = NearestNeighbors(metric="haversine", n_jobs=4)
-        self.margin_radius_km = margin_radius_km
-        self.reference_node_name = reference_node_name
-        self.mask_attr_name = mask_attr_name
-
-    def get_reference_coords(self, graph: HeteroData) -> np.ndarray:
-        """Retrive coordinates from the reference nodes."""
-        assert (
-            self.reference_node_name in graph.node_types
-        ), f'Reference node "{self.reference_node_name}" not found in the graph.'
-
-        coords_rad = graph[self.reference_node_name].x.numpy()
-        if self.mask_attr_name is not None:
-            assert (
-                self.mask_attr_name in graph[self.reference_node_name].node_attrs()
-            ), f'Mask attribute "{self.mask_attr_name}" not found in the reference nodes.'
-            mask = graph[self.reference_node_name][self.mask_attr_name].squeeze()
-            coords_rad = coords_rad[mask]
-
-        return coords_rad
 
     def fit_coords(self, coords_rad: np.ndarray):
         """Fit the KNN model to the coordinates in radians."""
         self.nearest_neighbour.fit(coords_rad)
 
-    def fit(self, graph: HeteroData):
-        """Fit the KNN model to the nodes of interest."""
-        # Prepare string for logging
-        reference_mask_str = self.reference_node_name
-        if self.mask_attr_name is not None:
-            reference_mask_str += f" ({self.mask_attr_name})"
-
-        # Fit to the reference nodes
-        coords_rad = self.get_reference_coords(graph)
-        self.fit_coords(coords_rad)
-
-        LOGGER.info(
-            'Fitting %s with %d reference nodes from "%s".',
-            self.__class__.__name__,
-            len(coords_rad),
-            reference_mask_str,
-        )
-
     def get_mask(self, coords_rad: np.ndarray) -> np.ndarray:
         """Compute a mask based on the distance to the reference nodes."""
-
         neigh_dists, _ = self.nearest_neighbour.kneighbors(coords_rad, n_neighbors=1)
-        mask = neigh_dists[:, 0] * EARTH_RADIUS <= self.margin_radius_km
+        mask = neigh_dists[:, 0] * EARTH_RADIUS <= self.margin_radius
         return mask
+
+
+class BBoxAreaMaskBuilder(BaseAreaMaskBuilder):
+    """Class to build a mask based on distance to masked reference nodes using bounding box."""
+
+    reference_node_name: str
+    mask_attr_name: str | None
+    margin_radius_degrees: float
+    bbox: tuple[float, float, float, float]
+
+    def __init__(self, reference_node_name: str, margin_radius_degrees: float = 1.0, mask_attr_name: str | None = None):
+        super().__init__(reference_node_name, margin_radius_degrees, mask_attr_name)
+        self.bbox = None
+
+    def fit_coords(self, coords_rad: np.ndarray) -> None:
+        """Compute the bounding box, in degrees.
+
+        Parameters
+        ----------
+        coords_rad : np.ndarray
+            Coordinates, in radians.
+        """
+        coords = np.rad2deg(coords_rad)
+        lat_min, lon_min = coords.min(axis=0) - self.margin_radius
+        lat_max, lon_max = coords.max(axis=0) + self.margin_radius
+        self.bbox = lon_min, lat_min, lon_max, lat_max
