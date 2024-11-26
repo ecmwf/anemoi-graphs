@@ -8,9 +8,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 Please add your functional changes to the appropriate section in the PR.
 Keep it human-readable, your future self will thank you!
 
-## [Unreleased](https://github.com/ecmwf/anemoi-graphs/compare/0.4.0...HEAD)
+## [Unreleased](https://github.com/ecmwf/anemoi-graphs/compare/0.4.1...HEAD)
+
+# Changed
+
+- fix: bug when computing area weights with scipy.Voronoi. (#79)
+
+## [0.4.1 - ICON graphs, multiple edge builders and post processors](https://github.com/ecmwf/anemoi-graphs/compare/0.4.0...0.4.1) - 2024-11-26
 
 ### Added
+
 - feat: Define node sets and edges based on an ICON icosahedral mesh (#53)
 - feat: Add support for `post_processors` in the recipe. (#71)
 - feat: Add `RemoveUnconnectedNodes` post processor to clean unconnected nodes in LAM. (#71)
@@ -38,8 +45,6 @@ Keep it human-readable, your future self will thank you!
 - Added `CutOutMask` class to create a mask for a cutout. (#68)
 - Added `MissingZarrVariable` and `NotMissingZarrVariable` classes to create a mask for missing zarr variables. (#68)
 - feat: Add CONTRIBUTORS.md file. (#72)
-- Fixed issue when computing area weights with scipy.Voronoi. (#79)
-
 - Create package documentation.
 
 ### Changed
