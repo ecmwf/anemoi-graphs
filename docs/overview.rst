@@ -1,22 +1,25 @@
 .. _overview:
 
-##########
- Overview
-##########
+###########
+ Background
+###########
+
+This page introduces some graph notation and terminology, and background information, 
+which will be used in the rest of the documentation.
 
 A graph :math:`G = (V, E)` is a collection of nodes/vertices :math:`V`
 and edges :math:`E` that connect the nodes. The nodes can represent
 locations in the globe.
 
 In weather models, the nodes :math:`V` can generally be classified into
-2 categories:
+two categories:
 
 -  **Data nodes**: The `data nodes` represent the input/output of the
    data-driven model, so they are linked to existing datasets.
 -  **Hidden nodes**: These `hidden nodes` represent the latent space,
    where the internal dynamics are learned.
 
-Similarly, the edges :math:`V` can be classified into 3 categories:
+Similarly, the edges :math:`V` can be classified into three categories:
 
 -  **Encoder edges**: These `encoder edges` connect the `data` nodes
    with the `hidden` nodes to encode the input data into the latent
@@ -29,8 +32,8 @@ Similarly, the edges :math:`V` can be classified into 3 categories:
    with the `data` nodes to decode the latent space into the output
    data.
 
-When building the graph with `anemoi-graphs`, there is no difference
-between these categories. However, it is important to keep this
+The commands and syntax for building the graphs at each
+layer are the same in in `anemoi-graphs`. However, it is important to keep this
 distinction in mind when designing a weather graph to be used in a
 data-driven model with :ref:`anemoi-training
 <anemoi-training:index-page>`.
@@ -39,8 +42,7 @@ data-driven model with :ref:`anemoi-training
  Design principles
 *******************
 
-In particular, when designing a graph for a weather model, the following
-guidelines should be followed:
+When designing a graph for a weather model, we suggest the following guidelines:
 
 -  Use a coarser resolution for the `hidden nodes`. This will reduce the
    computational cost of training and inference.
@@ -92,36 +94,3 @@ the `node_attrs` and `edge_attrs` methods.
    >>> graph[("data", "to", "hidden")].edge_attrs()
    ['edge_index', 'edge_length', 'edge_dirs']
 
-************
- Installing
-************
-
-To install the package, you can use the following command:
-
-.. code:: bash
-
-   pip install anemoi-graphs[...options...]
-
-The options are:
-
--  ``dev``: install the development dependencies
--  ``docs``: install the dependencies for the documentation
--  ``test``: install the dependencies for testing
--  ``all``: install all the dependencies
-
-**************
- Contributing
-**************
-
-.. code:: bash
-
-   git clone ...
-   cd anemoi-graphs
-   pip install .[dev]
-   pip install -r docs/requirements.txt
-
-You may also have to install pandoc on MacOS:
-
-.. code:: bash
-
-   brew install pandoc
