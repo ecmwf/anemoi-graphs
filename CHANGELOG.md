@@ -16,6 +16,7 @@ Keep it human-readable, your future self will thank you!
 - feat: Add `RemoveUnconnectedNodes` post processor to clean unconnected nodes in LAM. (#71)
 - feat: Define node sets and edges based on an ICON icosahedral mesh (#53)
 - feat: Support for multiple edge builders between two sets of nodes (#70)
+- feat: Support for multi-dimensional node attributes in plots (#86)
 
 # Changed
 - fix: bug when computing area weights with scipy.Voronoi. (#79)
