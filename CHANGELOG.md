@@ -10,9 +10,9 @@ Keep it human-readable, your future self will thank you!
 
 ## [Unreleased](https://github.com/ecmwf/anemoi-graphs/compare/0.4.1...HEAD)
 
-# Changed
+### Changed
 
-- fix: bug when computing area weights with scipy.Voronoi. (#79)
+- docs: Documentation structure (#84)
 
 ## [0.4.1 - ICON graphs, multiple edge builders and post processors](https://github.com/ecmwf/anemoi-graphs/compare/0.4.0...0.4.1) - 2024-11-26
 
@@ -26,7 +26,7 @@ Keep it human-readable, your future self will thank you!
 
 ### Changed
 
-- docs: Documentation structure (#84)
+- fix: bug when computing area weights with scipy.Voronoi. (#79)
 
 ## [0.4.0 - LAM and stretched graphs](https://github.com/ecmwf/anemoi-graphs/compare/0.3.0...0.4.0) - 2024-11-08
 
