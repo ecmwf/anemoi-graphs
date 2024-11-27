@@ -4,7 +4,7 @@
  Edges - Attributes
 ####################
 
-There are 2 main edge attributes implemented in the `anemoi-graphs`
+There are two main edge attributes implemented in the `anemoi-graphs`
 package:
 
 *************
