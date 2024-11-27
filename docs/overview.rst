@@ -4,20 +4,44 @@
  Background
 ###########
 
-This page introduces some graph notation and terminology, and background information, 
+This page introduces some graph notation, terminology, and background information
 which will be used in the rest of the documentation.
 
-A graph :math:`G = (V, E)` is a collection of nodes/vertices :math:`V`
+nodes
+   A `node` represents a location (2D) on the earth's surface which may
+   contain additional `attributes`.
+
+edges
+   An `edge` represents a connection between two nodes. The `edges` can
+   be used to define the flow of information between the nodes. Edges
+   may also contain `attributes` related to their length, direction or
+   other properties.
+
+A `graph` :math:`G = (V, E)` is a collection of nodes/vertices :math:`V`
 and edges :math:`E` that connect the nodes. The nodes can represent
 locations in the globe.
 
 In weather models, the nodes :math:`V` can generally be classified into
-two categories:
+three categories:
 
--  **Data nodes**: The `data nodes` represent the input/output of the
-   data-driven model, so they are linked to existing datasets.
--  **Hidden nodes**: These `hidden nodes` represent the latent space,
-   where the internal dynamics are learned.
+data nodes
+   A set of nodes representing one or multiple datasets. The `data
+   nodes` may correspond to the input/output of our data-driven model.
+   They can be defined from Zarr datasets and this method supports all
+   :ref:`anemoi-datasets <anemoi-datasets:index-page>` operations such
+   as `cutout` or `thinning`.
+
+hidden nodes
+   The `hidden nodes` capture intermediate representations of the model,
+   which are used to learn the dynamics of the system considered
+   (atmosphere, ocean, etc, ...). These nodes can be generated from
+   existing locations (Zarr datasets or NPZ files) or algorithmically
+   from iterative refinements of polygons over the globe.
+
+isolated nodes
+   A set of nodes that are not connected to any other nodes in the
+   graph. These nodes can be used to store additional information that
+   is not directly used in the training process.
 
 Similarly, the edges :math:`V` can be classified into three categories:
 
