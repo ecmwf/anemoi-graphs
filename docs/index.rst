@@ -119,12 +119,10 @@ You may also have to install pandoc on MacOS:
 .. toctree::
    :maxdepth: 1
    :hidden:
-   :caption: Get started
+   :caption: Introduction
 
    overview
    cli/introduction
-   usage/getting_started
-   usage/limited_area
 
 .. toctree::
    :maxdepth: 1
@@ -136,6 +134,14 @@ You may also have to install pandoc on MacOS:
    graphs/node_attributes
    graphs/edges
    graphs/edge_attributes
+
+.. toctree::
+   :maxdepth: 1
+   :hidden:
+   :caption: Recipe examples
+
+   usage/getting_started
+   usage/limited_area
 
 .. toctree::
    :maxdepth: 1
