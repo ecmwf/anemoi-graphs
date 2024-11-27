@@ -7,6 +7,10 @@
 This page introduces some graph notation, terminology, and background information
 which will be used in the rest of the documentation.
 
+***********
+Terminology
+***********
+
 nodes
    A `node` represents a location (2D) on the earth's surface which may
    contain additional `attributes`.
@@ -62,9 +66,9 @@ distinction in mind when designing a weather graph to be used in a
 data-driven model with :ref:`anemoi-training
 <anemoi-training:index-page>`.
 
-*******************
+******************
  Design principles
-*******************
+******************
 
 When designing a graph for a weather model, we suggest the following guidelines:
 
