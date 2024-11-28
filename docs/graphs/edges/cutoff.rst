@@ -4,8 +4,8 @@
  Cut-off radius
 ################
 
-The *cut-off method* is a method for establishing connections between two
-sets of nodes. Given two sets of nodes, (`source`, `target`), the
+The *cut-off method* is a method for establishing connections between
+two sets of nodes. Given two sets of nodes, (`source`, `target`), the
 cut-off method connects all source nodes, :math:`V_{source}`, in a
 neighbourhood of the target nodes, :math:`V_{target}`.
 
@@ -20,8 +20,8 @@ as,
 
    \text{cutoff_radius} = \text{cutoff_factor} \times \text{nodes_reference_dist}
 
-where :math:`\text{nodes_reference_dist}` is the maximum distance between a
-target node and its nearest source node.
+where :math:`\text{nodes_reference_dist}` is the maximum distance
+between a target node and its nearest source node.
 
 .. math::
 
@@ -29,9 +29,9 @@ target node and its nearest source node.
 
 where :math:`d(x, y)` is the `Haversine distance
 <https://en.wikipedia.org/wiki/Haversine_formula>`_ between nodes
-:math:`x` and :math:`y`. The :math:`\text{cutoff_factor}` is a parameter that can
-be adjusted to increase or decrease the size of the neighbourhood, and
-consequently the number of connections in the graph.
+:math:`x` and :math:`y`. The :math:`\text{cutoff_factor}` is a parameter
+that can be adjusted to increase or decrease the size of the
+neighbourhood, and consequently the number of connections in the graph.
 
 To use this method to create your connections, you can use the following
 YAML configuration:

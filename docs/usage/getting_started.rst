@@ -1,16 +1,16 @@
 .. _usage-getting-started:
 
-############
-First recipe
-############
+##############
+ First recipe
+##############
 
 The simplest use case is to build an encoder-processor-decoder graph for
 a global weather model. The following is an expanded version of the
 examples given in the :ref:`graphs introduction <graphs-introduction>`.
 
-***************
-Nodes and edges
-***************
+*****************
+ Nodes and edges
+*****************
 
 In this case, the recipe must contain a ``nodes`` section where the keys
 will be the names of the sets of `nodes`, that will later be used to

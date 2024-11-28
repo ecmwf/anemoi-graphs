@@ -1,15 +1,15 @@
 .. _overview:
 
-###########
+############
  Background
-###########
+############
 
-This page introduces some graph notation, terminology, and background information
-which will be used in the rest of the documentation.
+This page introduces some graph notation, terminology, and background
+information which will be used in the rest of the documentation.
 
-***********
-Terminology
-***********
+*************
+ Terminology
+*************
 
 nodes
    A `node` represents a location (2D) on the earth's surface which may
@@ -60,17 +60,18 @@ Similarly, the edges :math:`V` can be classified into three categories:
    with the `data` nodes to decode the latent space into the output
    data.
 
-The commands and syntax for building the graphs at each
-layer are the same in in `anemoi-graphs`. However, it is important to keep this
+The commands and syntax for building the graphs at each layer are the
+same in in `anemoi-graphs`. However, it is important to keep this
 distinction in mind when designing a weather graph to be used in a
 data-driven model with :ref:`anemoi-training
 <anemoi-training:index-page>`.
 
-******************
+*******************
  Design principles
-******************
+*******************
 
-When designing a graph for a weather model, we suggest the following guidelines:
+When designing a graph for a weather model, we suggest the following
+guidelines:
 
 -  Use a coarser resolution for the `hidden nodes`. This will reduce the
    computational cost of training and inference.
@@ -121,4 +122,3 @@ the `node_attrs` and `edge_attrs` methods.
 
    >>> graph[("data", "to", "hidden")].edge_attrs()
    ['edge_index', 'edge_length', 'edge_dirs']
-
