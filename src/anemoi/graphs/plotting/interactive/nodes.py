@@ -6,9 +6,7 @@ from typing import Union
 import matplotlib.pyplot as plt
 import numpy as np
 import plotly.graph_objects as go
-import torch_geometric
 from torch_geometric.data import HeteroData
-from torch_geometric.utils.convert import to_networkx
 
 from anemoi.graphs.plotting.prepare import compute_isolated_nodes
 from anemoi.graphs.plotting.style import *
@@ -66,6 +64,3 @@ def plot_isolated_nodes(graph: HeteroData, out_file: Optional[Union[str, Path]] 
         fig.write_html(out_file)
     else:
         fig.show()
-
-
-def plot_interactive_nodes(graph: HeteroData, nodes_name: str, out_file: Optional[str] = None) -> None:

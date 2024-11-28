@@ -72,7 +72,7 @@ def plot_downscale(
         )
 
     # Node trace
-    node_trace_data, graph_data, coords_data = convert_and_plot_nodes(
+    node_trace_data, _, coords_data = convert_and_plot_nodes(
         g_data, data_nodes, x_range, y_range, z_range, scale=1.0, color="darkgrey"
     )
     node_trace_hidden = [node_trace_data]
@@ -103,7 +103,7 @@ def plot_downscale(
             coords_hidden[0],
             1.0,
             1.0 - scale_increment,
-            "yellowgreen",
+            colorscale[i],
             x_range,
             y_range,
             z_range,
@@ -192,7 +192,7 @@ def plot_upscale(
     )
 
     # Node trace
-    node_trace_data, graph_data, coords_data = convert_and_plot_nodes(
+    node_trace_data, _, coords_data = convert_and_plot_nodes(
         g_data, data_nodes, x_range, y_range, z_range, scale=1.0, color="darkgrey"
     )
     node_trace_hidden = [node_trace_data]
@@ -239,7 +239,7 @@ def plot_upscale(
             coords_data,
             1 - scale_increment,
             1.0,
-            "yellowgreen",
+            colorscale[-1 - i],
             x_range,
             y_range,
             z_range,
@@ -312,7 +312,7 @@ def plot_level(
         )
 
     # Node trace
-    node_trace_data, graph_data, coords_data = convert_and_plot_nodes(
+    node_trace_data, _, _ = convert_and_plot_nodes(
         g_data, data_nodes, x_range, y_range, z_range, scale=1.0, color="darkgrey"
     )
     node_trace_hidden = [node_trace_data]
@@ -354,8 +354,9 @@ def plot_level(
     edge_traces = sum(edge_traces, [])
     # Combine traces and layout into a figure
     fig = go.Figure(data=node_trace_hidden + edge_traces, layout=layout)
-    
+
     return fig
+
 
 def plot_3d_graph(
     graph: HeteroData, nodes_coord: Tuple[List[float], List[float]], title: str = None, show_edges: bool = True
