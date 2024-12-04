@@ -10,6 +10,10 @@ Keep it human-readable, your future self will thank you!
 
 ## [Unreleased](https://github.com/ecmwf/anemoi-graphs/compare/0.4.1...HEAD)
 
+### Changed
+
+- docs: Documentation structure (#84)
+
 ## [0.4.1 - ICON graphs, multiple edge builders and post processors](https://github.com/ecmwf/anemoi-graphs/compare/0.4.0...0.4.1) - 2024-11-26
 
 ### Added
@@ -20,7 +24,7 @@ Keep it human-readable, your future self will thank you!
 - feat: Define node sets and edges based on an ICON icosahedral mesh (#53)
 - feat: Support for multiple edge builders between two sets of nodes (#70)
 
-# Changed
+### Changed
 
 - fix: bug when computing area weights with scipy.Voronoi. (#79)
 

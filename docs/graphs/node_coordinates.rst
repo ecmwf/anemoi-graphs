@@ -9,15 +9,13 @@
    This is still a work in progress. More classes will be added in the
    future.
 
-The `nodes` :math:`V` correspond to locations on the earth's surface.
-
 The `nodes` are defined in the ``nodes`` section of the recipe file. The
 keys are the names of the sets of `nodes` that will later be used to
 build the connections. Each `nodes` configuration must include a
 ``node_builder`` section describing how to define the `nodes`.
 
 The `nodes` can be defined based on the coordinates already available in
-a file:
+a file using the following methods:
 
 .. toctree::
    :maxdepth: 1
