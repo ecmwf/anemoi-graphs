@@ -24,24 +24,6 @@ from anemoi.graphs.utils import haversine_distance
 LOGGER = logging.getLogger(__name__)
 
 
-class NormaliserMixin:
-    def normalise(self, values: torch.Tensor) -> torch.Tensor:
-        if self.norm is None:
-            return values
-        elif self.norm == "l1":
-            return values / values.abs().sum()
-        elif self.norm == "l2":
-            return values / values.norm(2)
-        elif self.norm == "unit-max":
-            return values / values.abs().max()
-        elif self.norm == "unit-range":
-            return (values - values.min()) / (values.max() - values.min())
-        elif self.norm == "unit-std":
-            return values / values.std()
-
-        raise ValueError(f"Unknown normalization {self.norm}")
-
-
 class BaseEdgeAttributeBuilder(MessagePassing, NormaliserMixin):
     """Base class for edge attribute builders."""
 

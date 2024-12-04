@@ -131,7 +131,7 @@ class BaseNodeBuilder(ABC):
             return graph
 
         t0 = time.time()
-        graph = self.register_attributes(graph, attr_config)
+        graph = self.register_attributes(graph, attrs_config)
         t1 = time.time()
         LOGGER.debug("Time to register node coordinates (%s): %.2f s", self.__class__.__name__, t1 - t0)
 
