@@ -147,6 +147,7 @@ You may also have to install pandoc on MacOS:
    graphs/node_attributes
    graphs/edges
    graphs/edge_attributes
+   graphs/post_processor
 
 .. toctree::
    :maxdepth: 1
@@ -167,6 +168,7 @@ You may also have to install pandoc on MacOS:
    modules/edge_attributes
    modules/graph_creator
    modules/graph_inspector
+   modules/post_processor
 
 .. toctree::
    :maxdepth: 1
