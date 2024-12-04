@@ -26,11 +26,11 @@ layer. An example of a simple recipe file follows in the :ref:`the following sec
 This will read the specifications in the ``recipe.yaml`` recipe file, and write to a PyTorch
 ``.pt`` file.
 
-To **inspect** an existing graph stored as a ``.pt`` file, use the ``inspect`` command:
+To **describe** an existing graph stored as a ``.pt`` file, use the ``describe`` command:
 
 .. code:: console
 
-   $ anemoi-graphs inspect graph.pt
+   $ anemoi-graphs describe graph.pt
 
 This will generate a text summary of the graph, including the number of nodes and edges
 at each layer, the geographic boundaries, and statistics about the edge lengths:
@@ -41,18 +41,15 @@ at each layer, the geographic boundaries, and statistics about the edge lengths:
 A set of interactive and static visualisations are generated to allow visual inspection
 of the graph design.
 
-Finally, the ``describe`` command will print graph information about an existing graph
-to the console:
+Finally, the ``inspect`` command will generate a set of interactive and static visualisations
+are generated to allow visual inspection of the graph design.:
 
 .. code:: console
 
-   $ anemoi-graphs describe graph.pt
+   $ anemoi-graphs inspect graph.pt output_folder/
 
-.. argparse::
-    :module: anemoi.graphs.__main__
-    :func: create_parser
-    :prog: anemoi-graphs
-    :nosubcommands:
+Create Command
+--------------
 
 .. argparse::
     :module: anemoi.graphs.__main__
@@ -60,12 +57,16 @@ to the console:
     :prog: anemoi-graphs
     :path: create
 
+Describe Command
+----------------
 .. argparse::
     :module: anemoi.graphs.__main__
     :func: create_parser
     :prog: anemoi-graphs
     :path: describe
 
+Inspect Command
+---------------
 .. argparse::
     :module: anemoi.graphs.__main__
     :func: create_parser
