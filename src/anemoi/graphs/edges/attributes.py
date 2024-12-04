@@ -18,7 +18,6 @@ from torch_geometric.typing import PairTensor
 from torch_geometric.typing import Size
 
 from anemoi.graphs.edges.directional import compute_directions
-from anemoi.graphs.edges.directional import directional_edge_features
 from anemoi.graphs.normalise import NormaliserMixin
 from anemoi.graphs.utils import haversine_distance
 
