@@ -48,6 +48,10 @@ are generated to allow visual inspection of the graph design.:
 
    $ anemoi-graphs inspect graph.pt output_folder/
 
+===================
+Command line usage
+===================
+
 Create Command
 --------------
 
