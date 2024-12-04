@@ -1,3 +1,12 @@
+# (C) Copyright 2024 Anemoi contributors.
+#
+# This software is licensed under the terms of the Apache Licence Version 2.0
+# which can be obtained at http://www.apache.org/licenses/LICENSE-2.0.
+#
+# In applying this licence, ECMWF does not waive the privileges and immunities
+# granted to it by virtue of its status as an intergovernmental organisation
+# nor does it submit to any jurisdiction.
+
 from __future__ import annotations
 
 import logging
@@ -25,13 +34,15 @@ class BaseNodeBuilder(ABC):
     ----------
     name : str
         name of the nodes, key for the nodes in the HeteroData graph object.
-    aoi_mask_builder : KNNAreaMaskBuilder
+    area_mask_builder : KNNAreaMaskBuilder
         The area of interest mask builder, if any. Defaults to None.
     """
 
+    hidden_attributes: set[str] = set()
+
     def __init__(self, name: str) -> None:
         self.name = name
-        self.aoi_mask_builder = None
+        self.area_mask_builder = None
 
     def register_nodes(self, graph: HeteroData) -> HeteroData:
         """Register nodes in the graph.
@@ -66,6 +77,9 @@ class BaseNodeBuilder(ABC):
         HeteroData
             The graph with the registered attributes.
         """
+        for hidden_attr in self.hidden_attributes:
+            graph[self.name][f"_{hidden_attr}"] = getattr(self, hidden_attr)
+
         for attr_name, attr_config in config.items():
             graph[self.name][attr_name] = instantiate(attr_config).compute(graph, self.name)
 
@@ -93,14 +107,14 @@ class BaseNodeBuilder(ABC):
         coords = np.deg2rad(coords)
         return torch.tensor(coords, dtype=torch.float32)
 
-    def update_graph(self, graph: HeteroData, attr_config: DotDict | None = None) -> HeteroData:
+    def update_graph(self, graph: HeteroData, attrs_config: DotDict | None = None) -> HeteroData:
         """Update the graph with new nodes.
 
         Parameters
         ----------
         graph : HeteroData
             Input graph.
-        attr_config : DotDict
+        attrs_config : DotDict
             The configuration of the attributes.
 
         Returns
@@ -113,7 +127,7 @@ class BaseNodeBuilder(ABC):
         t1 = time.time()
         LOGGER.debug("Time to register node coordinates (%s): %.2f s", self.__class__.__name__, t1 - t0)
 
-        if attr_config is None:
+        if attrs_config is None:
             return graph
 
         t0 = time.time()

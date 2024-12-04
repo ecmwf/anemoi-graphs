@@ -1,3 +1,12 @@
+# (C) Copyright 2024 Anemoi contributors.
+#
+# This software is licensed under the terms of the Apache Licence Version 2.0
+# which can be obtained at http://www.apache.org/licenses/LICENSE-2.0.
+#
+# In applying this licence, ECMWF does not waive the privileges and immunities
+# granted to it by virtue of its status as an intergovernmental organisation
+# nor does it submit to any jurisdiction.
+
 from __future__ import annotations
 
 import logging
@@ -6,7 +15,8 @@ from pathlib import Path
 import numpy as np
 import torch
 from anemoi.datasets import open_dataset
-from anemoi.utils.config import DotDict
+from omegaconf import DictConfig
+from omegaconf import OmegaConf
 from torch_geometric.data import HeteroData
 
 from anemoi.graphs.generate.masks import KNNAreaMaskBuilder
@@ -20,7 +30,7 @@ class ZarrDatasetNodes(BaseNodeBuilder):
 
     Attributes
     ----------
-    dataset : zarr.core.Array
+    dataset : str | DictConfig
         The dataset.
 
     Methods
@@ -31,14 +41,15 @@ class ZarrDatasetNodes(BaseNodeBuilder):
         Register the nodes in the graph.
     register_attributes(graph, name, config)
         Register the attributes in the nodes of the graph specified.
-    update_graph(graph, name, attr_config)
+    update_graph(graph, name, attrs_config)
         Update the graph with new nodes and attributes.
     """
 
-    def __init__(self, dataset: DotDict, name: str) -> None:
+    def __init__(self, dataset: DictConfig, name: str) -> None:
         LOGGER.info("Reading the dataset from %s.", dataset)
-        self.dataset = open_dataset(dataset)
+        self.dataset = dataset if isinstance(dataset, str) else OmegaConf.to_container(dataset)
         super().__init__(name)
+        self.hidden_attributes = BaseNodeBuilder.hidden_attributes | {"dataset"}
 
     def get_coordinates(self) -> torch.Tensor:
         """Get the coordinates of the nodes.
@@ -48,28 +59,8 @@ class ZarrDatasetNodes(BaseNodeBuilder):
         torch.Tensor of shape (num_nodes, 2)
             A 2D tensor with the coordinates, in radians.
         """
-        return self.reshape_coords(self.dataset.latitudes, self.dataset.longitudes)
-
-
-class CutOutZarrDatasetNodes(ZarrDatasetNodes):
-    """Nodes from Zarr dataset."""
-
-    def __init__(
-        self, name: str, lam_dataset: str, forcing_dataset: str, thinning: int = 1, adjust: str = "all"
-    ) -> None:
-        dataset_config = {
-            "cutout": [{"dataset": lam_dataset, "thinning": thinning}, {"dataset": forcing_dataset}],
-            "adjust": adjust,
-        }
-        super().__init__(dataset_config, name)
-        self.n_cutout, self.n_other = self.dataset.grids
-
-    def register_attributes(self, graph: HeteroData, config: DotDict) -> None:
-        # this is a mask to cutout the LAM area
-        graph[self.name]["cutout"] = torch.tensor([True] * self.n_cutout + [False] * self.n_other, dtype=bool).reshape(
-            (-1, 1)
-        )
-        return super().register_attributes(graph, config)
+        dataset = open_dataset(self.dataset)
+        return self.reshape_coords(dataset.latitudes, dataset.longitudes)
 
 
 class NPZFileNodes(BaseNodeBuilder):
@@ -92,7 +83,7 @@ class NPZFileNodes(BaseNodeBuilder):
         Register the nodes in the graph.
     register_attributes(graph, name, config)
         Register the attributes in the nodes of the graph specified.
-    update_graph(graph, name, attr_config)
+    update_graph(graph, name, attrs_config)
         Update the graph with new nodes and attributes.
     """
 
@@ -138,12 +129,12 @@ class LimitedAreaNPZFileNodes(NPZFileNodes):
         margin_radius_km: float = 100.0,
     ) -> None:
 
-        self.aoi_mask_builder = KNNAreaMaskBuilder(reference_node_name, margin_radius_km, mask_attr_name)
+        self.area_mask_builder = KNNAreaMaskBuilder(reference_node_name, margin_radius_km, mask_attr_name)
 
         super().__init__(resolution, grid_definition_path, name)
 
     def register_nodes(self, graph: HeteroData) -> None:
-        self.aoi_mask_builder.fit(graph)
+        self.area_mask_builder.fit(graph)
         return super().register_nodes(graph)
 
     def get_coordinates(self) -> np.ndarray:
@@ -151,11 +142,11 @@ class LimitedAreaNPZFileNodes(NPZFileNodes):
 
         LOGGER.info(
             "Limiting the processor mesh to a radius of %.2f km from the output mesh.",
-            self.aoi_mask_builder.margin_radius_km,
+            self.area_mask_builder.margin_radius_km,
         )
-        aoi_mask = self.aoi_mask_builder.get_mask(coords)
+        area_mask = self.area_mask_builder.get_mask(coords)
 
-        LOGGER.info("Dropping %d nodes from the processor mesh.", len(aoi_mask) - aoi_mask.sum())
-        coords = coords[aoi_mask]
+        LOGGER.info("Dropping %d nodes from the processor mesh.", len(area_mask) - area_mask.sum())
+        coords = coords[area_mask]
 
         return coords

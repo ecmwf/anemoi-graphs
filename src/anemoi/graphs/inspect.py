@@ -1,3 +1,12 @@
+# (C) Copyright 2024 Anemoi contributors.
+#
+# This software is licensed under the terms of the Apache Licence Version 2.0
+# which can be obtained at http://www.apache.org/licenses/LICENSE-2.0.
+#
+# In applying this licence, ECMWF does not waive the privileges and immunities
+# granted to it by virtue of its status as an intergovernmental organisation
+# nor does it submit to any jurisdiction.
+
 import logging
 import os
 from pathlib import Path
@@ -17,7 +26,19 @@ LOGGER = logging.getLogger(__name__)
 
 
 class GraphInspector:
-    """Inspect the graph."""
+    """Inspect the graph.
+
+    Attributes
+    ----------
+    path: Union[str, Path]
+        Path to the graph file.
+    output_path: Path
+        Path to the output directory where the plots will be saved.
+    show_attribute_distributions: Optional[bool]
+        Whether to show the distribution of the node and edge attributes.
+    show_nodes: Optional[bool]
+        Whether to show the interactive plots of the nodes.
+    """
 
     def __init__(
         self,

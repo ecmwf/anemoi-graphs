@@ -1,3 +1,12 @@
+# (C) Copyright 2024 Anemoi contributors.
+#
+# This software is licensed under the terms of the Apache Licence Version 2.0
+# which can be obtained at http://www.apache.org/licenses/LICENSE-2.0.
+#
+# In applying this licence, ECMWF does not waive the privileges and immunities
+# granted to it by virtue of its status as an intergovernmental organisation
+# nor does it submit to any jurisdiction.
+
 from __future__ import annotations
 
 import logging
@@ -7,6 +16,7 @@ from abc import abstractmethod
 
 import networkx as nx
 import numpy as np
+import scipy
 import torch
 from anemoi.utils.config import DotDict
 from hydra.utils import instantiate
@@ -19,11 +29,14 @@ from torch_geometric.nn import radius
 from anemoi.graphs import EARTH_RADIUS
 from anemoi.graphs.generate import hex_icosahedron
 from anemoi.graphs.generate import tri_icosahedron
+from anemoi.graphs.generate.masks import KNNAreaMaskBuilder
 from anemoi.graphs.generate.transforms import latlon_rad_to_cartesian
 from anemoi.graphs.nodes.builders.from_refined_icosahedron import HexNodes
 from anemoi.graphs.nodes.builders.from_refined_icosahedron import LimitedAreaHexNodes
 from anemoi.graphs.nodes.builders.from_refined_icosahedron import LimitedAreaTriNodes
+from anemoi.graphs.nodes.builders.from_refined_icosahedron import StretchedTriNodes
 from anemoi.graphs.nodes.builders.from_refined_icosahedron import TriNodes
+from anemoi.graphs.utils import concat_edges
 from anemoi.graphs.utils import get_grid_reference_distance
 
 LOGGER = logging.getLogger(__name__)
@@ -74,8 +87,19 @@ class BaseEdgeBuilder(ABC):
         HeteroData
             The graph with the registered edges.
         """
-        graph[self.name].edge_index = self.get_edge_index(graph)
-        graph[self.name].edge_type = type(self).__name__
+        edge_index = self.get_edge_index(graph)
+        edge_type = type(self).__name__
+
+        if "edge_index" in graph[self.name]:
+            # Expand current edge indices
+            graph[self.name].edge_index = concat_edges(graph[self.name].edge_index, edge_index)
+            if edge_type not in graph[self.name].edge_type:
+                graph[self.name].edge_type = graph[self.name].edge_type + "," + edge_type
+            return graph
+
+        # Register new edge indices
+        graph[self.name].edge_index = edge_index
+        graph[self.name].edge_type = edge_type
         return graph
 
     def register_attributes(self, graph: HeteroData, config: DotDict) -> HeteroData:
@@ -153,12 +177,14 @@ class NodeMaskingMixin:
     def undo_masking(self, adj_matrix, source_nodes: NodeStorage, target_nodes: NodeStorage):
         if self.target_mask_attr_name is not None:
             target_mask = target_nodes[self.target_mask_attr_name].squeeze()
-            target_mapper = dict(zip(list(range(len(adj_matrix.row))), np.where(target_mask)[0]))
+            assert adj_matrix.shape[0] == target_mask.sum()
+            target_mapper = dict(zip(list(range(adj_matrix.shape[0])), np.where(target_mask)[0]))
             adj_matrix.row = np.vectorize(target_mapper.get)(adj_matrix.row)
 
         if self.source_mask_attr_name is not None:
             source_mask = source_nodes[self.source_mask_attr_name].squeeze()
-            source_mapper = dict(zip(list(range(len(adj_matrix.col))), np.where(source_mask)[0]))
+            assert adj_matrix.shape[1] == source_mask.sum()
+            source_mapper = dict(zip(list(range(adj_matrix.shape[1])), np.where(source_mask)[0]))
             adj_matrix.col = np.vectorize(source_mapper.get)(adj_matrix.col)
 
         if self.source_mask_attr_name is not None or self.target_mask_attr_name is not None:
@@ -201,7 +227,7 @@ class KNNEdges(BaseEdgeBuilder, NodeMaskingMixin):
         num_nearest_neighbours: int,
         source_mask_attr_name: str | None = None,
         target_mask_attr_name: str | None = None,
-    ):
+    ) -> None:
         super().__init__(source_name, target_name, source_mask_attr_name, target_mask_attr_name)
         assert isinstance(num_nearest_neighbours, int), "Number of nearest neighbours must be an integer"
         assert num_nearest_neighbours > 0, "Number of nearest neighbours must be positive"
@@ -370,7 +396,13 @@ class MultiScaleEdges(BaseEdgeBuilder):
         Update the graph with the edges.
     """
 
-    VALID_NODES = [TriNodes, HexNodes, LimitedAreaTriNodes, LimitedAreaHexNodes]
+    VALID_NODES = [
+        TriNodes,
+        HexNodes,
+        LimitedAreaTriNodes,
+        LimitedAreaHexNodes,
+        StretchedTriNodes,
+    ]
 
     def __init__(self, source_name: str, target_name: str, x_hops: int, **kwargs):
         super().__init__(source_name, target_name)
@@ -378,7 +410,6 @@ class MultiScaleEdges(BaseEdgeBuilder):
         assert isinstance(x_hops, int), "Number of x_hops must be an integer"
         assert x_hops > 0, "Number of x_hops must be positive"
         self.x_hops = x_hops
-        self.node_type = None
 
     def add_edges_from_tri_nodes(self, nodes: NodeStorage) -> NodeStorage:
         nodes["_nx_graph"] = tri_icosahedron.add_edges_to_nx_graph(
@@ -388,6 +419,18 @@ class MultiScaleEdges(BaseEdgeBuilder):
             area_mask_builder=nodes.get("_area_mask_builder", None),
         )
 
+        return nodes
+
+    def add_edges_from_stretched_tri_nodes(self, nodes: NodeStorage) -> NodeStorage:
+        all_points_mask_builder = KNNAreaMaskBuilder("all_nodes", 1.0)
+        all_points_mask_builder.fit_coords(nodes.x.numpy())
+
+        nodes["_nx_graph"] = tri_icosahedron.add_edges_to_nx_graph(
+            nodes["_nx_graph"],
+            resolutions=nodes["_resolutions"],
+            x_hops=self.x_hops,
+            area_mask_builder=all_points_mask_builder,
+        )
         return nodes
 
     def add_edges_from_hex_nodes(self, nodes: NodeStorage) -> NodeStorage:
@@ -400,12 +443,14 @@ class MultiScaleEdges(BaseEdgeBuilder):
         return nodes
 
     def compute_edge_index(self, source_nodes: NodeStorage, target_nodes: NodeStorage) -> torch.Tensor:
-        if self.node_type in [TriNodes.__name__, LimitedAreaTriNodes.__name__]:
+        if source_nodes.node_type in [TriNodes.__name__, LimitedAreaTriNodes.__name__]:
             source_nodes = self.add_edges_from_tri_nodes(source_nodes)
-        elif self.node_type in [HexNodes.__name__, LimitedAreaHexNodes.__name__]:
+        elif source_nodes.node_type in [HexNodes.__name__, LimitedAreaHexNodes.__name__]:
             source_nodes = self.add_edges_from_hex_nodes(source_nodes)
+        elif source_nodes.node_type == StretchedTriNodes.__name__:
+            source_nodes = self.add_edges_from_stretched_tri_nodes(source_nodes)
         else:
-            raise ValueError(f"Invalid node type {self.node_type}")
+            raise ValueError(f"Invalid node type {source_nodes.node_type}")
 
         adjmat = nx.to_scipy_sparse_array(source_nodes["_nx_graph"], format="coo")
 
@@ -415,10 +460,134 @@ class MultiScaleEdges(BaseEdgeBuilder):
         return torch.from_numpy(edge_index).to(torch.int32)
 
     def update_graph(self, graph: HeteroData, attrs_config: DotDict | None = None) -> HeteroData:
-        self.node_type = graph[self.source_name].node_type
+        node_type = graph[self.source_name].node_type
         valid_node_names = [n.__name__ for n in self.VALID_NODES]
-        assert (
-            self.node_type in valid_node_names
-        ), f"{self.__class__.__name__} requires {','.join(valid_node_names)} nodes."
+        assert node_type in valid_node_names, f"{self.__class__.__name__} requires {','.join(valid_node_names)} nodes."
 
         return super().update_graph(graph, attrs_config)
+
+
+class ICONTopologicalBaseEdgeBuilder(BaseEdgeBuilder):
+    """Base class for computing edges based on ICON grid topology.
+
+    Attributes
+    ----------
+    source_name : str
+        The name of the source nodes.
+    target_name : str
+        The name of the target nodes.
+    icon_mesh   : str
+        The name of the ICON mesh (defines both the processor mesh and the data)
+    """
+
+    def __init__(
+        self,
+        source_name: str,
+        target_name: str,
+        icon_mesh: str,
+        source_mask_attr_name: str | None = None,
+        target_mask_attr_name: str | None = None,
+    ):
+        self.icon_mesh = icon_mesh
+        super().__init__(source_name, target_name, source_mask_attr_name, target_mask_attr_name)
+
+    def update_graph(self, graph: HeteroData, attrs_config: DotDict = None) -> HeteroData:
+        """Update the graph with the edges."""
+        assert self.icon_mesh is not None, f"{self.__class__.__name__} requires initialized icon_mesh."
+        self.icon_sub_graph = graph[self.icon_mesh][self.sub_graph_address]
+        return super().update_graph(graph, attrs_config)
+
+    def get_adjacency_matrix(self, source_nodes: NodeStorage, target_nodes: NodeStorage):
+        """Parameters
+        ----------
+        source_nodes : NodeStorage
+            The source nodes.
+        target_nodes : NodeStorage
+            The target nodes.
+        """
+        LOGGER.info(f"Using ICON topology {self.source_name}>{self.target_name}")
+        nrows = self.icon_sub_graph.num_edges
+        adj_matrix = scipy.sparse.coo_matrix(
+            (
+                np.ones(nrows),
+                (
+                    self.icon_sub_graph.edge_vertices[:, self.vertex_index[0]],
+                    self.icon_sub_graph.edge_vertices[:, self.vertex_index[1]],
+                ),
+            )
+        )
+        return adj_matrix
+
+
+class ICONTopologicalProcessorEdges(ICONTopologicalBaseEdgeBuilder):
+    """Computes edges based on ICON grid topology: processor grid built
+    from ICON grid vertices.
+    """
+
+    def __init__(
+        self,
+        source_name: str,
+        target_name: str,
+        icon_mesh: str,
+        source_mask_attr_name: str | None = None,
+        target_mask_attr_name: str | None = None,
+    ):
+        self.sub_graph_address = "_multi_mesh"
+        self.vertex_index = (1, 0)
+        super().__init__(
+            source_name,
+            target_name,
+            icon_mesh,
+            source_mask_attr_name,
+            target_mask_attr_name,
+        )
+
+
+class ICONTopologicalEncoderEdges(ICONTopologicalBaseEdgeBuilder):
+    """Computes encoder edges based on ICON grid topology: ICON cell
+    circumcenters for mapped onto processor grid built from ICON grid
+    vertices.
+    """
+
+    def __init__(
+        self,
+        source_name: str,
+        target_name: str,
+        icon_mesh: str,
+        source_mask_attr_name: str | None = None,
+        target_mask_attr_name: str | None = None,
+    ):
+        self.sub_graph_address = "_cell_grid"
+        self.vertex_index = (1, 0)
+        super().__init__(
+            source_name,
+            target_name,
+            icon_mesh,
+            source_mask_attr_name,
+            target_mask_attr_name,
+        )
+
+
+class ICONTopologicalDecoderEdges(ICONTopologicalBaseEdgeBuilder):
+    """Computes encoder edges based on ICON grid topology: mapping from
+    processor grid built from ICON grid vertices onto ICON cell
+    circumcenters.
+    """
+
+    def __init__(
+        self,
+        source_name: str,
+        target_name: str,
+        icon_mesh: str,
+        source_mask_attr_name: str | None = None,
+        target_mask_attr_name: str | None = None,
+    ):
+        self.sub_graph_address = "_cell_grid"
+        self.vertex_index = (0, 1)
+        super().__init__(
+            source_name,
+            target_name,
+            icon_mesh,
+            source_mask_attr_name,
+            target_mask_attr_name,
+        )

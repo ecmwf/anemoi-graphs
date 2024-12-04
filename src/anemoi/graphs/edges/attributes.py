@@ -1,3 +1,12 @@
+# (C) Copyright 2024 Anemoi contributors.
+#
+# This software is licensed under the terms of the Apache Licence Version 2.0
+# which can be obtained at http://www.apache.org/licenses/LICENSE-2.0.
+#
+# In applying this licence, ECMWF does not waive the privileges and immunities
+# granted to it by virtue of its status as an intergovernmental organisation
+# nor does it submit to any jurisdiction.
+
 from __future__ import annotations
 
 import logging
@@ -9,13 +18,15 @@ from torch_geometric.typing import PairTensor
 from torch_geometric.typing import Size
 
 from anemoi.graphs.edges.directional import compute_directions
+from anemoi.graphs.edges.directional import directional_edge_features
+from anemoi.graphs.normalise import NormaliserMixin
 from anemoi.graphs.utils import haversine_distance
 
 LOGGER = logging.getLogger(__name__)
 
 
-class NormalizerMixin:
-    def normalize(self, values: torch.Tensor) -> torch.Tensor:
+class NormaliserMixin:
+    def normalise(self, values: torch.Tensor) -> torch.Tensor:
         if self.norm is None:
             return values
         elif self.norm == "l1":
@@ -32,7 +43,7 @@ class NormalizerMixin:
         raise ValueError(f"Unknown normalization {self.norm}")
 
 
-class BaseEdgeAttributeBuilder(MessagePassing, NormalizerMixin):
+class BaseEdgeAttributeBuilder(MessagePassing, NormaliserMixin):
     """Base class for edge attribute builders."""
 
     def __init__(self, norm: str | None = None) -> None:
@@ -67,7 +78,7 @@ class BaseEdgeAttributeBuilder(MessagePassing, NormalizerMixin):
         if edge_features.ndim == 1:
             edge_features = edge_features.unsqueeze(-1)
 
-        return self.normalize(edge_features)
+        return self.normalise(edge_features)
 
     def aggregate(self, edge_features: torch.Tensor) -> torch.Tensor:
         return edge_features
@@ -91,6 +102,18 @@ class EdgeDirection(BaseEdgeAttributeBuilder):
 
 class Azimuth(BaseEdgeAttributeBuilder):
     """Compute the azimuth of the edge.
+
+    Attributes
+    ----------
+    norm : Optional[str]
+        Normalisation method. Options: None, "l1", "l2", "unit-max", "unit-range", "unit-std".
+    invert : bool
+        Whether to invert the edge lengths, i.e. 1 - edge_length. Defaults to False.
+
+    Methods
+    -------
+    compute(graph, source_name, target_name)
+        Compute edge lengths attributes.
 
     References
     ----------

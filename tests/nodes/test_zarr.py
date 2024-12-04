@@ -1,3 +1,12 @@
+# (C) Copyright 2024 Anemoi contributors.
+#
+# This software is licensed under the terms of the Apache Licence Version 2.0
+# which can be obtained at http://www.apache.org/licenses/LICENSE-2.0.
+#
+# In applying this licence, ECMWF does not waive the privileges and immunities
+# granted to it by virtue of its status as an intergovernmental organisation
+# nor does it submit to any jurisdiction.
+
 import pytest
 import torch
 import zarr
@@ -17,10 +26,11 @@ def test_init(mocker, mock_zarr_dataset):
     assert isinstance(node_builder, from_file.ZarrDatasetNodes)
 
 
-def test_fail_init():
-    """Test ZarrDatasetNodes initialization with invalid resolution."""
+def test_fail():
+    """Test ZarrDatasetNodes with invalid dataset."""
+    node_builder = from_file.ZarrDatasetNodes("invalid_path.zarr", name="test_nodes")
     with pytest.raises(zarr.errors.PathNotFoundError):
-        from_file.ZarrDatasetNodes("invalid_path.zarr", name="test_nodes")
+        node_builder.update_graph(HeteroData())
 
 
 def test_register_nodes(mocker, mock_zarr_dataset):
@@ -33,7 +43,7 @@ def test_register_nodes(mocker, mock_zarr_dataset):
 
     assert graph["test_nodes"].x is not None
     assert isinstance(graph["test_nodes"].x, torch.Tensor)
-    assert graph["test_nodes"].x.shape == (node_builder.dataset.num_nodes, 2)
+    assert graph["test_nodes"].x.shape == (mock_zarr_dataset.num_nodes, 2)
     assert graph["test_nodes"].node_type == "ZarrDatasetNodes"
 
 
