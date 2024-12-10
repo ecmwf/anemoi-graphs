@@ -51,8 +51,7 @@ dependencies = [
   "plotly>=5.19",
   "scikit-learn",
   "torch>=2.2",
-  "torch-cluster>=1.5.9",
-  "torch-geometric>=2.3.1,<2.5",
+  "torch-geometric[torch-cluster]>=2.3.1,<2.5",
   "trimesh>=4.1",
   "typeguard",
 ]
