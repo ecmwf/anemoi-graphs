@@ -10,6 +10,7 @@
 from __future__ import annotations
 
 import logging
+import time
 from abc import ABC
 from abc import abstractmethod
 
@@ -20,14 +21,16 @@ import torch
 from anemoi.utils.config import DotDict
 from hydra.utils import instantiate
 from scipy.sparse import coo_matrix
-from sklearn.neighbors import NearestNeighbors
 from torch_geometric.data import HeteroData
 from torch_geometric.data.storage import NodeStorage
+from torch_geometric.nn import knn
+from torch_geometric.nn import radius
 
 from anemoi.graphs import EARTH_RADIUS
 from anemoi.graphs.generate import hex_icosahedron
 from anemoi.graphs.generate import tri_icosahedron
 from anemoi.graphs.generate.masks import KNNAreaMaskBuilder
+from anemoi.graphs.generate.transforms import latlon_rad_to_cartesian
 from anemoi.graphs.nodes.builders.from_refined_icosahedron import HexNodes
 from anemoi.graphs.nodes.builders.from_refined_icosahedron import LimitedAreaHexNodes
 from anemoi.graphs.nodes.builders.from_refined_icosahedron import LimitedAreaTriNodes
@@ -60,31 +63,16 @@ class BaseEdgeBuilder(ABC):
         return self.source_name, "to", self.target_name
 
     @abstractmethod
-    def get_adjacency_matrix(self, source_nodes: NodeStorage, target_nodes: NodeStorage): ...
+    def compute_edge_index(self, source_nodes: NodeStorage, target_nodes: NodeStorage) -> torch.Tensor: ...
 
     def prepare_node_data(self, graph: HeteroData) -> tuple[NodeStorage, NodeStorage]:
         """Prepare node information and get source and target nodes."""
         return graph[self.source_name], graph[self.target_name]
 
     def get_edge_index(self, graph: HeteroData) -> torch.Tensor:
-        """Get the edge indices of source and target nodes.
-
-        Parameters
-        ----------
-        graph : HeteroData
-            The graph.
-
-        Returns
-        -------
-        torch.Tensor of shape (2, num_edges)
-            The edge indices.
-        """
+        """Get the edge index."""
         source_nodes, target_nodes = self.prepare_node_data(graph)
-
-        adjmat = self.get_adjacency_matrix(source_nodes, target_nodes)
-        # Get source & target indices of the edges
-        edge_index = np.stack([adjmat.col, adjmat.row], axis=0)
-        return torch.from_numpy(edge_index).to(torch.int32)
+        return self.compute_edge_index(source_nodes, target_nodes)
 
     def register_edges(self, graph: HeteroData) -> HeteroData:
         """Register edges in the graph.
@@ -130,7 +118,11 @@ class BaseEdgeBuilder(ABC):
             The graph with the registered attributes.
         """
         for attr_name, attr_config in config.items():
-            graph[self.name][attr_name] = instantiate(attr_config).compute(graph, self.name)
+            edge_index = graph[self.name].edge_index
+            source_coords = graph[self.name[0]].x
+            target_coords = graph[self.name[2]].x
+            edge_builder = instantiate(attr_config)
+            graph[self.name][attr_name] = edge_builder(x=(source_coords, target_coords), edge_index=edge_index)
         return graph
 
     def update_graph(self, graph: HeteroData, attrs_config: DotDict | None = None) -> HeteroData:
@@ -148,10 +140,19 @@ class BaseEdgeBuilder(ABC):
         HeteroData
             The graph with the edges.
         """
+        if torch.cuda.is_available():
+            graph = graph.to("cuda")
+
+        t0 = time.time()
         graph = self.register_edges(graph)
+        t1 = time.time()
+        LOGGER.debug("Time to register edge indices (%s): %.2f s", self.__class__.__name__, t1 - t0)
 
         if attrs_config is not None:
+            t0 = time.time()
             graph = self.register_attributes(graph, attrs_config)
+            t1 = time.time()
+            LOGGER.debug("Time to register edge attribute (%s): %.2f s", self.__class__.__name__, t1 - t0)
 
         return graph
 
@@ -232,8 +233,8 @@ class KNNEdges(BaseEdgeBuilder, NodeMaskingMixin):
         assert num_nearest_neighbours > 0, "Number of nearest neighbours must be positive"
         self.num_nearest_neighbours = num_nearest_neighbours
 
-    def get_adjacency_matrix(self, source_nodes: NodeStorage, target_nodes: NodeStorage) -> np.ndarray:
-        """Compute the adjacency matrix for the KNN method.
+    def compute_edge_index(self, source_nodes: NodeStorage, target_nodes: NodeStorage) -> torch.Tensor:
+        """Compute the edge indices for the KNN method.
 
         Parameters
         ----------
@@ -244,10 +245,9 @@ class KNNEdges(BaseEdgeBuilder, NodeMaskingMixin):
 
         Returns
         -------
-        np.ndarray
-            The adjacency matrix.
+        torch.Tensor of shape (2, num_edges)
+            Indices of source and target nodes connected by an edge.
         """
-        source_coords, target_coords = self.get_node_coordinates(source_nodes, target_nodes)
         assert self.num_nearest_neighbours is not None, "number of neighbors required for knn encoder"
         LOGGER.info(
             "Using KNN-Edges (with %d nearest neighbours) between %s and %s.",
@@ -255,19 +255,13 @@ class KNNEdges(BaseEdgeBuilder, NodeMaskingMixin):
             self.source_name,
             self.target_name,
         )
-
-        nearest_neighbour = NearestNeighbors(metric="haversine", n_jobs=4)
-        nearest_neighbour.fit(source_coords)
-        adj_matrix = nearest_neighbour.kneighbors_graph(
-            target_coords,
-            n_neighbors=self.num_nearest_neighbours,
-            mode="distance",
-        ).tocoo()
-
-        # Post-process the adjacency matrix. Add masked nodes.
-        adj_matrix = self.undo_masking(adj_matrix, source_nodes, target_nodes)
-
-        return adj_matrix
+        edge_idx = knn(
+            latlon_rad_to_cartesian(source_nodes.x),
+            latlon_rad_to_cartesian(target_nodes.x),
+            k=self.num_nearest_neighbours,
+        )
+        edge_idx = torch.flip(edge_idx, [0])
+        return edge_idx
 
 
 class CutOffEdges(BaseEdgeBuilder, NodeMaskingMixin):
@@ -303,11 +297,15 @@ class CutOffEdges(BaseEdgeBuilder, NodeMaskingMixin):
         cutoff_factor: float,
         source_mask_attr_name: str | None = None,
         target_mask_attr_name: str | None = None,
-    ):
+        max_num_neighbours: int = 32,
+    ) -> None:
         super().__init__(source_name, target_name, source_mask_attr_name, target_mask_attr_name)
         assert isinstance(cutoff_factor, (int, float)), "Cutoff factor must be a float"
+        assert isinstance(max_num_neighbours, int), "Number of nearest neighbours must be an integer"
         assert cutoff_factor > 0, "Cutoff factor must be positive"
+        assert max_num_neighbours > 0, "Number of nearest neighbours must be positive"
         self.cutoff_factor = cutoff_factor
+        self.max_num_neighbours = max_num_neighbours
 
     def get_cutoff_radius(self, graph: HeteroData, mask_attr: torch.Tensor | None = None) -> float:
         """Compute the cut-off radius.
@@ -328,8 +326,13 @@ class CutOffEdges(BaseEdgeBuilder, NodeMaskingMixin):
             The cut-off radius.
         """
         target_nodes = graph[self.target_name]
-        mask = target_nodes[mask_attr] if mask_attr is not None else None
-        target_grid_reference_distance = get_grid_reference_distance(target_nodes.x, mask)
+        if mask_attr is not None:
+            # If masking target nodes, we have to recompute the grid reference distance only over the masked nodes
+            mask = target_nodes[mask_attr].cpu()
+            target_grid_reference_distance = get_grid_reference_distance(target_nodes.x.cpu(), mask)
+        else:
+            target_grid_reference_distance = target_nodes._grid_reference_distance
+
         radius = target_grid_reference_distance * self.cutoff_factor
         return radius
 
@@ -338,7 +341,7 @@ class CutOffEdges(BaseEdgeBuilder, NodeMaskingMixin):
         self.radius = self.get_cutoff_radius(graph)
         return super().prepare_node_data(graph)
 
-    def get_adjacency_matrix(self, source_nodes: NodeStorage, target_nodes: NodeStorage) -> np.ndarray:
+    def compute_edge_index(self, source_nodes: NodeStorage, target_nodes: NodeStorage) -> torch.Tensor:
         """Get the adjacency matrix for the cut-off method.
 
         Parameters
@@ -350,10 +353,9 @@ class CutOffEdges(BaseEdgeBuilder, NodeMaskingMixin):
 
         Returns
         -------
-        np.ndarray
+        torch.Tensor of shape (2, num_edges)
             The adjacency matrix.
         """
-        source_coords, target_coords = self.get_node_coordinates(source_nodes, target_nodes)
         LOGGER.info(
             "Using CutOff-Edges (with radius = %.1f km) between %s and %s.",
             self.radius * EARTH_RADIUS,
@@ -361,14 +363,14 @@ class CutOffEdges(BaseEdgeBuilder, NodeMaskingMixin):
             self.target_name,
         )
 
-        nearest_neighbour = NearestNeighbors(metric="haversine", n_jobs=4)
-        nearest_neighbour.fit(source_coords)
-        adj_matrix = nearest_neighbour.radius_neighbors_graph(target_coords, radius=self.radius).tocoo()
-
-        # Post-process the adjacency matrix. Add masked nodes.
-        adj_matrix = self.undo_masking(adj_matrix, source_nodes, target_nodes)
-
-        return adj_matrix
+        edge_idx = radius(
+            latlon_rad_to_cartesian(source_nodes.x),
+            latlon_rad_to_cartesian(target_nodes.x),
+            r=self.radius,
+            max_num_neighbors=self.max_num_neighbours,
+        )
+        edge_idx = torch.flip(edge_idx, [0])
+        return edge_idx
 
 
 class MultiScaleEdges(BaseEdgeBuilder):
@@ -440,7 +442,7 @@ class MultiScaleEdges(BaseEdgeBuilder):
 
         return nodes
 
-    def get_adjacency_matrix(self, source_nodes: NodeStorage, target_nodes: NodeStorage):
+    def compute_edge_index(self, source_nodes: NodeStorage, target_nodes: NodeStorage) -> torch.Tensor:
         if source_nodes.node_type in [TriNodes.__name__, LimitedAreaTriNodes.__name__]:
             source_nodes = self.add_edges_from_tri_nodes(source_nodes)
         elif source_nodes.node_type in [HexNodes.__name__, LimitedAreaHexNodes.__name__]:
@@ -452,7 +454,10 @@ class MultiScaleEdges(BaseEdgeBuilder):
 
         adjmat = nx.to_scipy_sparse_array(source_nodes["_nx_graph"], format="coo")
 
-        return adjmat
+        # Get source & target indices of the edges
+        edge_index = np.stack([adjmat.col, adjmat.row], axis=0)
+
+        return torch.from_numpy(edge_index).to(torch.int32)
 
     def update_graph(self, graph: HeteroData, attrs_config: DotDict | None = None) -> HeteroData:
         node_type = graph[self.source_name].node_type

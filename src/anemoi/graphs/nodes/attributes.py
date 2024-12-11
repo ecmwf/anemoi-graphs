@@ -196,6 +196,22 @@ class SphericalAreaWeights(BaseNodeAttribute):
         self.fill_value = fill_value
 
     def get_raw_values(self, nodes: NodeStorage, **kwargs) -> np.ndarray:
+        """Compute the area associated to each node.
+
+        It uses Voronoi diagrams to compute the area of each node.
+
+        Parameters
+        ----------
+        nodes : NodeStorage
+            Nodes of the graph.
+        kwargs : dict
+            Additional keyword arguments.
+
+        Returns
+        -------
+        np.ndarray
+            Attributes.
+        """
         latitudes, longitudes = nodes.x[:, 0], nodes.x[:, 1]
         points = latlon_rad_to_cartesian((np.asarray(latitudes), np.asarray(longitudes)))
         sv = SphericalVoronoi(points, self.radius, self.centre)
