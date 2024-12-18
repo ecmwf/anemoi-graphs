@@ -158,14 +158,14 @@ class EdgeLength(BaseEdgeAttribute):
         return values
 
 
-class BooleanBaseEdgeAttribute(ABC, BaseEdgeAttribute):
+class BooleanBaseEdgeAttribute(BaseEdgeAttribute, ABC):
     """Base class for boolean edge attributes."""
 
     def __init__(self) -> None:
         super().__init__(norm=None, dtype="bool")
 
 
-class AttributeFromNode(ABC, BooleanBaseEdgeAttribute):
+class AttributeFromNode(BooleanBaseEdgeAttribute, ABC):
     """
     Base class for Attribute from Node.
 
