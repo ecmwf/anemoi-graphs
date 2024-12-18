@@ -1,9 +1,9 @@
 ################
- From .TXT file
+ From text file
 ################
 
-To define the `node coordinates` based on a TXT file, you can configure
-the YAML as follows:
+To define the `node coordinates` based on a `.txt` file, you can
+configure the `.yaml` as follows:
 
 .. code:: yaml
 
@@ -15,6 +15,6 @@ the YAML as follows:
          idx_lon: 0
          idx_lat: 1
 
-Here, dataset refers to the path of the TXT file that contains the
+Here, dataset refers to the path of the `.txt` file that contains the
 latitude and longitude values in the columns specified by `idx_lat` and
 `idx_lon`, respectively.
