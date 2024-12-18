@@ -204,6 +204,7 @@ class AttributeFromNode(ABC, BooleanBaseEdgeAttribute):
         assert hasattr(graph[node_name], self.node_attr_name)
         return graph[node_name][self.node_attr_name].numpy()[edge_index[self.idx]]
 
+
 class AttributeFromSourceNode(AttributeFromNode):
     """
     Copy an attribute of the source node to the edge.
