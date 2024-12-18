@@ -170,7 +170,7 @@ class AttributeFromNode(BooleanBaseEdgeAttribute):
     Base class for Attribute from Node.
 
     Copy an attribute of either the source or target node to the edge.
-    Accesses origin/target node attribute and propagates it to the edge.
+    Accesses source/target node attribute and propagates it to the edge.
     Used for example to identify if an encoder edge originates from a LAM or global node.
 
     Attributes
