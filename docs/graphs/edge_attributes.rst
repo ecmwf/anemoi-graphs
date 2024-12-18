@@ -71,20 +71,20 @@ edge.
             _target_: anemoi.graphs.edges.attributes.AttributeFromSourceNode
             node_attr_name: "attribute_name"
 
-
-Example usage for copying the cutout mask from nodes to edges in the encoder: 
+Example usage for copying the cutout mask from nodes to edges in the
+encoder:
 
 .. code:: yaml
-  edges:
-    # Encoder
-  - source_name: data
-    target_name: hidden
-    edge_builders: ...
-    attributes: 
-      cutout: 
-        _target_: anemoi.graphs.edges.attributes.AttributeFromSourceNode
-        node_attr_name: cutout
 
+   edges:
+     # Encoder
+   - source_name: data
+     target_name: hidden
+     edge_builders: ...
+     attributes:
+       cutout:
+         _target_: anemoi.graphs.edges.attributes.AttributeFromSourceNode
+         node_attr_name: cutout
 
 *************
  From Target
@@ -104,15 +104,17 @@ edge.
             _target_: anemoi.graphs.edges.attributes.AttributeFromTargetNode
             node_attr_name: "attribute_name"
 
-Example usage for copying the coutout mask from nodes to edges in the decoder: 
+Example usage for copying the coutout mask from nodes to edges in the
+decoder:
 
 .. code:: yaml
-  edges:
-    # Decoder
-  - source_name: hidden
-    target_name: data
-    edge_builders: ...
-    attributes: 
-      cutout: 
-        _target_: anemoi.graphs.edges.attributes.AttributeFromTargetNode
-        node_attr_name: cutout
+
+   edges:
+      # Decoder
+    - source_name: hidden
+      target_name: data
+      edge_builders: ...
+      attributes:
+        cutout:
+          _target_: anemoi.graphs.edges.attributes.AttributeFromTargetNode
+          node_attr_name: cutout
