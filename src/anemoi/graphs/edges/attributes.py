@@ -165,7 +165,7 @@ class BooleanBaseEdgeAttribute(ABC, BaseEdgeAttribute):
         super().__init__(norm=None, dtype="bool")
 
 
-class AttributeFromNode(BooleanBaseEdgeAttribute):
+class AttributeFromNode(ABC, BooleanBaseEdgeAttribute):
     """
     Base class for Attribute from Node.
 
