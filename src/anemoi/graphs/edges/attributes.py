@@ -203,8 +203,6 @@ class AttributeFromNode(ABC, BooleanBaseEdgeAttribute):
         edge_index = graph[(source_name, "to", target_name)].edge_index
         assert hasattr(graph[node_name], self.node_attr_name)
         return graph[node_name][self.node_attr_name].numpy()[edge_index[self.idx]]
-        return val
-
 
 class AttributeFromSourceNode(AttributeFromNode):
     """
