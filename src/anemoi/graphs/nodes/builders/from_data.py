@@ -24,10 +24,10 @@ class LatLonNodes(BaseNodeBuilder):
 
     Attributes
     ----------
-    latitudes : np.ndarray
-        The latitude of the nodes.
-    longitudes : np.ndarray
-        The longitude of the nodes.
+    latitudes : list | np.ndarray
+        The latitude of the nodes, in degrees.
+    longitudes : list | np.ndarray
+        The longitude of the nodes, in degrees.
 
     Methods
     -------
@@ -41,8 +41,11 @@ class LatLonNodes(BaseNodeBuilder):
         Update the graph with new nodes and attributes.
     """
 
-    def __init__(self, latitudes: np.ndarray, longitudes: np.ndarray, name: str) -> None:
+    def __init__(self, latitudes: list[float] | np.ndarray, longitudes: list[float] | np.ndarray, name: str) -> None:
         super().__init__(name)
+        self.latitudes = latitudes if isinstance(latitudes, np.ndarray) else np.array(latitudes)
+        self.longitudes = longitudes if isinstance(longitudes, np.ndarray) else np.array(longitudes)
+
         assert len(self.latitudes) == len(
             self.longitudes
         ), f"Lenght of latitudes and longitudes must match but {len(self.latitudes)}!={len(self.longitudes)}."
@@ -52,8 +55,6 @@ class LatLonNodes(BaseNodeBuilder):
         assert self.longitudes.ndim == 1 or (
             self.longitudes.ndim == 2 and self.longitudes.shape[1] == 1
         ), "longitudes must have shape (N, ) or (N, 1)."
-        self.latitudes = latitudes
-        self.longitudes = longitudes
 
     def get_coordinates(self) -> torch.Tensor:
         """Get the coordinates of the nodes.
