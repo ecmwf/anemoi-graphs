@@ -24,9 +24,10 @@ a file using the following methods:
    node_coordinates/npz_file
    node_coordinates/icon_mesh
 
-Alternatively, nodes can be designed based on other algorithms. A common approach is to
-project an icosahedron onto the earth's surface, and refine it iteratively to
-reach the desired resolution. Currently available methods of this kind are:
+Alternatively, nodes can be designed based on other algorithms. A common
+approach is to project an icosahedron onto the earth's surface, and
+refine it iteratively to reach the desired resolution. Currently
+available methods of this kind are:
 
 .. toctree::
    :maxdepth: 1
