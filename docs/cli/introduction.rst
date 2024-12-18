@@ -21,9 +21,9 @@ To **create** a graph, use the ``create`` command:
    $ anemoi-graphs create recipe.yaml graph.pt
 
 The ``.yaml`` recipe file consists of high-level specifications for generating the graphs at each
-layer. An example of a simple recipe file follows in the :ref:`the following section <usage-getting-started>`.
+layer. An example of a simple recipe file is given in the :ref:`the following section <usage-getting-started>`.
 
-This will read the specifications in the ``recipe.yaml`` recipe file, and write to a PyTorch
+The ``create`` command will read the specifications in the ``recipe.yaml`` recipe file, and write to a PyTorch
 ``.pt`` file.
 
 To **describe** an existing graph stored as a ``.pt`` file, use the ``describe`` command:
@@ -42,7 +42,7 @@ A set of interactive and static visualisations are generated to allow visual ins
 of the graph design.
 
 Finally, the ``inspect`` command will generate a set of interactive and static visualisations
-are generated to allow visual inspection of the graph design.:
+for visual inspection of the graph design:
 
 .. code:: console
 

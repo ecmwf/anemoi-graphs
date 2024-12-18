@@ -33,7 +33,7 @@ like this:
 
 In this example, two sets of nodes are defined, which have been named
 ``data`` and ``hidden`` (these names are later used to define edges).
-The ``data`` nodes have been defined based coordinates specified in a
+The ``data`` nodes have been defined based on coordinates specified in a
 :ref:`zarr file <zarr-file>` and the hidden nodes are specified based on
 a :ref:`triangular refined icosahedron <trinodes>` algorithm.
 

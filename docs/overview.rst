@@ -61,7 +61,7 @@ Similarly, the edges :math:`V` can be classified into three categories:
    data.
 
 The commands and syntax for building the graphs at each layer are the
-same in in `anemoi-graphs`. However, it is important to keep this
+same in `anemoi-graphs`. However, it is important to keep this
 distinction in mind when designing a weather graph to be used in a
 data-driven model with :ref:`anemoi-training
 <anemoi-training:index-page>`.
