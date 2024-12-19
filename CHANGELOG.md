@@ -10,6 +10,10 @@ Keep it human-readable, your future self will thank you!
 
 ## [Unreleased](https://github.com/ecmwf/anemoi-graphs/compare/0.4.1...HEAD)
 
+### Added
+
+- feat: Add `AttributeFromSourceNode` and `AttributeFromTargetNode` edge attribute to copy attribute from source or target node. Set `node_attr_name` in the config to specify which attribute to copy from the source | target node (#94)
+
 # Changed
 - fix: faster edge builder for tri icosahedron. (#92)
 
@@ -24,7 +28,6 @@ Keep it human-readable, your future self will thank you!
 - feat: Support for multiple edge builders between two sets of nodes (#70)
 - feat: Support for providing lon/lat coordinates from a text file (loaded with numpy loadtxt method) to build the graph `TextNodes` (#93)
 - feat: Build 2D graphs with `Voronoi` in case `SphericalVoronoi` does not work well/is an overkill (LAM). Set `flat=true` in the nodes attributes to compute area weight using Voronoi with a qhull options preventing the empty region creation (#93)
-- feat: Add `AttributeFromSourceNode` and `AttributeFromTargetNode` edge attribute to copy attribute from source or target node. Set `node_attr_name` in the config to specify which attribute to copy from the source | target node (#94)
 
 # Changed
 
