@@ -53,26 +53,12 @@ Attributes can also be copied from nodes to edges. This is done using
 the `AttributeFromNode` base class, with specialized versions for source
 and target nodes.
 
-*************
- From Source
-*************
+From Source
+===========
 
 This attribute copies a specific property of the source node to the
-edge.
-
-.. code:: yaml
-
-   edges:
-     - source_name: ...
-       target_name: ...
-       edge_builders: ...
-       attributes:
-          comes_from_source_node:
-            _target_: anemoi.graphs.edges.attributes.AttributeFromSourceNode
-            node_attr_name: "attribute_name"
-
-Example usage for copying the cutout mask from nodes to edges in the
-encoder:
+edge. Example usage for copying the cutout mask from nodes to edges in
+the encoder:
 
 .. code:: yaml
 
@@ -82,30 +68,16 @@ encoder:
      target_name: hidden
      edge_builders: ...
      attributes:
-       cutout:
+       cutout: # Assigned name to the edge attribute, can be different than node_attr_name
          _target_: anemoi.graphs.edges.attributes.AttributeFromSourceNode
          node_attr_name: cutout
 
-*************
- From Target
-*************
+From Target
+===========
 
 This attribute copies a specific property of the target node to the
-edge.
-
-.. code:: yaml
-
-   edges:
-     - source_name: ...
-       target_name: ...
-       edge_builders: ...
-       attributes:
-         comes_from_target_node:
-            _target_: anemoi.graphs.edges.attributes.AttributeFromTargetNode
-            node_attr_name: "attribute_name"
-
-Example usage for copying the coutout mask from nodes to edges in the
-decoder:
+edge. Example usage for copying the coutout mask from nodes to edges in
+the decoder:
 
 .. code:: yaml
 
@@ -115,6 +87,6 @@ decoder:
       target_name: data
       edge_builders: ...
       attributes:
-        cutout:
+        cutout: # Assigned name to the edge attribute, can be different than node_attr_name
           _target_: anemoi.graphs.edges.attributes.AttributeFromTargetNode
           node_attr_name: cutout

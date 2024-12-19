@@ -201,8 +201,13 @@ class AttributeFromNode(BooleanBaseEdgeAttribute, ABC):
         node_name = self.get_node_name(source_name, target_name)
 
         edge_index = graph[(source_name, "to", target_name)].edge_index
-        assert hasattr(graph[node_name], self.node_attr_name)
-        return graph[node_name][self.node_attr_name].numpy()[edge_index[self.idx]]
+        try:
+            return graph[node_name][self.node_attr_name].numpy()[edge_index[self.idx]]
+
+        except AttributeError:
+            raise AttributeError(
+                f"{self.__class__.__name__} failed because the attribute '{self.node_attr_name}' is not defined for the nodes."
+            )
 
 
 class AttributeFromSourceNode(AttributeFromNode):
